@@ -97,38 +97,44 @@ async function fetchFeed(f) {
 }
 
 // ---------- Urval och svensk text ----------
+// Två steg så att texten alltid hör till rätt artikel och bara bygger på den:
+// 1) AI:n väljer vilka nyheter som är bäst (bara numren i listan).
+// 2) Varje nyhet skrivs om för sig, med enbart sin egen rubrik och ingress som underlag, och kontrolleras sedan.
 
-const SCHEMA = {
+const PICK_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['posts'],
+  required: ['pick'],
+  properties: { pick: { type: 'array', items: { type: 'integer' } } },
+};
+
+const PICK_SYSTEM = `Du väljer dagens filmnyheter för Film Power, en svensk filmstudio för kortfilm och indieproduktioner. Läsarna är svenska filmskapare: regissörer, fotografer, klippare och studenter.
+
+Välj de nyheter som är mest intressanta och användbara för dem: festivaler, nya filmer och regissörer, teknik och kameror, finansiering, distribution, jobb och branschförändringar. Undvik skvaller, rena kassasiffror och nästan likadana nyheter om samma sak. Välj gärna från olika källor.`;
+
+const WRITE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'body', 'category'],
   properties: {
-    posts: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['index', 'title', 'body', 'category'],
-        properties: {
-          index: { type: 'integer' },
-          title: { type: 'string' },
-          body: { type: 'string' },
-          category: { type: 'string', enum: CATEGORIES },
-        },
-      },
-    },
+    title: { type: 'string' },
+    body: { type: 'string' },
+    category: { type: 'string', enum: CATEGORIES },
   },
 };
 
-const SYSTEM = `Du skriver dagens filmnyheter för Film Power, en svensk filmstudio för kortfilm och indieproduktioner. Läsarna är svenska filmskapare: regissörer, fotografer, klippare och studenter.
+const WRITE_SYSTEM = `Du skriver om en filmnyhet på svenska för Film Power, en svensk filmstudio. Läsarna är svenska filmskapare.
 
-Välj de nyheter som är mest intressanta och användbara för dem: festivaler, nya filmer och regissörer, teknik och kameror, finansiering, distribution, jobb och branschförändringar. Undvik skvaller, rena kassasiffror och nästan likadana nyheter om samma sak. Välj gärna från olika källor.
+Regler, i den här ordningen:
+1. Använd bara uppgifter som står i underlaget. Lägg aldrig till namn, siffror, datum, citat, plattformar eller bakgrund som inte står där, inte ens om du tror att du vet.
+2. Rubriken ska säga samma sak som originalrubriken, kort och konkret (högst 90 tecken).
+3. Texten är 1 till 3 meningar. Är underlaget kort blir texten kort. Hellre en mening som stämmer än tre som gissar.
+4. Behåll namn på filmer, personer och företag som i originalet.
+5. Skriv naturlig, enkel svenska. Inga tankstreck (—). Skriv inte ut källan, den läggs till automatiskt.
+6. Kategori: välj en av ${CATEGORIES.join(', ')}.`;
 
-Skriv på naturlig, levande svenska, som en kunnig kollega som berättar vad som hänt. Rubriken är kort och konkret (högst 90 tecken). Brödtexten är 2 till 4 meningar med det viktigaste och varför det spelar roll för filmskapare. Hitta inte på fakta som inte står i underlaget. Använd inga tankstreck (—). Skriv inte ut källan, den läggs till automatiskt.`;
-
-function newsPrompt(candidates, count) {
-  const list = candidates.map((c, i) => `[${i}] ${c.source}: ${c.title}\n${c.summary}`).join('\n\n');
-  return `Här är de senaste nyheterna. Välj de ${count} bästa och skriv dem på svenska. Kategorier att välja mellan: ${CATEGORIES.join(', ')}.\n\n${list}`;
+function articleText(c) {
+  return `Källa: ${c.source}\nRubrik: ${c.title}\nIngress: ${c.summary || '(ingen ingress)'}`;
 }
 
 // Vilken AI som skriver de svenska texterna: Claude om ANTHROPIC_API_KEY finns, annars Groq.
@@ -139,7 +145,8 @@ function aiProvider() {
 }
 
 // Ber AI:n om ett JSON-svar. schema används av Claude, hint (en beskrivning av formatet) av Groq.
-async function askClaude(system, user, schema) {
+// valid kontrollerar att svaret har rätt form.
+async function askClaude(system, user, schema, valid) {
   const client = new Anthropic();
   const response = await client.beta.messages.create({
     model: MODEL,
@@ -152,11 +159,13 @@ async function askClaude(system, user, schema) {
   });
   if (response.stop_reason === 'refusal') throw new Error('Claude avböjde att skriva nyheterna.');
   const block = response.content.find((b) => b.type === 'text');
-  return JSON.parse(block ? block.text : '{}');
+  const parsed = JSON.parse(block ? block.text : '{}');
+  if (!valid(parsed)) throw new Error('Claude gav ett svar i fel form.');
+  return parsed;
 }
 
 // Groq (OpenAI-kompatibelt API). GROQ_MODEL väljer modell, annars provas två vanliga i tur och ordning.
-async function askGroq(system, user, hint) {
+async function askGroq(system, user, hint, valid) {
   const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
   const errors = [];
   for (const model of models) {
@@ -166,7 +175,7 @@ async function askGroq(system, user, hint) {
         headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
         body: JSON.stringify({
           model,
-          temperature: 0.4,
+          temperature: 0.2,
           max_tokens: 8000,
           // gpt-oss tänker innan den svarar. Lite tänkande räcker och lämnar plats åt själva svaret.
           ...(model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
@@ -176,70 +185,94 @@ async function askGroq(system, user, hint) {
             { role: 'user', content: user },
           ],
         }),
-        signal: AbortSignal.timeout(40000),
+        signal: AbortSignal.timeout(30000),
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error('Groq ' + r.status + ': ' + ((data.error && data.error.message) || ''));
       const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
       const parsed = JSON.parse(text || '{}');
-      if (parsed.posts && parsed.posts.length) return parsed;
-      throw new Error('Groq gav inga inlägg.');
+      if (valid(parsed)) return parsed;
+      throw new Error('svar i fel form');
     } catch (err) { errors.push(model + ': ' + err.message); }
   }
   throw new Error(errors.join(' | '));
 }
 
-function askAI(system, user, schema, hint) {
-  return aiProvider() === 'claude' ? askClaude(system, user, schema) : askGroq(system, user, hint);
+function askAI(system, user, schema, hint, valid) {
+  return aiProvider() === 'claude' ? askClaude(system, user, schema, valid) : askGroq(system, user, hint, valid);
+}
+
+// Alla tal i en text, utan mellanslag och skiljetecken ("2 000" och "2,000" blir "2000").
+function numbersIn(text) {
+  return (String(text).match(/\d+(?:[.,\s]\d{3})*(?:[.,]\d+)?/g) || []).map((n) => n.replace(/[.,\s]/g, ''));
+}
+
+// En omskriven nyhet godkänns bara om varje tal i den också finns i underlaget.
+// Det fångar den vanligaste sortens påhitt: siffror, belopp, år och datum som inte står i artikeln.
+export function faithful(c, out) {
+  const src = numbersIn(c.title + ' ' + c.summary);
+  return numbersIn(out.title + ' ' + out.body).every((n) => src.some((x) => x === n || x.startsWith(n)));
+}
+
+// Skriver om en nyhet på svenska. Ger null om AI:n inte klarar det utan att hitta på.
+async function rewriteOne(c) {
+  const hint = 'Svara endast med JSON i formen {"title":"…","body":"…","category":"…"}.';
+  const valid = (p) => p && typeof p.title === 'string' && typeof p.body === 'string' && p.title.trim() && p.body.trim();
+  let extra = '';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const p = await askAI(WRITE_SYSTEM, articleText(c) + '\n\nSkriv om den här nyheten på svenska.' + extra, WRITE_SCHEMA, hint, valid);
+    const out = { title: clean(p.title, 140), body: clean(p.body, 1500), category: CATEGORIES.includes(p.category) ? p.category : 'Branschnytt' };
+    if (faithful(c, out)) return out;
+    extra = '\n\nOBS: Förra försöket innehöll siffror som inte står i underlaget. Använd bara det som står ovan.';
+  }
+  return null;
 }
 
 async function writeSwedish(candidates, count) {
-  const hint = 'Svara endast med JSON i formen {"posts":[{"index":0,"title":"…","body":"…","category":"…"}]} där index är numret på nyheten i listan.';
-  return toPosts(await askAI(SYSTEM, newsPrompt(candidates, count), SCHEMA, hint), candidates, count);
+  const list = candidates.map((c, i) => `[${i}] ${c.source}: ${c.title}\n${c.summary}`).join('\n\n');
+  let order = [];
+  try {
+    const p = await askAI(PICK_SYSTEM, `Välj de ${count + 2} bästa nyheterna, bäst först. Svara med deras nummer.\n\n${list}`, PICK_SCHEMA,
+      'Svara endast med JSON i formen {"pick":[3,0,7]} med numren på nyheterna, bäst först.', (x) => x && Array.isArray(x.pick));
+    order = p.pick.filter((i) => Number.isInteger(i) && candidates[i]);
+  } catch (err) { console.error('Nyhetsboten urval:', err); }
+  // Fyll på med de senaste nyheterna, så att det finns reserver om någon text underkänns.
+  candidates.forEach((_, i) => order.push(i));
+  order = [...new Set(order)];
+
+  const out = [];
+  let errors = 0;
+  for (let start = 0; out.length < count && start < order.length && start < count * 3; start += count) {
+    const batch = order.slice(start, start + count - out.length);
+    const written = await Promise.all(batch.map((i) => rewriteOne(candidates[i]).catch((err) => { errors++; console.error('Nyhetsboten:', err); return null; })));
+    written.forEach((w, k) => { if (w && out.length < count) out.push({ ...candidates[batch[k]], ...w }); });
+    if (errors && !out.length) throw new Error('AI:n svarade inte.');
+  }
+  return out;
 }
 
-// ---------- Översättning av äldre engelska inlägg ----------
+// ---------- Rätta botens äldre inlägg ----------
 
-const TRANSLATE_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['posts'],
-  properties: {
-    posts: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['index', 'title', 'body'],
-        properties: { index: { type: 'integer' }, title: { type: 'string' }, body: { type: 'string' } },
-      },
-    },
-  },
-};
-
-const TRANSLATE_SYSTEM = `Du översätter filmnyheter till svenska för Film Power, en svensk filmstudio. Läsarna är svenska filmskapare.
-
-Skriv rubriken och texten på naturlig, levande svenska, inte ordagrant. Rubriken är kort och konkret (högst 90 tecken). Texten är 2 till 4 meningar med det viktigaste. Behåll namn på filmer, personer och företag. Hitta inte på fakta. Använd inga tankstreck (—).`;
-
-// Översätter botens inlägg som publicerades på engelska (innan en AI-nyckel fanns). Högst tio åt gången.
-async function translateOld() {
+// Skriver om botens äldre inlägg med den nya metoden: engelska inlägg och sådana som skrevs med
+// den gamla metoden (då AI:n fick alla nyheter på en gång och kunde blanda ihop dem).
+// Underlaget hämtas från flödet via länken. Inlägg som inte längre finns i flöden räknas som okontrollerade.
+async function repairOld(feedItems) {
   const ids = await redis('ZREVRANGE', 'news:idx', 0, 199);
-  if (!ids.length) return 0;
+  if (!ids.length) return { repaired: 0, unverified: 0 };
   const raws = await redis('HMGET', 'news', ...ids);
-  const old = raws.filter(Boolean).map((r) => JSON.parse(r)).filter((i) => i.bot && !i.sv).slice(0, 10);
-  if (!old.length) return 0;
-  const list = old.map((o, i) => `[${i}] ${o.title}\n${o.body}`).join('\n\n');
-  const hint = 'Svara endast med JSON i formen {"posts":[{"index":0,"title":"…","body":"…"}]} med ett objekt per nyhet, där index är numret i listan.';
-  const parsed = await askAI(TRANSLATE_SYSTEM, `Översätt de här nyheterna till svenska:\n\n${list}`, TRANSLATE_SCHEMA, hint);
-  const cmds = [];
-  for (const p of parsed.posts || []) {
-    const o = old[p.index];
-    if (!o || !p.title || !p.body) continue;
-    const item = { ...o, title: clean(p.title, 140), body: clean(p.body, 1500), sv: true };
-    cmds.push(['HSET', 'news', o.id, JSON.stringify(item)]);
-  }
-  if (cmds.length) await pipeline(cmds);
-  return cmds.length;
+  const old = raws.filter(Boolean).map((r) => JSON.parse(r)).filter((i) => i.bot && (i.v || 0) < 3).slice(0, 10);
+  const byLink = new Map(feedItems.map((i) => [i.link, i]));
+  let repaired = 0, unverified = 0;
+  await Promise.all(old.map(async (o) => {
+    // Engelska inlägg innehåller själva originalet, så det duger som underlag.
+    const c = byLink.get(o.link) || (!o.sv ? { source: o.source, title: o.title, summary: o.body } : null);
+    if (!c) { unverified++; return; }
+    const w = await rewriteOne(c).catch(() => null);
+    if (!w) return;
+    await redis('HSET', 'news', o.id, JSON.stringify({ ...o, ...w, sv: true, v: 3 }));
+    repaired++;
+  }));
+  return { repaired, unverified };
 }
 
 // Byter bild på botens äldre inlägg till artikelns delningsbild (de kunde få en bild som hörde till en annan artikel).
@@ -266,21 +299,6 @@ async function refreshImages() {
 
 function clean(s, max) {
   return String(s).replace(/\s*—\s*/g, ', ').trim().slice(0, max);
-}
-
-// Gör om AI:ns svar till inlägg och kastar bort sådant som inte stämmer med listan.
-function toPosts(parsed, candidates, count) {
-  const used = new Set();
-  return (parsed.posts || []).filter((p) => {
-    if (!candidates[p.index] || used.has(p.index)) return false;
-    used.add(p.index);
-    return true;
-  }).slice(0, count).map((p) => ({
-    ...candidates[p.index],
-    title: clean(p.title, 140),
-    body: clean(p.body, 1500),
-    category: CATEGORIES.includes(p.category) ? p.category : 'Branschnytt',
-  }));
 }
 
 // Utan Claude-nyckel: de senaste nyheterna från olika källor, med originalrubrik och ingress.
@@ -403,6 +421,7 @@ async function run() {
       bot: true,
       img2: true,
       sv: mode !== 'plain',
+      v: mode !== 'plain' ? 3 : 0,
       createdAt: now - i * 1000,
     };
     const key = crypto.createHash('sha1').update(p.link).digest('hex').slice(0, 16);
@@ -410,16 +429,16 @@ async function run() {
   });
   if (cmds.length) await pipeline(cmds);
 
-  // Översätt det som tidigare publicerats på engelska, nu när en AI-nyckel finns.
-  let translated = 0;
+  // Rätta äldre inlägg: översätt engelska och skriv om sådana som skrevs med den gamla metoden.
+  let translated = 0, unverified = 0;
   if (aiProvider()) {
-    try { translated = await translateOld(); } catch (err) { console.error('Nyhetsboten översättning:', err); aiError = aiError || String(err.message || err).slice(0, 300); }
+    try { ({ repaired: translated, unverified } = await repairOld(all)); } catch (err) { console.error('Nyhetsboten rättning:', err); aiError = aiError || String(err.message || err).slice(0, 300); }
   }
 
   let imagesFixed = 0;
   try { imagesFixed = await refreshImages(); } catch (err) { console.error('Nyhetsboten bilder:', err); }
 
-  const status = { at: now, posted: picked.length, translated, imagesFixed, error: aiError, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
+  const status = { at: now, posted: picked.length, translated, unverified, imagesFixed, error: aiError, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }

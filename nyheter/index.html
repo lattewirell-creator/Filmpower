@@ -2494,6 +2494,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var when = new Date(d.last.at).toLocaleString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       t += ' Senast ' + when + ': ' + d.last.posted + ' ' + (d.last.posted === 1 ? 'nyhet' : 'nyheter') + '.';
       if (d.last.failed && d.last.failed.length) t += ' Svarade inte: ' + d.last.failed.join(', ') + '.';
+      if (d.last.unverified) t += ' ' + d.last.unverified + ' äldre ' + (d.last.unverified === 1 ? 'nyhet' : 'nyheter') + ' kunde inte kontrolleras mot källan. Ta gärna bort ' + (d.last.unverified === 1 ? 'den' : 'dem') + '.';
       if (d.last.error) t += ' Fel från ' + (d.ai === 'claude' ? 'Claude' : 'Groq') + ': ' + d.last.error;
     }
     return t;
@@ -2508,7 +2509,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     api('bot', { method: 'POST' }).then(function (d) {
       var parts = [];
       if (d.posted) parts.push(d.posted + ' nya ' + (d.posted === 1 ? 'nyhet' : 'nyheter') + ' publicerade');
-      if (d.translated) parts.push(d.translated + ' ' + (d.translated === 1 ? 'äldre nyhet översatt' : 'äldre nyheter översatta') + ' till svenska');
+      if (d.translated) parts.push(d.translated + ' ' + (d.translated === 1 ? 'äldre nyhet omskriven' : 'äldre nyheter omskrivna') + ' och kontrollerade mot källan');
       if (d.error) setMsg($('bot-msg'), 'AI:n gick inte att nå, så inget publicerades på engelska. Fel: ' + d.error, 'error');
       else setMsg($('bot-msg'), parts.length ? 'Klart! ' + parts.join(' och ') + '.' : 'Inga nya nyheter hittades just nu.', parts.length ? 'ok' : '');
       if (d.translated && !d.posted) loadNews();
