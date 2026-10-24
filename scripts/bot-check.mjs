@@ -13,7 +13,7 @@ for (const f of FEEDS) {
     console.log(`\n${f.name}: HTTP ${r.status}, ${items.length} nyheter, ${fresh.length} färska`);
     for (const i of fresh.slice(0, 3)) {
       const img = await articleImage(i);
-      console.log(`  - ${i.title}\n    ${i.link}\n    ${i.summary.slice(0, 140)}\n    bild: ${i.image || 'ingen'} -> ${img ? Math.round(img.length * 0.75 / 1024) + ' kB sparad' : 'kunde inte sparas'}`);
+      console.log(`  - ${i.title}\n    ${i.link}\n    flödesbild: ${i.image || 'ingen'}\n    bild i texten: ${i.inlineImage || 'ingen'}\n    -> ${img ? Math.round(img.length * 0.75 / 1024) + ' kB sparad' : 'kunde inte sparas'}`);
     }
   } catch (err) {
     console.log(`\n${f.name}: FEL ${err.message}`);

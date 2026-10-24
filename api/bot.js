@@ -61,9 +61,13 @@ function imageUrl(block) {
     || pick(/<media:thumbnail[^>]*url="([^"]+)"/i)
     || pick(/<media:content[^>]*url="([^"]+\.(?:jpe?g|png|webp)(?:\?[^"]*)?)"/i)
     || pick(/<enclosure[^>]*url="([^"]+)"[^>]*type="image\//i)
-    || pick(/<enclosure[^>]*type="image\/[^"]*"[^>]*url="([^"]+)"/i)
-    || pick(/<img[^>]*src=["'](https?:[^"']+)["']/i)
-    || pick(/&lt;img[^&]*?src=(?:&quot;|")(https?:[^&"]+)/i);
+    || pick(/<enclosure[^>]*type="image\/[^"]*"[^>]*url="([^"]+)"/i);
+}
+
+// Första bilden i artikeltexten. Osäkrare, den kan höra till en annan artikel eller en annons.
+function inlineImageUrl(block) {
+  const m = block.match(/<img[^>]*src=["'](https?:[^"']+)["']/i) || block.match(/&lt;img[^&]*?src=(?:&quot;|")(https?:[^&"]+)/i);
+  return m ? m[1].replace(/&amp;/g, '&') : '';
 }
 
 export function parseFeed(xml, source) {
@@ -76,8 +80,9 @@ export function parseFeed(xml, source) {
     const summary = text(tag(block, 'description') || tag(block, 'summary') || tag(block, 'content:encoded')).slice(0, 600);
     const when = Date.parse(text(tag(block, 'pubDate') || tag(block, 'published') || tag(block, 'updated') || tag(block, 'dc:date')));
     if (!title || !/^https?:\/\//.test(link)) continue;
-    const image = imageUrl(block);
-    items.push({ source, title: title.slice(0, 200), link, summary, image: /^https:\/\//.test(image) ? image : '', publishedAt: Number.isFinite(when) ? when : 0 });
+    const image = imageUrl(block), inline = inlineImageUrl(block);
+    const https = (u) => (/^https:\/\//.test(u) ? u : '');
+    items.push({ source, title: title.slice(0, 200), link, summary, image: https(image), inlineImage: https(inline), publishedAt: Number.isFinite(when) ? when : 0 });
   }
   return items;
 }
@@ -237,6 +242,28 @@ async function translateOld() {
   return cmds.length;
 }
 
+// Byter bild på botens äldre inlägg till artikelns delningsbild (de kunde få en bild som hörde till en annan artikel).
+async function refreshImages() {
+  const ids = await redis('ZREVRANGE', 'news:idx', 0, 199);
+  if (!ids.length) return 0;
+  const raws = await redis('HMGET', 'news', ...ids);
+  const old = raws.filter(Boolean).map((r) => JSON.parse(r)).filter((i) => i.bot && !i.img2 && i.link).slice(0, 10);
+  let fixed = 0;
+  for (const o of old) {
+    const data = await fetchImage(await pageImage(o.link));
+    const item = { ...o, img2: true };
+    if (data) {
+      const id = crypto.randomBytes(8).toString('hex');
+      await redis('SET', 'img:' + id, data);
+      if (o.image) await redis('DEL', 'img:' + o.image);
+      item.image = id;
+      fixed++;
+    }
+    await redis('HSET', 'news', o.id, JSON.stringify(item));
+  }
+  return fixed;
+}
+
 function clean(s, max) {
   return String(s).replace(/\s*—\s*/g, ', ').trim().slice(0, max);
 }
@@ -302,9 +329,12 @@ async function pageImage(link) {
   } catch { return ''; }
 }
 
-// Hämtar bilden från flödet, och annars artikelns delningsbild.
+// Den bild som säkrast hör till nyheten: först den flödet pekar ut, sedan artikelns delningsbild
+// (og:image) och sist första bilden i texten.
 export async function articleImage(item) {
-  return (await fetchImage(item.image)) || fetchImage(await pageImage(item.link));
+  return (await fetchImage(item.image))
+    || (await fetchImage(await pageImage(item.link)))
+    || fetchImage(item.inlineImage);
 }
 
 export async function fetchImage(url) {
@@ -371,6 +401,7 @@ async function run() {
       author: 'Film Power',
       authorKey: '',
       bot: true,
+      img2: true,
       sv: mode !== 'plain',
       createdAt: now - i * 1000,
     };
@@ -385,7 +416,10 @@ async function run() {
     try { translated = await translateOld(); } catch (err) { console.error('Nyhetsboten översättning:', err); aiError = aiError || String(err.message || err).slice(0, 300); }
   }
 
-  const status = { at: now, posted: picked.length, translated, error: aiError, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
+  let imagesFixed = 0;
+  try { imagesFixed = await refreshImages(); } catch (err) { console.error('Nyhetsboten bilder:', err); }
+
+  const status = { at: now, posted: picked.length, translated, imagesFixed, error: aiError, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }
