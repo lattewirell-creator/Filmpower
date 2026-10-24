@@ -7,7 +7,7 @@ import {
 // Nyhetsboten: hämtar filmnyheter från branschsajter en gång per dag och publicerar dem som Film Power.
 // Vercel Cron anropar GET varje morgon. Admin kan också köra den direkt (POST) och se status (GET ?status=1).
 
-const FEEDS = [
+export const FEEDS = [
   { name: 'Variety', url: 'https://variety.com/v/film/feed/' },
   { name: 'IndieWire', url: 'https://www.indiewire.com/feed/' },
   { name: 'Deadline', url: 'https://deadline.com/v/film/feed/' },
