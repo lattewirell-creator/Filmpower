@@ -121,9 +121,20 @@ Välj de nyheter som är mest intressanta och användbara för dem: festivaler, 
 
 Skriv på naturlig, levande svenska, som en kunnig kollega som berättar vad som hänt. Rubriken är kort och konkret (högst 90 tecken). Brödtexten är 2 till 4 meningar med det viktigaste och varför det spelar roll för filmskapare. Hitta inte på fakta som inte står i underlaget. Använd inga tankstreck (—). Skriv inte ut källan, den läggs till automatiskt.`;
 
-async function writeSwedish(candidates, count) {
-  const client = new Anthropic();
+function newsPrompt(candidates, count) {
   const list = candidates.map((c, i) => `[${i}] ${c.source}: ${c.title}\n${c.summary}`).join('\n\n');
+  return `Här är de senaste nyheterna. Välj de ${count} bästa och skriv dem på svenska. Kategorier att välja mellan: ${CATEGORIES.join(', ')}.\n\n${list}`;
+}
+
+// Vilken AI som skriver de svenska texterna: Claude om ANTHROPIC_API_KEY finns, annars Groq.
+function aiProvider() {
+  if (process.env.ANTHROPIC_API_KEY) return 'claude';
+  if (process.env.GROQ_API_KEY) return 'groq';
+  return '';
+}
+
+async function writeWithClaude(candidates, count) {
+  const client = new Anthropic();
   const response = await client.beta.messages.create({
     model: MODEL,
     max_tokens: 8000,
@@ -131,11 +142,52 @@ async function writeSwedish(candidates, count) {
     fallbacks: 'default',
     output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
     system: SYSTEM,
-    messages: [{ role: 'user', content: `Här är de senaste nyheterna. Välj de ${count} bästa och skriv dem på svenska. Kategorier att välja mellan: ${CATEGORIES.join(', ')}.\n\n${list}` }],
+    messages: [{ role: 'user', content: newsPrompt(candidates, count) }],
   });
   if (response.stop_reason === 'refusal') throw new Error('Claude avböjde att skriva nyheterna.');
   const block = response.content.find((b) => b.type === 'text');
-  const parsed = JSON.parse(block ? block.text : '{}');
+  return toPosts(JSON.parse(block ? block.text : '{}'), candidates, count);
+}
+
+// Groq (OpenAI-kompatibelt API). GROQ_MODEL väljer modell, annars provas två vanliga i tur och ordning.
+async function writeWithGroq(candidates, count) {
+  const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
+  const format = 'Svara endast med JSON i formen {"posts":[{"index":0,"title":"…","body":"…","category":"…"}]} där index är numret på nyheten i listan.';
+  let lastError;
+  for (const model of models) {
+    try {
+      const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
+        method: 'POST',
+        headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          temperature: 0.4,
+          max_tokens: 4000,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: SYSTEM + '\n\n' + format },
+            { role: 'user', content: newsPrompt(candidates, count) },
+          ],
+        }),
+        signal: AbortSignal.timeout(40000),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error('Groq ' + r.status + ': ' + ((data.error && data.error.message) || ''));
+      const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      const posts = toPosts(JSON.parse(text || '{}'), candidates, count);
+      if (posts.length) return posts;
+      throw new Error('Groq gav inga inlägg.');
+    } catch (err) { lastError = err; }
+  }
+  throw lastError;
+}
+
+async function writeSwedish(candidates, count) {
+  return aiProvider() === 'claude' ? writeWithClaude(candidates, count) : writeWithGroq(candidates, count);
+}
+
+// Gör om AI:ns svar till inlägg och kastar bort sådant som inte stämmer med listan.
+function toPosts(parsed, candidates, count) {
   const used = new Set();
   return (parsed.posts || []).filter((p) => {
     if (!candidates[p.index] || used.has(p.index)) return false;
@@ -234,8 +286,8 @@ async function run() {
   const count = postsPerDay();
   let picked = [], mode = 'plain';
   if (candidates.length) {
-    if (process.env.ANTHROPIC_API_KEY) {
-      try { picked = await writeSwedish(candidates, count); mode = 'ai'; } catch (err) { console.error('Nyhetsboten:', err); }
+    if (aiProvider()) {
+      try { picked = await writeSwedish(candidates, count); mode = aiProvider(); } catch (err) { console.error('Nyhetsboten:', err); }
     }
     if (!picked.length) picked = pickPlain(candidates, count);
   }
@@ -289,7 +341,7 @@ export default handle(async (req, res) => {
     const s = await getSession(req);
     if (!s || s.role !== 'admin') throw new HttpError(403, 'Bara admin kan se nyhetsboten.');
     const last = await redis('GET', 'bot:last');
-    return send(res, 200, { last: last ? JSON.parse(last) : null, ai: Boolean(process.env.ANTHROPIC_API_KEY), perDay: postsPerDay() });
+    return send(res, 200, { last: last ? JSON.parse(last) : null, ai: aiProvider(), perDay: postsPerDay() });
   }
 
   if (req.method === 'GET') {

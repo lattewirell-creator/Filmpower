@@ -2335,7 +2335,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   // ---------- Statistik ----------
   // ---------- Nyhetsboten ----------
   function botText(d) {
-    var t = 'Publicerar ' + d.perDay + ' filmnyheter som Film Power varje morgon' + (d.ai ? ', skrivna på svenska av Claude.' : '. Lägg till ANTHROPIC_API_KEY på Vercel för svenska sammanfattningar.');
+    var t = 'Publicerar ' + d.perDay + ' filmnyheter som Film Power varje morgon' + (d.ai ? ', skrivna på svenska av ' + (d.ai === 'groq' ? 'Groq' : 'Claude') + '.' : '. Lägg till GROQ_API_KEY eller ANTHROPIC_API_KEY på Vercel för svenska sammanfattningar.');
     if (d.last) {
       var when = new Date(d.last.at).toLocaleString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       t += ' Senast ' + when + ': ' + d.last.posted + ' ' + (d.last.posted === 1 ? 'nyhet' : 'nyheter') + '.';
