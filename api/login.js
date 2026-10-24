@@ -44,8 +44,9 @@ async function attempt(b, req, res) {
     if (user.status === 'blocked') throw new HttpError(403, 'Ditt konto är spärrat. Kontakta Film Power.');
 
     const role = user.role === 'admin' ? 'admin' : 'member';
-    return send(res, 200, { role, label: user.username }, {
-      'Set-Cookie': sessionCookie(req, { role, label: user.username, user: key }),
+    const label = user.displayName || user.username;
+    return send(res, 200, { role, label }, {
+      'Set-Cookie': sessionCookie(req, { role, label, user: key }),
     });
   }
 

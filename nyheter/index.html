@@ -78,7 +78,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .badge { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; padding: .25rem .6rem; border-radius: 999px; background: var(--soft); color: var(--ink); font-weight: 500; }
 .badge.admin { background: var(--brand); color: var(--on-brand); }
 .logo b, .btn { white-space: nowrap; }
-@media (max-width: 520px) { .who .name, .logo b { display: none; } }
+@media (max-width: 520px) { .logo b, .account-btn .txt, .who .badge { display: none; } }
 
 /* Login */
 .login { padding-block: clamp(4rem, 14vh, 8rem); text-align: center; }
@@ -139,6 +139,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .t-head b { font-weight: 600; white-space: nowrap; }
 .t-head .handle { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .verified { width: 1.1rem; height: 1.1rem; flex: none; }
+.account-btn { display: inline-flex; align-items: center; gap: .45rem; background: none; border: 0; padding: .25rem .6rem .25rem .25rem; border-radius: 999px; cursor: pointer; font-size: .92rem; }
+.account-btn:hover { background: var(--soft); }
+.avatar.mini { width: 1.9rem; height: 1.9rem; font-size: .8rem; }
+.avatar.big { width: 4.5rem; height: 4.5rem; font-size: 1.6rem; }
+.profile { display: flex; align-items: center; gap: 1rem; padding-top: .8rem; }
+.profile-txt { display: grid; min-width: 0; line-height: 1.3; }
+.profile-txt .row { display: flex; align-items: center; gap: .35rem; }
+.profile-txt b { font-size: 1.45rem; font-weight: 600; overflow-wrap: anywhere; }
+.profile-txt .handle { color: var(--muted); }
+.acc-badges { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+.acc-badges .status { margin: 0; }
+.acc-section { padding-block: 1.6rem; border-top: 1px solid var(--line); margin-top: 1.6rem; }
+.acc-section h3 { font-family: var(--body); font-size: 1.15rem; font-weight: 600; margin-bottom: .2rem; }
+.acc-section .form { padding-top: .6rem; }
+.reply-locked { display: flex; align-items: center; gap: .6rem; padding-block: 1rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .95rem; }
+.reply-locked svg { width: 1.2rem; height: 1.2rem; flex: none; }
+.status.verified-chip { border-color: var(--brand); color: var(--on-brand); background: var(--brand); }
 .verified circle { fill: var(--brand); }
 .verified path { stroke: var(--on-brand); }
 .t-cat { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); font-weight: 500; margin-top: .15rem; }
@@ -263,7 +280,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       <b>FILM POWER</b><span class="sub">Nyheter</span>
     </a>
     <div class="who" id="who" hidden>
-      <span class="name" id="who-name"></span>
+      <button class="account-btn" type="button" id="who-name" aria-label="Mitt konto"></button>
       <span class="badge" id="who-badge"></span>
       <button class="btn btn-ghost btn-small" type="button" id="logout-btn">Logga ut</button>
     </div>
@@ -369,6 +386,47 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         <h2>Inlägg</h2>
       </div>
       <div id="post-detail"></div>
+    </div>
+
+    <div id="panel-account" hidden>
+      <div class="detail-head">
+        <button class="icon-btn" type="button" id="acc-back" aria-label="Tillbaka">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <h2>Mitt konto</h2>
+      </div>
+      <div class="profile">
+        <div class="avatar big" id="acc-avatar"></div>
+        <div class="profile-txt">
+          <span class="row"><b id="acc-name"></b></span>
+          <span class="handle" id="acc-handle"></span>
+        </div>
+      </div>
+      <div class="acc-badges" id="acc-badges"></div>
+      <div class="stats" id="acc-stats" style="margin-top:1.4rem"></div>
+
+      <div class="acc-section" id="acc-name-section" hidden>
+        <h3>Ändra namn</h3>
+        <p class="muted" style="font-size:.92rem">Namnet syns i dina kommentarer. Du loggar fortfarande in med ditt användarnamn.</p>
+        <form class="form" id="name-form" novalidate>
+          <div class="field"><label for="acc-display">Visningsnamn</label><input class="input" id="acc-display" maxlength="30" autocomplete="name"></div>
+          <div class="form-actions"><button class="btn btn-primary btn-small" type="submit" id="name-btn">Spara namn</button><p class="msg" id="name-msg" role="status" aria-live="polite"></p></div>
+        </form>
+      </div>
+
+      <div class="acc-section" id="acc-pw-section" hidden>
+        <h3>Byt lösenord</h3>
+        <form class="form" id="pw-form" novalidate>
+          <div class="field"><label for="pw-current">Nuvarande lösenord</label><input class="input" id="pw-current" type="password" autocomplete="current-password"></div>
+          <div class="row2">
+            <div class="field"><label for="pw-new">Nytt lösenord</label><input class="input" id="pw-new" type="password" autocomplete="new-password" minlength="8"></div>
+            <div class="field"><label for="pw-new2">Upprepa nytt lösenord</label><input class="input" id="pw-new2" type="password" autocomplete="new-password"></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary btn-small" type="submit" id="pw-btn">Byt lösenord</button><p class="msg" id="pw-msg" role="status" aria-live="polite"></p></div>
+        </form>
+      </div>
+
+      <p class="notice acc-section" id="acc-note" hidden style="border-top:0"></p>
     </div>
 
     <div id="panel-write" role="tabpanel" hidden>
@@ -652,7 +710,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     state.user = user;
     var admin = isAdmin();
     $('who').hidden = false;
-    $('who-name').textContent = user.label;
+    renderWho();
     $('who-badge').textContent = admin ? 'Admin' : 'Medlem';
     $('who-badge').className = 'badge' + (admin ? ' admin' : '');
     $('greeting').textContent = admin
@@ -666,6 +724,102 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     loadNews().then(route);
     if (admin && state.dbReady) loadUsers();
   }
+
+  function renderWho() {
+    var u = state.user, b = $('who-name');
+    b.replaceChildren();
+    b.appendChild(el('span', 'avatar mini' + (myInitial() === 'FP' ? '' : ' user'), myInitial()));
+    b.appendChild(el('span', 'txt', u.label));
+    if (u.verified) b.appendChild(verified());
+  }
+  $('who-name').addEventListener('click', function () { location.hash = 'konto'; });
+
+  // ---------- Mitt konto ----------
+  function openAccount() {
+    closeMenu();
+    ['panel-feed', 'panel-post', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = true; });
+    $('panel-account').hidden = false;
+    $('tabs').hidden = true;
+    $('app-head').hidden = true;
+    state.panel = 'panel-account';
+    window.scrollTo(0, 0);
+    setMsg($('name-msg'), ''); setMsg($('pw-msg'), '');
+    $('pw-form').reset();
+    api('account').then(renderAccount).catch(function (err) { toast(err.message); });
+  }
+
+  function renderAccount(acc) {
+    var initial = acc.kind === 'admin' ? 'FP' : (acc.displayName || '?').charAt(0);
+    $('acc-avatar').textContent = initial;
+    $('acc-avatar').className = 'avatar big' + (initial === 'FP' ? '' : ' user');
+    var nameBox = $('acc-name').parentNode;
+    $('acc-name').textContent = acc.displayName;
+    Array.prototype.forEach.call(nameBox.querySelectorAll('.verified'), function (v) { v.remove(); });
+    if (acc.verified || acc.kind === 'admin') nameBox.appendChild(verified());
+    $('acc-handle').textContent = acc.kind === 'account' ? '@' + acc.username : acc.kind === 'code' ? 'Inloggad med kod' : 'Inloggad med adminkod';
+
+    var badges = $('acc-badges');
+    badges.replaceChildren();
+    badges.appendChild(el('span', 'status' + (acc.role === 'admin' ? ' pending' : ''), acc.role === 'admin' ? 'Admin' : 'Medlem'));
+    if (acc.verified) badges.appendChild(el('span', 'status verified-chip', 'Verifierad'));
+    if (acc.createdAt) badges.appendChild(el('span', 'status', 'Medlem sedan ' + new Date(acc.createdAt).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })));
+
+    var stats = $('acc-stats');
+    stats.replaceChildren();
+    [[acc.liked, 'Gillade inlägg'], [acc.saved, 'Sparade inlägg']].forEach(function (c) {
+      var s = el('div', 'stat');
+      s.appendChild(el('b', null, c[0].toLocaleString('sv-SE')));
+      s.appendChild(el('span', null, c[1]));
+      stats.appendChild(s);
+    });
+
+    var own = acc.kind === 'account';
+    $('acc-name-section').hidden = !own;
+    $('acc-pw-section').hidden = !own;
+    $('acc-display').value = own ? acc.displayName : '';
+    var note = $('acc-note');
+    note.hidden = own;
+    note.textContent = acc.kind === 'code'
+      ? 'Du är inloggad med en kod. Vill du välja eget namn, få en bock och kunna kommentera? Logga ut och välj Skapa konto.'
+      : 'Adminkoden visas alltid som Film Power. Skapa ett eget konto om du vill ha ett personligt namn.';
+    if (!own || acc.verified || acc.role === 'admin') return;
+    var hint = el('p', 'muted');
+    hint.style.marginTop = '1rem';
+    hint.style.fontSize = '.92rem';
+    hint.textContent = 'Ditt konto är inte verifierat än. Verifierade konton får en grön bock och kan kommentera. Fråga Film Power om du vill bli verifierad.';
+    $('acc-stats').after(hint);
+  }
+
+  $('acc-back').addEventListener('click', goBack);
+
+  $('name-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('acc-display').value.trim();
+    if (name.length < 2) { setMsg($('name-msg'), 'Namnet behöver minst 2 tecken.', 'error'); return; }
+    $('name-btn').disabled = true;
+    api('account', { method: 'PATCH', body: { displayName: name } }).then(function (d) {
+      state.user.label = d.displayName;
+      renderWho();
+      $('acc-name').textContent = d.displayName;
+      $('greeting').textContent = isAdmin() ? 'Inloggad som admin, ' + d.displayName : 'Välkommen, ' + d.displayName;
+      setMsg($('name-msg'), 'Namnet är sparat.', 'ok');
+    }).catch(function (err) { setMsg($('name-msg'), err.message, 'error'); })
+      .then(function () { $('name-btn').disabled = false; });
+  });
+
+  $('pw-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var cur = $('pw-current').value, p1 = $('pw-new').value, p2 = $('pw-new2').value;
+    if (!cur || !p1) { setMsg($('pw-msg'), 'Fyll i nuvarande och nytt lösenord.', 'error'); return; }
+    if (p1.length < 8) { setMsg($('pw-msg'), 'Det nya lösenordet behöver minst 8 tecken.', 'error'); return; }
+    if (p1 !== p2) { setMsg($('pw-msg'), 'De nya lösenorden är inte likadana.', 'error'); return; }
+    $('pw-btn').disabled = true;
+    api('account', { method: 'PATCH', body: { currentPassword: cur, newPassword: p1 } }).then(function () {
+      $('pw-form').reset();
+      setMsg($('pw-msg'), 'Lösenordet är bytt.', 'ok');
+    }).catch(function (err) { setMsg($('pw-msg'), err.message, 'error'); })
+      .then(function () { $('pw-btn').disabled = false; });
+  });
 
   // ---------- Flikar ----------
   var TITLES = { all: 'Nyheter', popular: 'Populärt', saved: 'Sparade', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik' };
@@ -682,7 +836,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     state.panel = tab.dataset.panel;
     if (tab.dataset.view) state.view = tab.dataset.view;
     tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.id === tabId)); });
-    ['panel-feed', 'panel-post', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = p !== state.panel; });
+    ['panel-feed', 'panel-post', 'panel-account', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = p !== state.panel; });
     $('tabs').hidden = false;
     $('app-head').hidden = false;
     $('view-title').textContent = TITLES[tab.dataset.view || state.panel];
@@ -837,7 +991,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     var c = actBtn('comment', 'Kommentera', num(item.comments));
     c.addEventListener('click', function () {
-      if (big) { $('reply-text').focus(); return; }
+      if (big) { var r0 = $('reply-text'); if (r0) r0.focus(); return; }
       location.hash = 'inlagg-' + item.id;
       setTimeout(function () { var r = $('reply-text'); if (r) r.focus(); }, 300);
     });
@@ -977,10 +1131,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var m = /^#inlagg-([a-f0-9]+)$/.exec(location.hash);
     if (!state.user) return;
     if (m) openPost(m[1]);
-    else if (state.panel === 'panel-post') selectTab('tab-' + state.view);
+    else if (location.hash === '#konto') openAccount();
+    else if (state.panel === 'panel-post' || state.panel === 'panel-account') selectTab('tab-' + state.view);
   }
   window.addEventListener('hashchange', function () {
-    state.fromFeed = state.panel !== 'panel-post';
+    state.fromFeed = state.panel !== 'panel-post' && state.panel !== 'panel-account';
     route();
   });
 
@@ -992,7 +1147,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function openPost(id) {
     closeMenu();
-    ['panel-feed', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = true; });
+    ['panel-feed', 'panel-account', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = true; });
     $('panel-post').hidden = false;
     $('tabs').hidden = true;
     $('app-head').hidden = true;
@@ -1067,7 +1222,19 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     actions.appendChild(actionBar(item, true));
     box.appendChild(actions);
 
-    // Svarsruta
+    // Svarsruta, bara för verifierade konton och admins
+    if (!isAdmin() && !state.user.verified) {
+      var locked = el('div', 'reply-locked');
+      locked.appendChild(verified());
+      locked.appendChild(el('span', null, 'Bara verifierade konton kan svara på inlägg.'));
+      box.appendChild(locked);
+      var lockedList = el('div');
+      lockedList.id = 'comment-list';
+      box.appendChild(lockedList);
+      if (comments) renderComments(item);
+      else lockedList.appendChild(el('p', 'no-comments', 'Hämtar kommentarer…'));
+      return;
+    }
     var reply = el('form', 'reply');
     reply.noValidate = true;
     reply.appendChild(el('div', 'avatar' + (myInitial() === 'FP' ? '' : ' user'), myInitial()));
@@ -1133,7 +1300,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var main = el('div', 't-main');
       var head = el('div', 't-head');
       head.appendChild(el('b', null, c.author));
-      if (c.isAdmin) head.appendChild(verified());
+      if (c.isAdmin || c.verified) head.appendChild(verified());
       head.appendChild(el('span', 'handle', '· ' + timeAgo(c.createdAt)));
       if (c.canDelete) {
         var del = el('button', 'c-del', 'Ta bort');
@@ -1353,10 +1520,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     users.forEach(function (u) {
       var row = el('div', 'code-row');
       var info = el('div');
-      info.appendChild(el('b', null, u.username));
+      info.appendChild(el('b', null, u.displayName && u.displayName !== u.username ? u.displayName + ' (@' + u.username + ')' : u.username));
       var meta = el('small');
       meta.appendChild(el('span', 'status ' + u.status, STATUS_TEXT[u.status] || u.status));
       if (u.role === 'admin') meta.appendChild(el('span', 'status pending', 'Admin'));
+      if (u.verified) meta.appendChild(el('span', 'status verified-chip', 'Verifierad'));
       meta.appendChild(document.createTextNode('Skapat ' + fmtDate(u.createdAt)));
       info.appendChild(meta);
       row.appendChild(info);
@@ -1367,6 +1535,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         var makeAdmin = u.role !== 'admin';
         actions.appendChild(smallButton(makeAdmin ? 'Gör till admin' : 'Ta bort admin', 'btn-ghost', function () {
           return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { role: makeAdmin ? 'admin' : 'member' } }).then(loadUsers);
+        }));
+        actions.appendChild(smallButton(u.verified ? 'Ta bort verifiering' : 'Verifiera', 'btn-ghost', function () {
+          return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { verified: !u.verified } }).then(loadUsers);
         }));
         actions.appendChild(smallButton('Spärra', 'btn-danger', function () { return setStatus(u.id, 'blocked'); }));
       }

@@ -23,6 +23,8 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Fästa inlägg:** Klicka på **⋯** på ett inlägg och välj **Fäst högst upp**, eller kryssa i rutan när du skriver. Där kan du också ta bort inlägget.
 - **Kommentarer:** Alla inloggade kan kommentera och ta bort sina egna kommentarer. Admin kan ta bort alla.
 - **Statistik:** Fliken **Statistik** visar inlägg, visningar, gillningar, kommentarer, konton och de mest lästa inläggen.
+- **Verifiering:** Under **Konton** klickar du **Verifiera** på ett godkänt konto. Personen får en grön bock vid sitt namn. Bara verifierade konton och admins kan kommentera. Övriga kan läsa, gilla och spara.
+- **Mitt konto:** Klicka på ditt namn uppe till höger. Där ändrar du visningsnamn och lösenord. Namnet uppdateras även i gamla kommentarer.
 - **Fler admins:** Låt personen skapa ett eget konto. Godkänn det under **Konton** och klicka **Gör till admin**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
 - **Medlemmar med kod:** Klickar **Logga in med kod** under **Medlem** och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.

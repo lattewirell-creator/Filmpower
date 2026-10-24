@@ -191,7 +191,7 @@ export async function getSession(req) {
     if (!raw) return null;
     const u = JSON.parse(raw);
     if (u.status !== 'active') return null;
-    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.username };
+    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified) };
   }
   if (s.role === 'member') {
     // Spärrade koder loggas ut direkt.

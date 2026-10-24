@@ -20,14 +20,22 @@ export default handle(async (req, res) => {
       ['HGETALL', 'comments:' + id],
     ]);
     const [item] = await withStats([JSON.parse(raw)], s);
-    const comments = [];
-    for (let i = 0; i < flat.length; i += 2) {
-      const c = JSON.parse(flat[i + 1]);
-      comments.push({
-        id: c.id, author: c.author, isAdmin: c.isAdmin, text: c.text, createdAt: c.createdAt,
-        canDelete: s.role === 'admin' || c.actor === a,
-      });
+    const raws = [];
+    for (let i = 0; i < flat.length; i += 2) raws.push(JSON.parse(flat[i + 1]));
+    const userKeys = [...new Set(raws.filter((c) => c.actor.startsWith('u:')).map((c) => c.actor.slice(2)))];
+    const accounts = new Map();
+    if (userKeys.length) {
+      const rows = await redis('HMGET', 'users', ...userKeys);
+      rows.forEach((u, i) => { if (u) accounts.set(userKeys[i], JSON.parse(u)); });
     }
+    const comments = raws.map((c) => {
+      const acc = c.actor.startsWith('u:') ? accounts.get(c.actor.slice(2)) : null;
+      return {
+      id: c.id, author: acc ? acc.displayName || acc.username : c.author, isAdmin: c.isAdmin, text: c.text, createdAt: c.createdAt,
+      verified: Boolean(acc && acc.verified),
+      canDelete: s.role === 'admin' || c.actor === a,
+      };
+    });
     comments.sort((x, y) => y.createdAt - x.createdAt);
     return send(res, 200, { item, comments });
   }
@@ -53,6 +61,7 @@ export default handle(async (req, res) => {
     const b = await readBody(req, 20_000);
     const text = String(b.text || '').replace(/\r\n/g, '\n').trim().slice(0, MAX_COMMENT);
     if (!text) throw new HttpError(400, 'Skriv något först.');
+    if (s.role !== 'admin' && !s.verified) throw new HttpError(403, 'Bara verifierade konton kan kommentera.');
     await rateLimit('rl:comment:' + a, 20, 600, 'Du har kommenterat mycket på kort tid. Vänta några minuter.');
     const c = {
       id: crypto.randomBytes(6).toString('hex'),
@@ -67,7 +76,7 @@ export default handle(async (req, res) => {
       ['HINCRBY', 'news:comments', id, 1],
     ]);
     return send(res, 201, {
-      comment: { id: c.id, author: c.author, isAdmin: c.isAdmin, text: c.text, createdAt: c.createdAt, canDelete: true },
+      comment: { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), text: c.text, createdAt: c.createdAt, canDelete: true },
       comments: count,
     });
   }
