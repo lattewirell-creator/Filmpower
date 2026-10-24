@@ -2405,7 +2405,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     b.disabled = true;
     setMsg($('bot-msg'), 'Hämtar och skriver nyheter, det kan ta en halv minut…');
     api('bot', { method: 'POST' }).then(function (d) {
-      setMsg($('bot-msg'), d.posted ? 'Klart! ' + d.posted + ' nya ' + (d.posted === 1 ? 'nyhet' : 'nyheter') + ' publicerade.' : 'Inga nya nyheter hittades just nu.', d.posted ? 'ok' : '');
+      var parts = [];
+      if (d.posted) parts.push(d.posted + ' nya ' + (d.posted === 1 ? 'nyhet' : 'nyheter') + ' publicerade');
+      if (d.translated) parts.push(d.translated + ' ' + (d.translated === 1 ? 'äldre nyhet översatt' : 'äldre nyheter översatta') + ' till svenska');
+      setMsg($('bot-msg'), parts.length ? 'Klart! ' + parts.join(' och ') + '.' : 'Inga nya nyheter hittades just nu.', parts.length ? 'ok' : '');
+      if (d.translated && !d.posted) loadNews();
       loadBot();
       if (d.posted && typeof loadNews === 'function') loadNews();
     }).catch(function (err) { setMsg($('bot-msg'), err.message, 'error'); }).then(function () { b.disabled = false; });

@@ -133,26 +133,26 @@ function aiProvider() {
   return '';
 }
 
-async function writeWithClaude(candidates, count) {
+// Ber AI:n om ett JSON-svar. schema används av Claude, hint (en beskrivning av formatet) av Groq.
+async function askClaude(system, user, schema) {
   const client = new Anthropic();
   const response = await client.beta.messages.create({
     model: MODEL,
     max_tokens: 8000,
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
-    output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
-    system: SYSTEM,
-    messages: [{ role: 'user', content: newsPrompt(candidates, count) }],
+    output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+    system,
+    messages: [{ role: 'user', content: user }],
   });
   if (response.stop_reason === 'refusal') throw new Error('Claude avböjde att skriva nyheterna.');
   const block = response.content.find((b) => b.type === 'text');
-  return toPosts(JSON.parse(block ? block.text : '{}'), candidates, count);
+  return JSON.parse(block ? block.text : '{}');
 }
 
 // Groq (OpenAI-kompatibelt API). GROQ_MODEL väljer modell, annars provas två vanliga i tur och ordning.
-async function writeWithGroq(candidates, count) {
+async function askGroq(system, user, hint) {
   const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
-  const format = 'Svara endast med JSON i formen {"posts":[{"index":0,"title":"…","body":"…","category":"…"}]} där index är numret på nyheten i listan.';
   let lastError;
   for (const model of models) {
     try {
@@ -165,8 +165,8 @@ async function writeWithGroq(candidates, count) {
           max_tokens: 4000,
           response_format: { type: 'json_object' },
           messages: [
-            { role: 'system', content: SYSTEM + '\n\n' + format },
-            { role: 'user', content: newsPrompt(candidates, count) },
+            { role: 'system', content: system + '\n\n' + hint },
+            { role: 'user', content: user },
           ],
         }),
         signal: AbortSignal.timeout(40000),
@@ -174,16 +174,69 @@ async function writeWithGroq(candidates, count) {
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error('Groq ' + r.status + ': ' + ((data.error && data.error.message) || ''));
       const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-      const posts = toPosts(JSON.parse(text || '{}'), candidates, count);
-      if (posts.length) return posts;
+      const parsed = JSON.parse(text || '{}');
+      if (parsed.posts && parsed.posts.length) return parsed;
       throw new Error('Groq gav inga inlägg.');
     } catch (err) { lastError = err; }
   }
   throw lastError;
 }
 
+function askAI(system, user, schema, hint) {
+  return aiProvider() === 'claude' ? askClaude(system, user, schema) : askGroq(system, user, hint);
+}
+
 async function writeSwedish(candidates, count) {
-  return aiProvider() === 'claude' ? writeWithClaude(candidates, count) : writeWithGroq(candidates, count);
+  const hint = 'Svara endast med JSON i formen {"posts":[{"index":0,"title":"…","body":"…","category":"…"}]} där index är numret på nyheten i listan.';
+  return toPosts(await askAI(SYSTEM, newsPrompt(candidates, count), SCHEMA, hint), candidates, count);
+}
+
+// ---------- Översättning av äldre engelska inlägg ----------
+
+const TRANSLATE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['posts'],
+  properties: {
+    posts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['index', 'title', 'body'],
+        properties: { index: { type: 'integer' }, title: { type: 'string' }, body: { type: 'string' } },
+      },
+    },
+  },
+};
+
+const TRANSLATE_SYSTEM = `Du översätter filmnyheter till svenska för Film Power, en svensk filmstudio. Läsarna är svenska filmskapare.
+
+Skriv rubriken och texten på naturlig, levande svenska, inte ordagrant. Rubriken är kort och konkret (högst 90 tecken). Texten är 2 till 4 meningar med det viktigaste. Behåll namn på filmer, personer och företag. Hitta inte på fakta. Använd inga tankstreck (—).`;
+
+// Översätter botens inlägg som publicerades på engelska (innan en AI-nyckel fanns). Högst tio åt gången.
+async function translateOld() {
+  const ids = await redis('ZREVRANGE', 'news:idx', 0, 199);
+  if (!ids.length) return 0;
+  const raws = await redis('HMGET', 'news', ...ids);
+  const old = raws.filter(Boolean).map((r) => JSON.parse(r)).filter((i) => i.bot && !i.sv).slice(0, 10);
+  if (!old.length) return 0;
+  const list = old.map((o, i) => `[${i}] ${o.title}\n${o.body}`).join('\n\n');
+  const hint = 'Svara endast med JSON i formen {"posts":[{"index":0,"title":"…","body":"…"}]} med ett objekt per nyhet, där index är numret i listan.';
+  const parsed = await askAI(TRANSLATE_SYSTEM, `Översätt de här nyheterna till svenska:\n\n${list}`, TRANSLATE_SCHEMA, hint);
+  const cmds = [];
+  for (const p of parsed.posts || []) {
+    const o = old[p.index];
+    if (!o || !p.title || !p.body) continue;
+    const item = { ...o, title: clean(p.title, 140), body: clean(p.body, 1500), sv: true };
+    cmds.push(['HSET', 'news', o.id, JSON.stringify(item)]);
+  }
+  if (cmds.length) await pipeline(cmds);
+  return cmds.length;
+}
+
+function clean(s, max) {
+  return String(s).replace(/\s*—\s*/g, ', ').trim().slice(0, max);
 }
 
 // Gör om AI:ns svar till inlägg och kastar bort sådant som inte stämmer med listan.
@@ -195,8 +248,8 @@ function toPosts(parsed, candidates, count) {
     return true;
   }).slice(0, count).map((p) => ({
     ...candidates[p.index],
-    title: String(p.title).replace(/\s*—\s*/g, ', ').trim().slice(0, 140),
-    body: String(p.body).replace(/\s*—\s*/g, ', ').trim().slice(0, 1500),
+    title: clean(p.title, 140),
+    body: clean(p.body, 1500),
     category: CATEGORIES.includes(p.category) ? p.category : 'Branschnytt',
   }));
 }
@@ -315,6 +368,7 @@ async function run() {
       author: 'Film Power',
       authorKey: '',
       bot: true,
+      sv: mode !== 'plain',
       createdAt: now - i * 1000,
     };
     const key = crypto.createHash('sha1').update(p.link).digest('hex').slice(0, 16);
@@ -322,7 +376,13 @@ async function run() {
   });
   if (cmds.length) await pipeline(cmds);
 
-  const status = { at: now, posted: picked.length, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
+  // Översätt det som tidigare publicerats på engelska, nu när en AI-nyckel finns.
+  let translated = 0;
+  if (aiProvider()) {
+    try { translated = await translateOld(); } catch (err) { console.error('Nyhetsboten översättning:', err); }
+  }
+
+  const status = { at: now, posted: picked.length, translated, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }
