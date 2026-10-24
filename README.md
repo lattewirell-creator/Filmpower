@@ -22,7 +22,7 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Flödet:** Inläggen visas som på Twitter, med gilla, kommentera, visningar, spara och dela. Klicka på ett inlägg för att öppna det och läsa kommentarerna. Flikarna **Nyheter**, **Populärt** (mest gillat) och **Sparade** finns för alla. Sortera med **Nyast först** eller **Äldst först**.
 - **Fästa inlägg:** Klicka på **⋯** på ett inlägg och välj **Fäst högst upp**, eller kryssa i rutan när du skriver. Där kan du också ta bort inlägget.
 - **Statistik:** Fliken **Statistik** visar inlägg, visningar, gillningar, kommentarer, konton och de mest lästa inläggen.
-- **Verifiering:** Under **Konton** klickar du **Verifiera** på ett konto. Personen får en blå bock som på Twitter (Film Power har en guldbock) och kan publicera egna inlägg under **Skriv**. Inläggen visas med personens eget namn och profilbild. Man kan ta bort sina egna inlägg. Bara admin kan fästa inlägg.
+- **Verifiering:** Under **Konton** klickar du **Verifiera** på ett konto. Personen får ett rött vaxsigill med präglad bock (Film Power har ett i guld) och kan publicera egna inlägg under **Skriv**. Inläggen visas med personens eget namn och profilbild. Man kan ta bort sina egna inlägg. Bara admin kan fästa inlägg.
 - **Kommentarer:** Alla inloggade kan kommentera och svara på kommentarer med **Svara**.
 - **Profiler:** Fliken **Medlemmar** listar alla godkända medlemmar med sökruta. Klicka på en person, eller på någons profilbild eller namn på ett inlägg eller vid en kommentar, för att se profilen och personens inlägg. Film Power har en egen profil.
 - **Taggar:** Skriv @användarnamn, till exempel @filmpower, i en bio, ett inlägg eller en kommentar så blir det en länk till profilen. Bara användarnamn som finns blir länkar.
