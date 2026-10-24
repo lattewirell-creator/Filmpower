@@ -59,6 +59,7 @@ function imageUrl(block) {
   return pick(/<media:content[^>]*url="([^"]+)"[^>]*(?:medium="image"|type="image\/)/i)
     || pick(/<media:content[^>]*(?:medium="image"|type="image\/)[^>]*url="([^"]+)"/i)
     || pick(/<media:thumbnail[^>]*url="([^"]+)"/i)
+    || pick(/<media:content[^>]*url="([^"]+\.(?:jpe?g|png|webp)(?:\?[^"]*)?)"/i)
     || pick(/<enclosure[^>]*url="([^"]+)"[^>]*type="image\//i)
     || pick(/<enclosure[^>]*type="image\/[^"]*"[^>]*url="([^"]+)"/i)
     || pick(/<img[^>]*src=["'](https?:[^"']+)["']/i)
@@ -168,20 +169,35 @@ function pickPlain(candidates, count) {
 
 const MAX_IMAGE_BYTES = 640_000; // Ryms som data-URL under appens bildtak.
 
-// Ber om en mindre version (WordPress-sajter skalar om med ?w=), annars originalet.
+// Ber om mindre versioner (WordPress-sajter skalar om med ?w=), och sist originalet.
 function smaller(url) {
   try {
     const u = new URL(url);
-    if (u.searchParams.has('w') || /\.wp\.com$|wordpress|variety|deadline|hollywoodreporter|indiewire/.test(u.hostname)) {
-      u.searchParams.set('w', '1000');
-      u.searchParams.delete('h');
-      u.searchParams.delete('resize');
-      u.searchParams.delete('fit');
-      u.searchParams.delete('crop');
-      return [u.toString(), url];
+    if (u.searchParams.has('w') || u.searchParams.has('width') || /\.wp\.com$|wordpress|variety|deadline|hollywoodreporter|indiewire|discussingfilm/.test(u.hostname)) {
+      const key = u.searchParams.has('width') ? 'width' : 'w';
+      ['h', 'height', 'resize', 'fit', 'crop'].forEach((k) => u.searchParams.delete(k));
+      return [1000, 640].map((w) => { u.searchParams.set(key, String(w)); return u.toString(); }).concat(url);
     }
   } catch { /* ogiltig adress */ }
   return [url];
+}
+
+// Artikelns delningsbild (og:image), när flödet saknar bild.
+async function pageImage(link) {
+  try {
+    const r = await fetch(link, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; FilmPowerNewsBot/1.0; +https://filmpower.vercel.app)', accept: 'text/html' }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return '';
+    const html = (await r.text()).slice(0, 300_000);
+    const m = html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)(?::src)?["'][^>]*content=["']([^"']+)["']/i)
+      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)["']/i);
+    const url = m ? m[1].replace(/&amp;/g, '&') : '';
+    return /^https:\/\//.test(url) ? url : '';
+  } catch { return ''; }
+}
+
+// Hämtar bilden från flödet, och annars artikelns delningsbild.
+export async function articleImage(item) {
+  return (await fetchImage(item.image)) || fetchImage(await pageImage(item.link));
 }
 
 export async function fetchImage(url) {
@@ -225,7 +241,7 @@ async function run() {
   }
 
   // Hämta artikelbilderna och spara dem en och en (varje bild är ett eget, stort anrop).
-  const images = await Promise.all(picked.map((p) => fetchImage(p.image)));
+  const images = await Promise.all(picked.map(articleImage));
   const imageIds = [];
   for (const data of images) {
     if (!data) { imageIds.push(''); continue; }

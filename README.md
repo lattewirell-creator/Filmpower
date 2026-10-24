@@ -27,6 +27,7 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Profiler:** Fliken **Medlemmar** listar alla godkända medlemmar med sökruta. Klicka på en person, eller på någons profilbild eller namn på ett inlägg eller vid en kommentar, för att se profilen och personens inlägg. Film Power har en egen profil.
 - **Taggar:** Skriv @användarnamn, till exempel @filmpower, i en bio, ett inlägg eller en kommentar så blir det en länk till profilen. Bara användarnamn som finns blir länkar.
 - **Affiliates:** Under **Konton** väljer du i listan vilket konto personen är affiliate till, till exempel Film Power eller ett annat konto. Personen får ett litet märke med det kontots profilbild efter sitt namn, som på Twitter. Klick på märket öppnar kontots profil.
+- **Skriv med ett klick:** Admin och verifierade konton har en grön knapp nere till höger, som på Twitter. Den öppnar en ruta där du skriver ett inlägg var du än är i appen.
 - **Mitt konto:** Klicka på ditt namn uppe till höger. Profilen ser ut som på Twitter med banner, profilbild, bio och flikarna Inlägg, Gillade och Sparade. Under **Redigera profil** byter du banner (kameraknappen på bannern), profilbild (klicka på bilden), namn, bio och lösenord. När du väljer en ny bild öppnas **Justera bild**, där du drar bilden på plats, zoomar med reglaget (eller nyp med två fingrar på mobilen) och vrider den med pilknappen innan du trycker **Använd**. Med **Justera** kan du också flytta och zooma bilden du redan har. Film Power har en egen banner med loggan och kameran.
 - **Anonymt läge:** Kryssa i **Logga in anonymt** vid inloggningen, eller slå på det under Redigera profil. Kommentarerna visas då som **Anonym** utan namn och bild. Admin ser fortfarande vem som skrivit. Inlägg publiceras alltid med namn.
 - **Fler admins:** Låt personen skapa ett eget konto. Klicka **Gör till admin** under **Konton**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
@@ -36,7 +37,7 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 ## Nyhetsboten
 
-Varje morgon runt klockan 06–07 hämtar boten färska filmnyheter från Variety, IndieWire, Deadline, The Hollywood Reporter, No Film School och DiscussingFilm och publicerar dem som Film Power, med länk till källan. Den tar bara nyheter från de senaste två dygnen och publicerar aldrig samma nyhet två gånger.
+Varje morgon runt klockan 06–07 hämtar boten färska filmnyheter från Variety, IndieWire, Deadline, The Hollywood Reporter, No Film School och DiscussingFilm och publicerar dem som Film Power, med artikelbild och länken "Källa: Variety" till originalartikeln. Den tar bara nyheter från de senaste två dygnen och publicerar aldrig samma nyhet två gånger.
 
 - **Svenska texter:** Lägg till miljövariabeln `ANTHROPIC_API_KEY` (en API-nyckel från console.anthropic.com) på Vercel och gör en redeploy. Då väljer Claude ut de bästa nyheterna för filmskapare och skriver rubrik och text på svenska. Utan nyckel publiceras originalrubrik och ingress på engelska.
 - **Antal per dag:** Standard är 3. Ändra med miljövariabeln `BOT_POSTS_PER_DAY` (1–10).
