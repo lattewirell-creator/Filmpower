@@ -787,6 +787,30 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return s;
   }
 
+  // ---------- Hjälpfunktioner ----------
+  function api(path, opts) {
+    opts = opts || {};
+    var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: { 'x-fp': '1' } };
+    if (opts.body) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+    return fetch('/api/' + path, init).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (!r.ok) { var e = new Error(data.error || 'Något gick fel. Försök igen.'); e.status = r.status; throw e; }
+        return data;
+      });
+    }, function () { throw new Error('Ingen kontakt med servern. Kolla din uppkoppling.'); });
+  }
+
+  function show(view) {
+    ['view-loading', 'view-login', 'view-app'].forEach(function (v) { $(v).hidden = v !== view; });
+  }
+  function setMsg(node, text, kind) { node.textContent = text || ''; node.className = 'msg' + (kind ? ' ' + kind : ''); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function isAdmin() { return state.user && state.user.role === 'admin'; }
   function canWrite() { return state.user && (state.user.role === 'admin' || state.user.verified); }
 
   // Rund profilbild, eller bokstav om bild saknas. Film Power får sin svarta FP-avatar.
