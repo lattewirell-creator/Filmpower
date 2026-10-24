@@ -83,6 +83,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .msg { min-height: 1.5em; font-size: .95rem; }
 .msg.error { color: var(--danger); }
 .msg.ok { color: var(--brand); }
+.seg { display: inline-flex; gap: .25rem; padding: .25rem; margin-top: 2.2rem; border: 1px solid var(--line); border-radius: 999px; }
+.seg-btn { border: 0; background: transparent; padding: .5rem 1.1rem; border-radius: 999px; cursor: pointer; color: var(--muted); font-size: .95rem; }
+.seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.login form { margin-top: 1.6rem; text-align: left; }
+.login form .btn { margin-top: .3rem; }
+.login form#login-form { text-align: center; }
+.login .switch { font-size: .92rem; text-align: center; }
+.linklike { background: none; border: 0; padding: 0; color: var(--brand); font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .back { display: inline-block; margin-top: 2.5rem; font-size: .92rem; color: var(--muted); }
 
 /* App */
@@ -132,6 +140,11 @@ textarea.input { resize: vertical; min-height: 11rem; line-height: 1.6; }
 .code-row small { color: var(--muted); font-family: var(--mono); font-size: .8rem; }
 .code-row .confirm { display: flex; gap: .5rem; align-items: center; font-size: .9rem; }
 
+.row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
+.status { display: inline-block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; padding: .15rem .55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: .5rem; font-family: var(--body); font-weight: 500; }
+.status.pending { border-color: var(--brand); color: var(--brand); }
+.status.blocked { border-color: var(--danger); color: var(--danger); }
+.count { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 .35rem; margin-left: .35rem; border-radius: 999px; background: var(--brand); color: var(--on-brand); font-size: .75rem; font-weight: 500; }
 .notice { padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); font-size: .95rem; margin-bottom: 1.5rem; }
 .loading { padding-block: 6rem; text-align: center; color: var(--muted); }
 footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color: var(--muted); }
@@ -160,14 +173,37 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   <section class="login wrap" id="view-login" hidden>
     <p class="label">För filmskapare</p>
     <h1>Nyheter från <em>filmvärlden</em></h1>
-    <p class="lead">Festivaler, jobb, teknik och tips, samlat på ett ställe. Logga in med koden du har fått av Film Power.</p>
-    <form id="login-form" novalidate>
+    <p class="lead">Festivaler, jobb, teknik och tips, samlat på ett ställe. Logga in med ditt konto eller med koden du har fått av Film Power.</p>
+
+    <div class="seg" aria-label="Sätt att logga in">
+      <button type="button" class="seg-btn" id="mode-user" aria-pressed="true">Användarnamn</button>
+      <button type="button" class="seg-btn" id="mode-code" aria-pressed="false">Kod</button>
+    </div>
+
+    <form id="user-form" novalidate>
+      <div class="field"><label for="u-name">Användarnamn</label><input class="input" id="u-name" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+      <div class="field"><label for="u-pass">Lösenord</label><input class="input" id="u-pass" type="password" autocomplete="current-password" required></div>
+      <button class="btn btn-primary" type="submit" id="user-btn">Logga in</button>
+      <p class="msg" id="user-msg" role="alert" aria-live="polite"></p>
+      <p class="muted switch">Inget konto än? <button type="button" class="linklike" id="show-register">Skapa konto</button></p>
+    </form>
+
+    <form id="register-form" novalidate hidden>
+      <div class="field"><label for="r-name">Välj användarnamn</label><input class="input" id="r-name" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" required><span class="help">3–20 tecken. Bokstäver a–z, siffror, punkt, bindestreck eller understreck.</span></div>
+      <div class="field"><label for="r-pass">Välj lösenord</label><input class="input" id="r-pass" type="password" autocomplete="new-password" minlength="8" required><span class="help">Minst 8 tecken.</span></div>
+      <div class="field"><label for="r-pass2">Upprepa lösenordet</label><input class="input" id="r-pass2" type="password" autocomplete="new-password" required></div>
+      <button class="btn btn-primary" type="submit" id="register-btn">Skapa konto</button>
+      <p class="msg" id="register-msg" role="alert" aria-live="polite"></p>
+      <p class="muted switch">Har du redan ett konto? <button type="button" class="linklike" id="show-login">Logga in</button></p>
+    </form>
+
+    <form id="login-form" novalidate hidden>
       <label class="muted" for="code" style="font-size:.9rem">Din kod</label>
       <input class="code-input" id="code" name="code" placeholder="FP-XXXX-XXXX" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required>
       <button class="btn btn-primary" type="submit" id="login-btn">Logga in</button>
       <p class="msg" id="login-msg" role="alert" aria-live="polite"></p>
     </form>
-    <p class="muted" style="font-size:.92rem">Har du ingen kod? Ring Film Power på 070-270 25 51.</p>
+    <p class="muted" style="font-size:.92rem">Frågor? Ring Film Power på 070-270 25 51.</p>
     <a class="back" href="/">← Till startsidan</a>
   </section>
 
@@ -183,6 +219,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <div class="tabs" role="tablist" id="admin-tabs" hidden>
       <button class="tab" role="tab" aria-selected="true" aria-controls="panel-feed" id="tab-feed" data-panel="panel-feed">Nyheter</button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="panel-write" id="tab-write" data-panel="panel-write">Skriv nyhet</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="panel-users" id="tab-users" data-panel="panel-users">Konton<span class="count" id="pending-count" hidden></span></button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="panel-codes" id="tab-codes" data-panel="panel-codes">Koder</button>
     </div>
 
@@ -217,6 +254,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           <p class="msg" id="post-msg" role="status" aria-live="polite"></p>
         </div>
       </form>
+    </div>
+
+    <div id="panel-users" role="tabpanel" hidden>
+      <p class="muted">Nya konton behöver godkännas av dig innan de kan logga in. Spärrade konton loggas ut direkt.</p>
+      <div class="code-list" id="user-list" style="margin-top:1.5rem"></div>
     </div>
 
     <div id="panel-codes" role="tabpanel" hidden>
@@ -305,18 +347,64 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     }).then(function () { $('login-btn').disabled = false; });
   });
 
+  // Växla mellan användarnamn, nytt konto och kod
+  function setMode(mode) {
+    $('mode-user').setAttribute('aria-pressed', String(mode !== 'code'));
+    $('mode-code').setAttribute('aria-pressed', String(mode === 'code'));
+    $('user-form').hidden = mode !== 'user';
+    $('register-form').hidden = mode !== 'register';
+    $('login-form').hidden = mode !== 'code';
+  }
+  $('mode-user').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
+  $('mode-code').addEventListener('click', function () { setMode('code'); $('code').focus(); });
+  $('show-register').addEventListener('click', function () { setMode('register'); $('r-name').focus(); });
+  $('show-login').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
+
+  $('user-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var username = $('u-name').value.trim(), password = $('u-pass').value;
+    if (!username || !password) { setMsg($('user-msg'), 'Fyll i användarnamn och lösenord.', 'error'); return; }
+    $('user-btn').disabled = true;
+    setMsg($('user-msg'), '');
+    api('login', { method: 'POST', body: { username: username, password: password } }).then(function (user) {
+      $('u-pass').value = '';
+      enterApp(user);
+    }).catch(function (err) { setMsg($('user-msg'), err.message, 'error'); })
+      .then(function () { $('user-btn').disabled = false; });
+  });
+
+  $('register-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var username = $('r-name').value.trim(), p1 = $('r-pass').value, p2 = $('r-pass2').value;
+    if (!username || !p1) { setMsg($('register-msg'), 'Fyll i användarnamn och lösenord.', 'error'); return; }
+    if (p1.length < 8) { setMsg($('register-msg'), 'Lösenordet behöver minst 8 tecken.', 'error'); return; }
+    if (p1 !== p2) { setMsg($('register-msg'), 'Lösenorden är inte likadana.', 'error'); return; }
+    $('register-btn').disabled = true;
+    setMsg($('register-msg'), '');
+    api('register', { method: 'POST', body: { username: username, password: p1 } }).then(function () {
+      $('register-form').reset();
+      setMode('user');
+      $('u-name').value = username;
+      setMsg($('user-msg'), 'Kontot är skapat. Du kan logga in när admin har godkänt det.', 'ok');
+    }).catch(function (err) { setMsg($('register-msg'), err.message, 'error'); })
+      .then(function () { $('register-btn').disabled = false; });
+  });
+
   $('logout-btn').addEventListener('click', function () {
     api('logout', { method: 'POST' }).catch(function () {}).then(function () {
       state.user = null; state.items = [];
       $('who').hidden = true;
       $('feed').replaceChildren();
       $('code-list').replaceChildren();
+      $('user-list').replaceChildren();
+      $('pending-count').hidden = true;
+      setMode('user');
       $('new-code').hidden = true;
       $('new-code-value').textContent = '';
       $('post-form').reset();
       setMsg($('post-msg'), ''); setMsg($('code-msg'), '');
       show('view-login');
-      $('code').focus();
+      $('u-name').focus();
     });
   });
 
@@ -334,6 +422,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     selectTab('panel-feed');
     show('view-app');
     loadNews();
+    if (admin && state.dbReady) loadUsers();
   }
 
   // ---------- Flikar (admin) ----------
@@ -341,8 +430,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   tabs.forEach(function (t) { t.addEventListener('click', function () { selectTab(t.dataset.panel); }); });
   function selectTab(panel) {
     tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.panel === panel)); });
-    ['panel-feed', 'panel-write', 'panel-codes'].forEach(function (p) { $(p).hidden = p !== panel; });
+    ['panel-feed', 'panel-write', 'panel-users', 'panel-codes'].forEach(function (p) { $(p).hidden = p !== panel; });
     if (panel === 'panel-codes') loadCodes();
+    if (panel === 'panel-users') loadUsers();
     if (panel === 'panel-feed') renderFeed();
   }
 
@@ -480,6 +570,62 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     }).catch(function (err) { setMsg($('post-msg'), err.message, 'error'); })
       .then(function () { $('post-btn').disabled = false; });
   });
+
+  // ---------- Konton ----------
+  var STATUS_TEXT = { pending: 'Väntar', active: 'Aktiv', blocked: 'Spärrad' };
+
+  function loadUsers() {
+    var list = $('user-list');
+    if (!state.dbReady) { list.replaceChildren(el('p', 'muted', 'Koppla databasen i Vercel för att hantera konton.')); return; }
+    if (!list.childNodes.length) list.replaceChildren(el('p', 'muted', 'Hämtar konton…'));
+    api('users').then(function (d) { renderUsers(d.users || []); })
+      .catch(function (err) { list.replaceChildren(el('p', 'msg error', err.message)); });
+  }
+
+  function setStatus(id, status) {
+    return api('users?id=' + encodeURIComponent(id), { method: 'PATCH', body: { status: status } }).then(loadUsers);
+  }
+
+  function smallButton(label, cls, onClick) {
+    var b = el('button', 'btn btn-small ' + cls, label);
+    b.type = 'button';
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      onClick().catch(function (err) { b.disabled = false; b.textContent = err.message; });
+    });
+    return b;
+  }
+
+  function renderUsers(users) {
+    var pending = users.filter(function (u) { return u.status === 'pending'; }).length;
+    $('pending-count').textContent = pending;
+    $('pending-count').hidden = pending === 0;
+
+    var list = $('user-list');
+    list.replaceChildren();
+    list.appendChild(el('p', 'label', 'Konton (' + users.length + ')'));
+    if (!users.length) { list.appendChild(el('p', 'muted', 'Ingen har skapat ett konto än. Tipsa dina medlemmar om att gå in på /nyheter och välja Skapa konto.')); return; }
+    users.forEach(function (u) {
+      var row = el('div', 'code-row');
+      var info = el('div');
+      info.appendChild(el('b', null, u.username));
+      var meta = el('small');
+      meta.appendChild(el('span', 'status ' + u.status, STATUS_TEXT[u.status] || u.status));
+      meta.appendChild(document.createTextNode('Skapat ' + fmtDate(u.createdAt)));
+      info.appendChild(meta);
+      row.appendChild(info);
+
+      var actions = el('div', 'row-actions');
+      if (u.status === 'pending') actions.appendChild(smallButton('Godkänn', 'btn-primary', function () { return setStatus(u.id, 'active'); }));
+      if (u.status === 'active') actions.appendChild(smallButton('Spärra', 'btn-danger', function () { return setStatus(u.id, 'blocked'); }));
+      if (u.status === 'blocked') actions.appendChild(smallButton('Aktivera', 'btn-ghost', function () { return setStatus(u.id, 'active'); }));
+      actions.appendChild(confirmButton('Ta bort', 'Ta bort kontot?', function () {
+        return api('users?id=' + encodeURIComponent(u.id), { method: 'DELETE' }).then(loadUsers);
+      }));
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+  }
 
   // ---------- Koder ----------
   function loadCodes() {

@@ -17,12 +17,14 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 ## Så används appen
 
 - **Admin:** Gå till `/nyheter/` och logga in med din `ADMIN_CODE`. Under **Skriv nyhet** publicerar du nyheter. Under **Koder** skapar du en personlig kod till varje medlem. Koden visas bara en gång, så kopiera den och skicka den till personen.
-- **Medlemmar:** Går till `/nyheter/` och loggar in med koden de har fått. De kan läsa men inte ändra något.
+- **Medlemmar med konto:** Går till `/nyheter/`, klickar **Skapa konto** och väljer användarnamn och lösenord. Kontot väntar sedan på godkännande. Du godkänner, spärrar eller tar bort konton under fliken **Konton**. Siffran på fliken visar hur många som väntar.
+- **Medlemmar med kod:** Väljer **Kod** på inloggningssidan och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.
 - **Byta adminkod:** Ändra `ADMIN_CODE` i Vercel och gör en ny Redeploy. Alla som är inloggade loggas då ut.
 
 ## Säkerhet
 
 - Koderna sparas som hashar i databasen, inte i klartext.
+- Lösenord sparas med scrypt och unikt salt per konto.
 - Inloggningen är begränsad till 10 försök per kvart per IP-adress.
 - Sessionen ligger i en signerad, HttpOnly-cookie som gäller i 30 dagar.

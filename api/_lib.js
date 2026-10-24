@@ -185,12 +185,42 @@ export async function getSession(req) {
   const s = verify(readCookie(req, COOKIE));
   if (!s) return null;
   if (s.role === 'member') {
-    // Spärrade koder loggas ut direkt.
+    // Spärrade koder och konton loggas ut direkt.
     if (!dbReady()) return null;
-    const exists = await redis('HEXISTS', 'codes', s.code);
-    if (!exists) return null;
+    if (s.user) {
+      const raw = await redis('HGET', 'users', s.user);
+      if (!raw || JSON.parse(raw).status !== 'active') return null;
+    } else {
+      const exists = await redis('HEXISTS', 'codes', s.code);
+      if (!exists) return null;
+    }
   }
   return s;
+}
+
+// ---------- Konton (användarnamn + lösenord) ----------
+
+export const USERNAME_RE = /^[a-z0-9_.-]{3,20}$/;
+
+export function usernameKey(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+export function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(String(password), salt, 64, (err, key) => (err ? reject(err) : resolve({ salt, hash: key.toString('hex') })));
+  });
+}
+
+export async function checkPassword(password, salt, hash) {
+  const r = await hashPassword(password, salt);
+  return safeEqual(r.hash, hash);
+}
+
+export async function rateLimit(key, max, seconds, message) {
+  if (!dbReady()) return;
+  const [count] = await pipeline([['INCR', key], ['EXPIRE', key, seconds, 'NX']]);
+  if (count > max) throw new HttpError(429, message);
 }
 
 export async function requireSession(req, role) {
