@@ -240,6 +240,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .modal { border-radius: 0; min-height: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .toggle, .toggle::before { transition: none; } }
+/* Justera bild (beskärning) */
+.crop-back { z-index: 70; place-items: center; }
+.crop-modal { width: min(36rem, 100%); }
+.crop-stage { position: relative; height: min(62vh, 26rem); background: #0b0c0b; touch-action: none; cursor: grab; outline: none; }
+.crop-stage.dragging { cursor: grabbing; }
+.crop-stage:focus-visible { box-shadow: inset 0 0 0 3px var(--brand); }
+.crop-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.crop-zoom { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.3rem .3rem; color: var(--muted); }
+.crop-zoom svg { width: 1.2rem; height: 1.2rem; flex: none; }
+.crop-zoom input { flex: 1; accent-color: var(--brand); height: 1.6rem; cursor: pointer; }
+.crop-hint { padding: 0 1.3rem 1.2rem; color: var(--muted); font-size: .88rem; text-align: center; }
+@media (max-width: 560px) { .crop-back { place-items: stretch; } .crop-stage { height: min(68vh, 30rem); } }
 .mention { color: var(--brand); font-weight: 500; text-decoration: none; }
 .mention:hover { text-decoration: underline; text-underline-offset: 2px; }
 .aff { display: inline-grid; place-items: center; flex: none; width: 1.15rem; height: 1.15rem; border-radius: 4px; box-shadow: 0 0 0 1.5px var(--bg), 0 0 0 2.5px var(--line); background: var(--ink); color: var(--bg); font: 700 .5rem/1 var(--display); letter-spacing: -.04em; text-decoration: none; }
@@ -251,6 +263,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .p-aff { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; color: var(--muted); font-size: .93rem; }
 .member .m-bio { color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cover.has-img { background-size: cover; background-position: center; }
+/* Film Powers banner */
+.cover.brand { background: radial-gradient(120% 140% at 85% 30%, #2f5f24 0%, #142312 45%, #0a0d09 100%); }
+.fpb { position: absolute; inset: 0; z-index: 1; }
+.fpb-txt { position: absolute; left: 5%; top: 24%; display: grid; gap: .45em; font-size: clamp(.62rem, 1.9vw, 1.05rem); }
+.fpb-logo { display: flex; align-items: center; gap: .55em; }
+.fpb-mark { display: grid; place-items: center; width: 2.3em; height: 2.3em; background: #f4f1e8; color: #0f100e; border-radius: .14em; font: 700 1.15em/1 var(--display); letter-spacing: -.04em; }
+.fpb-name { font: 700 2.05em/1 var(--display); color: #f4f1e8; letter-spacing: .06em; white-space: nowrap; }
+.fpb-tag { margin: 0; font: 500 .95em/1.3 var(--body); color: #b9d8a8; letter-spacing: .02em; }
+.fpb-cam { position: absolute; right: 2%; top: 50%; height: 108%; width: auto; max-width: none; transform: translateY(-46%) rotate(-7deg); filter: drop-shadow(0 18px 24px rgba(0,0,0,.55)); }
+@media (max-width: 560px) { .fpb-txt { top: 18%; } .fpb-cam { height: 92%; right: -6%; } }
 .cover.has-img::before, .cover.has-img::after { display: none; }
 .cover-actions { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; gap: .8rem; }
 .cam-btn { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; border: 0; border-radius: 50%; background: rgba(10,12,10,.6); color: #fff; cursor: pointer; transition: background-color .15s ease; }
@@ -265,8 +287,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .c-reply { background: none; border: 0; padding: 0; color: var(--muted); font-size: .85rem; cursor: pointer; }
 .c-reply:hover { color: var(--brand); text-decoration: underline; }
 .status.verified-chip { border-color: var(--brand); color: var(--on-brand); background: var(--brand); }
-.verified circle { fill: var(--brand); }
-.verified path { stroke: var(--on-brand); }
+.verified .badge { fill: #1d9bf0; }
+.verified.gold .badge { fill: #e2b113; }
+.verified .tick { stroke: #ffffff; }
 .t-cat { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); font-weight: 500; margin-top: .15rem; }
 .t-title { font-family: var(--display); font-size: 1.35rem; line-height: 1.2; margin: .2rem 0 .25rem; font-weight: 500; }
 .t-title a { text-decoration: none; }
@@ -598,6 +621,23 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   </section>
 </main>
 
+<div class="modal-back crop-back" id="crop-modal" hidden>
+  <div class="modal crop-modal" role="dialog" aria-modal="true" aria-labelledby="crop-title">
+    <div class="modal-head">
+      <button class="icon-btn" type="button" id="crop-cancel" aria-label="Avbryt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+      <h2 id="crop-title">Justera bild</h2>
+      <button class="btn btn-primary btn-small" type="button" id="crop-apply">Använd</button>
+    </div>
+    <div class="crop-stage" id="crop-stage" tabindex="0" aria-label="Bildutsnitt. Dra eller använd piltangenterna för att flytta bilden."><canvas id="crop-canvas"></canvas></div>
+    <div class="crop-zoom">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg>
+      <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" aria-label="Zooma">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg>
+    </div>
+    <p class="crop-hint">Dra i bilden för att flytta den och zooma med reglaget.</p>
+  </div>
+</div>
+
 <div class="modal-back" id="edit-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
     <div class="modal-head">
@@ -696,13 +736,22 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     s.innerHTML = ICON[name];
     return s;
   }
-  function verified() {
+  // Verifieringsmärke som på Twitter: en taggig rosett med vit bock. Blå för personer, guld för Film Power.
+  var BADGE_PATH = (function () {
+    var pts = [];
+    for (var i = 0; i <= 120; i++) {
+      var t = i / 120 * Math.PI * 2, r = 10.2 * (1 + 0.075 * Math.cos(8 * t));
+      pts.push((12 + r * Math.cos(t)).toFixed(2) + ' ' + (12 + r * Math.sin(t)).toFixed(2));
+    }
+    return 'M' + pts.join('L') + 'Z';
+  })();
+  function verified(gold) {
     var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     s.setAttribute('viewBox', '0 0 24 24');
-    s.setAttribute('class', 'verified');
-    s.setAttribute('aria-label', 'Verifierad');
+    s.setAttribute('class', 'verified' + (gold ? ' gold' : ''));
+    s.setAttribute('aria-label', gold ? 'Verifierad organisation' : 'Verifierad');
     s.setAttribute('role', 'img');
-    s.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+    s.innerHTML = '<path class="badge" d="' + BADGE_PATH + '"/><path class="tick" d="M7.7 12.4l2.9 2.9 5.8-6.2" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>';
     return s;
   }
 
@@ -993,6 +1042,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     box.replaceChildren();
     var cover = el('div', 'cover' + (p.brand ? ' brand' : ''));
     if (p.banner) { cover.classList.add('has-img'); cover.style.backgroundImage = 'url(/api/image?id=' + encodeURIComponent(p.banner) + ')'; }
+    else if (p.brand) cover.appendChild(fpBanner());
     box.appendChild(cover);
 
     var head = el('div', 'p-head');
@@ -1008,7 +1058,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     var nm = el('div', 'p-name');
     nm.appendChild(el('span', null, p.name));
-    if (p.verified) nm.appendChild(verified());
+    if (p.verified) nm.appendChild(verified(p.brand));
     if (p.affiliate) nm.appendChild(affBadge(p.affiliate));
     box.appendChild(nm);
     box.appendChild(el('div', 'p-handle', p.handle || '@' + p.username));
@@ -1085,6 +1135,24 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     show('posts');
   }
 
+  // Film Powers egen banner: loggan, sloganen och kameran från introt.
+  function fpBanner() {
+    var wrap = el('div', 'fpb');
+    var txt = el('div', 'fpb-txt');
+    var logo = el('div', 'fpb-logo');
+    logo.appendChild(el('span', 'fpb-mark', 'FP'));
+    logo.appendChild(el('span', 'fpb-name', 'FILM POWER'));
+    txt.appendChild(logo);
+    txt.appendChild(el('p', 'fpb-tag', 'Vi får bilder att röra sig.'));
+    wrap.appendChild(txt);
+    var cam = el('img', 'fpb-cam');
+    cam.src = '/intro-camera.webp';
+    cam.alt = '';
+    cam.decoding = 'async';
+    wrap.appendChild(cam);
+    return wrap;
+  }
+
   function loadProfile(username) {
     return api('profile?u=' + encodeURIComponent(username)).then(function (d) {
       var items = (d.items || []).map(norm);
@@ -1152,7 +1220,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var txt = el('div', 'm-txt');
       var nm = el('div', 'm-name');
       nm.appendChild(el('span', null, m.name));
-      if (m.verified) nm.appendChild(verified());
+      if (m.verified) nm.appendChild(verified(m.brand));
       if (m.affiliate) nm.appendChild(affBadge(m.affiliate));
       txt.appendChild(nm);
       txt.appendChild(el('span', 'handle', '@' + m.username));
@@ -1242,31 +1310,169 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
   $('edit-close').addEventListener('click', closeEdit);
   $('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEdit(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeEdit(); });
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; if (!$('crop-modal').hidden) closeCrop(null); else closeEdit(); });
 
   function updateBioCount() { $('bio-count').textContent = $('acc-bio').value.length + ' / 160'; }
   $('acc-bio').addEventListener('input', updateBioCount);
 
-  // Beskär till kvadrat och krymper, så att profilbilden blir liten och skarp.
-  function squareImage(file, size) {
+  function loadImage(file) {
     return new Promise(function (resolve, reject) {
-      var url = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function () {
-        URL.revokeObjectURL(url);
-        var s = Math.min(img.naturalWidth, img.naturalHeight);
-        var c = document.createElement('canvas');
-        c.width = c.height = size;
-        var ctx = c.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, size, size);
-        ctx.drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, size, size);
-        resolve(c.toDataURL('image/jpeg', 0.85));
-      };
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
       img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Bilden gick inte att läsa. Prova en JPG eller PNG.')); };
       img.src = url;
     });
   }
+
+  // Ritar det valda utsnittet (r) i given storlek och gör om det till JPEG.
+  function cropToData(img, r, w, h, q) {
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, w, h);
+    return c.toDataURL('image/jpeg', q);
+  }
+
+  // ---------- Justera bild ----------
+  // Visar bilden bakom en rund (profilbild) eller avlång (banner) ram. Man drar för att flytta och zoomar med reglaget.
+  var crop = null;
+
+  function openCrop(img, ratio) {
+    return new Promise(function (resolve) {
+      crop = { img: img, ratio: ratio, zoom: 1, cx: img.naturalWidth / 2, cy: img.naturalHeight / 2, done: resolve, back: document.activeElement };
+      $('crop-title').textContent = ratio === 1 ? 'Justera profilbild' : 'Justera banner';
+      $('crop-zoom').value = 1;
+      $('crop-modal').hidden = false;
+      layoutCrop();
+      $('crop-stage').focus();
+    });
+  }
+
+  function closeCrop(result) {
+    if (!crop) return;
+    var c = crop;
+    crop = null;
+    $('crop-modal').hidden = true;
+    if (c.back && c.back.focus) c.back.focus();
+    c.done(result);
+  }
+
+  function layoutCrop() {
+    if (!crop) return;
+    var stage = $('crop-stage'), cv = $('crop-canvas');
+    var w = stage.clientWidth, h = stage.clientHeight, dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    var fw, fh;
+    if (crop.ratio === 1) { fw = fh = Math.min(w, h) - 48; }
+    else { fw = w - 32; fh = fw / crop.ratio; if (fh > h - 32) { fh = h - 32; fw = fh * crop.ratio; } }
+    crop.w = w; crop.h = h; crop.dpr = dpr;
+    crop.frame = { x: (w - fw) / 2, y: (h - fh) / 2, w: fw, h: fh };
+    crop.base = Math.max(fw / crop.img.naturalWidth, fh / crop.img.naturalHeight);
+    drawCrop();
+  }
+
+  // Håller bilden inom ramen så att det aldrig blir tomma kanter.
+  function clampCrop() {
+    var s = crop.base * crop.zoom, hw = crop.frame.w / 2 / s, hh = crop.frame.h / 2 / s;
+    var iw = crop.img.naturalWidth, ih = crop.img.naturalHeight;
+    crop.cx = Math.min(Math.max(crop.cx, hw), iw - hw);
+    crop.cy = Math.min(Math.max(crop.cy, hh), ih - hh);
+  }
+
+  function drawCrop() {
+    clampCrop();
+    var cv = $('crop-canvas'), ctx = cv.getContext('2d'), f = crop.frame, s = crop.base * crop.zoom;
+    ctx.setTransform(crop.dpr, 0, 0, crop.dpr, 0, 0);
+    ctx.clearRect(0, 0, crop.w, crop.h);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(crop.img, f.x + f.w / 2 - crop.cx * s, f.y + f.h / 2 - crop.cy * s, crop.img.naturalWidth * s, crop.img.naturalHeight * s);
+    // Mörka allt utanför ramen.
+    ctx.beginPath();
+    ctx.rect(0, 0, crop.w, crop.h);
+    if (crop.ratio === 1) ctx.arc(f.x + f.w / 2, f.y + f.h / 2, f.w / 2, 0, Math.PI * 2, true);
+    else { ctx.moveTo(f.x, f.y); ctx.lineTo(f.x, f.y + f.h); ctx.lineTo(f.x + f.w, f.y + f.h); ctx.lineTo(f.x + f.w, f.y); ctx.closePath(); }
+    ctx.fillStyle = 'rgba(11, 12, 11, .62)';
+    ctx.fill('evenodd');
+    ctx.beginPath();
+    if (crop.ratio === 1) ctx.arc(f.x + f.w / 2, f.y + f.h / 2, f.w / 2, 0, Math.PI * 2);
+    else ctx.rect(f.x, f.y, f.w, f.h);
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255, 255, 255, .9)';
+    ctx.stroke();
+  }
+
+  function cropRegion() {
+    var s = crop.base * crop.zoom, w = crop.frame.w / s, h = crop.frame.h / s;
+    return { x: crop.cx - w / 2, y: crop.cy - h / 2, w: w, h: h };
+  }
+
+  function setZoom(z) {
+    if (!crop) return;
+    crop.zoom = Math.min(4, Math.max(1, z));
+    $('crop-zoom').value = crop.zoom;
+    drawCrop();
+  }
+
+  (function () {
+    var stage = $('crop-stage'), pts = {}, last = null, pinch = null;
+    function centroid() {
+      var ids = Object.keys(pts), x = 0, y = 0;
+      ids.forEach(function (k) { x += pts[k].x; y += pts[k].y; });
+      return { x: x / ids.length, y: y / ids.length, n: ids.length };
+    }
+    function spread() {
+      var p = Object.keys(pts).map(function (k) { return pts[k]; });
+      return p.length < 2 ? 0 : Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+    }
+    stage.addEventListener('pointerdown', function (e) {
+      if (!crop) return;
+      stage.setPointerCapture(e.pointerId);
+      pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      last = centroid();
+      pinch = last.n >= 2 ? { d: spread(), z: crop.zoom } : null;
+      stage.classList.add('dragging');
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!crop || !pts[e.pointerId]) return;
+      pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var c = centroid(), s = crop.base * crop.zoom;
+      if (last && last.n === c.n) { crop.cx -= (c.x - last.x) / s; crop.cy -= (c.y - last.y) / s; }
+      last = c;
+      if (pinch && pinch.d) setZoom(pinch.z * spread() / pinch.d);
+      else drawCrop();
+    });
+    function up(e) {
+      delete pts[e.pointerId];
+      last = Object.keys(pts).length ? centroid() : null;
+      pinch = last && last.n >= 2 ? { d: spread(), z: crop ? crop.zoom : 1 } : null;
+      if (!last) stage.classList.remove('dragging');
+    }
+    stage.addEventListener('pointerup', up);
+    stage.addEventListener('pointercancel', up);
+    stage.addEventListener('wheel', function (e) {
+      if (!crop) return;
+      e.preventDefault();
+      setZoom(crop.zoom * Math.exp(-e.deltaY * 0.0015));
+    }, { passive: false });
+    stage.addEventListener('keydown', function (e) {
+      if (!crop) return;
+      var step = 12 / (crop.base * crop.zoom), k = e.key;
+      if (k === 'ArrowLeft') crop.cx -= step; else if (k === 'ArrowRight') crop.cx += step;
+      else if (k === 'ArrowUp') crop.cy -= step; else if (k === 'ArrowDown') crop.cy += step;
+      else if (k === '+' || k === '=') return setZoom(crop.zoom + 0.1);
+      else if (k === '-') return setZoom(crop.zoom - 0.1);
+      else return;
+      e.preventDefault();
+      drawCrop();
+    });
+  })();
+
+  $('crop-zoom').addEventListener('input', function () { setZoom(Number(this.value)); });
+  $('crop-cancel').addEventListener('click', function () { closeCrop(null); });
+  $('crop-apply').addEventListener('click', function () { closeCrop(cropRegion()); });
+  $('crop-modal').addEventListener('click', function (e) { if (e.target === this) closeCrop(null); });
+  window.addEventListener('resize', layoutCrop);
 
   function saveAvatar(value) {
     setMsg($('avatar-msg'), value ? 'Laddar upp…' : '');
@@ -1287,7 +1493,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var file = this.files && this.files[0];
     this.value = '';
     if (!file) return;
-    squareImage(file, 400).then(saveAvatar).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
+    loadImage(file).then(function (img) {
+      return openCrop(img, 1).then(function (r) { if (r) return saveAvatar(cropToData(img, r, 400, 400, 0.85)); });
+    }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
   });
   $('acc-avatar-remove').addEventListener('click', function () { saveAvatar(null); });
 
@@ -1299,31 +1507,16 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('acc-banner-remove').hidden = !id;
   }
 
-  // Beskär till 3:1 och krymper tills bilden är lagom stor.
-  function bannerImage(file) {
-    return new Promise(function (resolve, reject) {
-      var url = URL.createObjectURL(file), img = new Image();
-      img.onload = function () {
-        URL.revokeObjectURL(url);
-        var iw = img.naturalWidth, ih = img.naturalHeight, sw = iw, sh = iw / 3;
-        if (sh > ih) { sh = ih; sw = ih * 3; }
-        var sx = (iw - sw) / 2, sy = (ih - sh) / 2;
-        var c = document.createElement('canvas'), ctx = c.getContext('2d');
-        var widths = [1500, 1200, 960], qs = [0.82, 0.72, 0.62];
-        for (var i = 0; i < widths.length; i++) {
-          c.width = widths[i]; c.height = Math.round(widths[i] / 3);
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
-          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
-          for (var j = 0; j < qs.length; j++) {
-            var data = c.toDataURL('image/jpeg', qs[j]);
-            if (data.length <= 680000) return resolve(data);
-          }
-        }
-        reject(new Error('Bannern är för stor. Prova en mindre bild.'));
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Bilden gick inte att läsa. Prova en JPG eller PNG.')); };
-      img.src = url;
-    });
+  // Sparar utsnittet i 3:1 och krymper tills bilden är lagom stor.
+  function bannerData(img, r) {
+    var widths = [1500, 1200, 960], qs = [0.82, 0.72, 0.62];
+    for (var i = 0; i < widths.length; i++) {
+      for (var j = 0; j < qs.length; j++) {
+        var data = cropToData(img, r, widths[i], Math.round(widths[i] / 3), qs[j]);
+        if (data.length <= 680000) return data;
+      }
+    }
+    throw new Error('Bannern är för stor. Prova en mindre bild.');
   }
 
   function saveBanner(value) {
@@ -1340,7 +1533,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var file = this.files && this.files[0];
     this.value = '';
     if (!file) return;
-    bannerImage(file).then(saveBanner).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
+    loadImage(file).then(function (img) {
+      return openCrop(img, 3).then(function (r) { if (r) return saveBanner(bannerData(img, r)); });
+    }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
   });
   $('acc-banner-remove').addEventListener('click', function () { saveBanner(null); });
 
@@ -1486,7 +1681,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var pa = postAuthor(item);
     var head = el('div', 't-head');
     head.appendChild(profileLink(pa.username, el('b', null, pa.name)));
-    if (pa.verified) head.appendChild(verified());
+    if (pa.verified) head.appendChild(verified(pa.brand));
     if (pa.affiliate) head.appendChild(affBadge(pa.affiliate));
     var handle = [pa.handle, withTime ? timeAgo(item.createdAt) : ''].filter(Boolean).join(' · ');
     head.appendChild(el('span', 'handle', handle));
@@ -1755,7 +1950,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var who = el('div', 'who-txt');
     var row = el('span', 'row');
     row.appendChild(profileLink(pa.username, el('b', null, pa.name)));
-    if (pa.verified) row.appendChild(verified());
+    if (pa.verified) row.appendChild(verified(pa.brand));
     if (pa.affiliate) row.appendChild(affBadge(pa.affiliate));
     who.appendChild(row);
     if (pa.handle) who.appendChild(el('span', 'handle', pa.handle));
@@ -1868,7 +2063,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var main = el('div', 't-main');
       var head = el('div', 't-head');
       head.appendChild(profileLink(cUser, el('b', null, c.author)));
-      if (c.isAdmin || c.verified) head.appendChild(verified());
+      if (c.isAdmin || c.verified) head.appendChild(verified(brand));
       if (c.affiliate) head.appendChild(affBadge(c.affiliate));
       if (c.anon && c.realAuthor) head.appendChild(el('span', 'handle', '(' + c.realAuthor + ')'));
       head.appendChild(el('span', 'handle', '· ' + timeAgo(c.createdAt)));

@@ -31,7 +31,7 @@ export default handle(async (req, res) => {
 
   let profile;
   if (key === 'filmpower') {
-    profile = { brand: true, name: 'Film Power', username: 'filmpower', avatar: '', verified: true, role: 'admin', createdAt: null, bio: 'Film studio. Manus, inspelning och klippning. Din idé, vår film.', authorKey: '' };
+    profile = { brand: true, name: 'Film Power', username: 'filmpower', avatar: '', verified: true, role: 'admin', createdAt: null, bio: 'Film studio för kortfilm och indieproduktioner. Vi får bilder att röra sig.', authorKey: '' };
   } else {
     const raw = await redis('HGET', 'users', key);
     const u = raw ? JSON.parse(raw) : null;
