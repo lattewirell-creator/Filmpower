@@ -13,6 +13,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&display=swap">
+<script>
+  // Kameraintro: en gång per besök, aldrig för den som valt minskade animationer.
+  (function () {
+    var seen = false;
+    try { seen = sessionStorage.getItem('fp_intro') === '1'; } catch (e) {}
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!seen && !calm) document.documentElement.classList.add('intro-on');
+  })();
+</script>
 <style>
 /* Layout: en luftig kolumn, ett stort budskap, en tydlig väg till samtal */
 :root {
@@ -147,10 +156,78 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .three, .work, .prices { grid-template-columns: 1fr; }
   .three { gap: 2rem; }
 }
+
+/* Kameraintro */
+.intro, .flash { display: none; }
+html.intro-on { overflow: hidden; background: #0b0d0b; }
+html.intro-on body > .side, html.intro-on body > .content, html.intro-on body > .scrim { visibility: hidden; }
+html.intro-on .intro {
+  display: flex; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem;
+  background: radial-gradient(60% 50% at 50% 45%, #1d241b 0%, #0b0d0b 70%); color: #e9ede6;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.intro-skip { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); background: none; border: 1px solid rgba(233,237,230,.25); color: #c9cfc4; border-radius: 999px; padding: .5rem 1rem; font: 500 .9rem var(--body); cursor: pointer; }
+.intro-skip:hover { border-color: #e9ede6; color: #fff; }
+.cam { background: none; border: 0; padding: 0; cursor: pointer; width: min(82vw, 360px); transition: transform .25s ease; border-radius: 24px; }
+.cam:hover { transform: scale(1.03) rotate(-1deg); }
+.cam:focus-visible { outline: 3px solid #86bb6c; outline-offset: 8px; }
+.cam svg { display: block; width: 100%; height: auto; overflow: visible; }
+.cam .shutter { transition: transform .12s ease; }
+.cam .iris { transform-origin: 160px 130px; transform: scale(0); transition: transform .14s ease-in; }
+.cam .rec { animation: rec 1.2s steps(1) infinite; }
+@keyframes rec { 50% { opacity: .2; } }
+.cam.shoot { transform: scale(.98); }
+.cam.shoot .shutter { transform: translateY(5px); }
+.cam.shoot .iris { transform: scale(1); }
+.intro-hint { margin: 0; font: 500 1.05rem var(--body); letter-spacing: .02em; color: #c9cfc4; }
+.intro-hint b { color: #fff; font-weight: 500; }
+.intro-brand { position: absolute; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); font: 500 .72rem var(--body); letter-spacing: .32em; color: #7f8a7a; text-transform: uppercase; }
+.flash { position: fixed; inset: 0; z-index: 101; background: #fff; pointer-events: none; opacity: 0; }
+.flash.go { display: block; animation: flash .75s ease-out forwards; }
+@keyframes flash { 0% { opacity: 0; } 8% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Framkallningen: sidan glider in som ett polaroidkort och får färg */
+html.dev-bg { background: #0b0d0b; overflow: hidden; }
+body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes develop {
+  0%   { transform: scale(.78) rotate(-3deg); filter: sepia(1) blur(10px) brightness(1.6) contrast(.6); box-shadow: 0 0 0 14px #f4f2ec, 0 40px 90px rgba(0,0,0,.6); }
+  55%  { transform: scale(.9) rotate(-1deg); filter: sepia(.45) blur(2px) brightness(1.15) contrast(.9); box-shadow: 0 0 0 10px #f4f2ec, 0 30px 70px rgba(0,0,0,.5); }
+  100% { transform: none; filter: none; box-shadow: none; }
+}
 </style>
 <style>body{margin:0}img{max-width:100%}</style>
 </head>
 <body>
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="Välkommen till Film Power">
+  <button class="intro-skip" type="button" id="intro-skip">Hoppa över</button>
+  <button class="cam" type="button" id="intro-cam" aria-label="Ta en bild och öppna Film Power">
+    <svg viewBox="0 0 320 220" aria-hidden="true">
+      <defs>
+        <radialGradient id="glass" cx="40%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#3d6b8f"/><stop offset=".55" stop-color="#14263a"/><stop offset="1" stop-color="#05080d"/>
+        </radialGradient>
+      </defs>
+      <rect class="shutter" x="216" y="20" width="40" height="22" rx="7" fill="#c9cdc4"/>
+      <path d="M118 40 140 14h40l22 26z" fill="#262a25"/>
+      <rect x="132" y="20" width="56" height="12" rx="3" fill="#0f1210"/>
+      <rect x="36" y="34" width="248" height="34" rx="12" fill="#262a25"/>
+      <rect x="18" y="58" width="284" height="146" rx="24" fill="#171a16"/>
+      <rect x="18" y="94" width="284" height="80" fill="#2f4a27"/>
+      <path d="M18 94h284M18 174h284" stroke="#3d7a2c" stroke-width="2"/>
+      <rect x="38" y="70" width="48" height="16" rx="4" fill="#efece2"/>
+      <text x="262" y="86" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="17" fill="#c9cdc4">FP</text>
+      <circle cx="160" cy="130" r="64" fill="#0d0f0c" stroke="#c9cdc4" stroke-width="6"/>
+      <circle cx="160" cy="130" r="50" fill="#151815" stroke="#3a3f39" stroke-width="4"/>
+      <circle cx="160" cy="130" r="36" fill="url(#glass)"/>
+      <circle class="iris" cx="160" cy="130" r="36" fill="#000"/>
+      <ellipse cx="146" cy="114" rx="11" ry="6.5" fill="#fff" opacity=".35" transform="rotate(-25 146 114)"/>
+      <circle class="rec" cx="276" cy="186" r="5.5" fill="#e0402f"/>
+    </svg>
+  </button>
+  <p class="intro-hint"><b>Tryck på kameran</b> för att ta en bild</p>
+  <div class="intro-brand">Film Power · Film studio</div>
+</div>
+<div class="flash" id="flash"></div>
 <aside class="side" id="side" aria-label="Meny">
   <a class="logo" href="#top" aria-label="Film Power, till början">
     <span class="logo-mark" aria-hidden="true">FP</span>
@@ -347,5 +424,56 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 })();
 </script>
 
+<script>
+(function () {
+  var root = document.documentElement;
+  if (!root.classList.contains('intro-on')) return;
+  var cam = document.getElementById('intro-cam'), flash = document.getElementById('flash'), intro = document.getElementById('intro');
+  var done = false;
+
+  function remember() { try { sessionStorage.setItem('fp_intro', '1'); } catch (e) {} }
+
+  // Kort slutarklick, skapat i webbläsaren. Spelas bara efter klicket.
+  function click() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx(), len = Math.floor(ctx.sampleRate * 0.07);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      var src = ctx.createBufferSource(), gain = ctx.createGain();
+      gain.gain.value = 0.35;
+      src.buffer = buf; src.connect(gain); gain.connect(ctx.destination); src.start();
+    } catch (e) {}
+  }
+
+  function finish(animate) {
+    if (done) return;
+    done = true;
+    remember();
+    root.classList.remove('intro-on');
+    if (!animate) return;
+    root.classList.add('dev-bg');
+    document.body.classList.add('developing');
+    document.body.addEventListener('animationend', function end(e) {
+      if (e.target !== document.body) return;
+      document.body.removeEventListener('animationend', end);
+      document.body.classList.remove('developing');
+      root.classList.remove('dev-bg');
+    });
+  }
+
+  cam.addEventListener('click', function () {
+    if (done) return;
+    cam.classList.add('shoot');
+    click();
+    setTimeout(function () { flash.classList.add('go'); }, 160);
+    setTimeout(function () { finish(true); }, 260);
+    setTimeout(function () { flash.classList.remove('go'); }, 1000);
+  });
+  document.getElementById('intro-skip').addEventListener('click', function () { finish(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !done) finish(false); });
+})();
+</script>
 </body>
 </html>

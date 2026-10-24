@@ -16,10 +16,10 @@
 <meta name="description" content="Nyheter för filmskapare från Film Power. Logga in med din kod.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#3d7a2c">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23141614'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-weight='700' font-size='32' fill='%23fafaf8' text-anchor='middle'%3EFP%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='14' cy='13' r='8' fill='%231b2419'/%3E%3Ccircle cx='31' cy='11' r='9.5' fill='%231b2419'/%3E%3Crect x='3' y='21' width='32' height='21' rx='5' fill='%233d8a2a'/%3E%3Cpath d='M35 27.5 45 22v19l-10-5.5z' fill='%231b2419'/%3E%3Cpath d='M21.5 24 14 33.5h5.2L16.5 40 26 29.8h-5.4l3-5.8z' fill='%23f5c518'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&family=Rubik:wght@800&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: smal kolumn som ett flöde, inlägg i Twitter-stil, adminverktyg i flikar */
 :root {
@@ -34,16 +34,20 @@
   --display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
   --body: "Jost", "Futura", "Century Gothic", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --logo-dark: #1b2419;
+  --logo-green: #3d8a2a;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #111311; --ink: #eef0ec; --muted: #a2a89f; --line: #262a25; --soft: #1c211b;
     --brand: #86bb6c; --on-brand: #0e150b; --danger: #f2827a; color-scheme: dark;
+    --logo-dark: #e6ece2; --logo-green: #6cb04f;
   }
 }
 :root[data-theme="dark"] {
   --bg: #111311; --ink: #eef0ec; --muted: #a2a89f; --line: #262a25; --soft: #1c211b;
   --brand: #86bb6c; --on-brand: #0e150b; --danger: #f2827a; color-scheme: dark;
+  --logo-dark: #e6ece2; --logo-green: #6cb04f;
 }
 
 * { box-sizing: border-box; }
@@ -71,14 +75,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .topbar { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
 .topbar .wrap { max-width: 64rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .85rem; }
 .logo { display: flex; align-items: center; gap: .7rem; text-decoration: none; }
-.logo-mark { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; background: var(--ink); color: var(--bg); font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: -.04em; border-radius: 3px; }
-.logo b { font-family: var(--display); font-weight: 700; font-size: 1.05rem; letter-spacing: .04em; }
-.logo .sub { color: var(--brand); font-family: var(--display); font-style: italic; font-size: 1.05rem; }
+.logo .sub { color: var(--muted); font-family: var(--body); font-size: .7rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; border-left: 1px solid var(--line); padding-left: .7rem; margin-left: .1rem; }
+/* Logga: filmkamera med blixt och fett ordmärke */
+.logo { gap: .55rem; }
+.logo-icon { width: 2.5rem; height: 2.5rem; flex: none; }
+.logo-icon .reel, .logo-icon .lens { fill: var(--logo-dark); }
+.logo-icon .reel-hole { fill: var(--bg); }
+.logo-icon .cam-body { fill: var(--logo-green); }
+.logo-icon .bolt { fill: #f5c518; }
+.wordmark { font-family: "Rubik", "Arial Black", system-ui, sans-serif; font-weight: 800; font-size: 1.55rem; letter-spacing: -.035em; line-height: 1; color: var(--ink); white-space: nowrap; }
+.wordmark span { color: var(--logo-green); }
 .who { display: flex; align-items: center; gap: .75rem; font-size: .92rem; }
 .badge { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; padding: .25rem .6rem; border-radius: 999px; background: var(--soft); color: var(--ink); font-weight: 500; }
 .badge.admin { background: var(--brand); color: var(--on-brand); }
-.logo b, .btn { white-space: nowrap; }
-@media (max-width: 520px) { .logo b, .account-btn .txt, .who .badge { display: none; } }
+.btn { white-space: nowrap; }
+@media (max-width: 520px) { .logo .sub, .account-btn .txt, .who .badge { display: none; } .wordmark { font-size: 1.3rem; } .logo-icon { width: 2.2rem; height: 2.2rem; } }
 
 /* Login */
 .login { padding-block: clamp(4rem, 14vh, 8rem); text-align: center; }
@@ -292,8 +303,15 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 <header class="topbar">
   <div class="wrap">
     <a class="logo" href="/" aria-label="Till Film Powers startsida">
-      <span class="logo-mark" aria-hidden="true">FP</span>
-      <b>FILM POWER</b><span class="sub">Nyheter</span>
+      <svg class="logo-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <circle class="reel" cx="14" cy="13" r="8"/>
+        <circle class="reel" cx="31" cy="11" r="9.5"/>
+        <g class="reel-hole"><circle cx="14" cy="9.6" r="1.7"/><circle cx="11" cy="15" r="1.7"/><circle cx="17" cy="15" r="1.7"/><circle cx="31" cy="7" r="2"/><circle cx="27.4" cy="13.6" r="2"/><circle cx="34.6" cy="13.6" r="2"/></g>
+        <rect class="cam-body" x="3" y="21" width="32" height="21" rx="5"/>
+        <path class="lens" d="M35 27.5 45 22v19l-10-5.5z"/>
+        <path class="bolt" d="M21.5 24 14 33.5h5.2L16.5 40 26 29.8h-5.4l3-5.8z"/>
+      </svg>
+      <span class="wordmark">Film<span>Power</span></span><span class="sub">Nyheter</span>
     </a>
     <div class="who" id="who" hidden>
       <button class="account-btn" type="button" id="who-name" aria-label="Mitt konto"></button>
