@@ -239,6 +239,51 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
   55%  { transform: scale(.9) rotate(-1deg); filter: sepia(.45) blur(2px) brightness(1.15) contrast(.9); box-shadow: 0 0 0 10px #f4f2ec, 0 30px 70px rgba(0,0,0,.5); }
   100% { transform: none; filter: none; box-shadow: none; }
 }
+
+/* Filmguiden: AI-chatten nere till höger */
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.guide-fab { position: fixed; right: max(20px, env(safe-area-inset-right, 0px)); bottom: max(20px, env(safe-area-inset-bottom, 0px)); z-index: 70; display: inline-flex; align-items: center; gap: .55rem; height: 3.4rem; padding: 0 1.35rem 0 1.15rem; border: 0; border-radius: 999px; background: var(--brand); color: var(--on-brand); font: 500 1rem/1 var(--body); box-shadow: 0 10px 28px rgba(0,0,0,.25); cursor: pointer; transition: transform .15s ease; }
+.guide-fab:hover { transform: translateY(-2px); }
+.guide-fab svg { width: 1.35rem; height: 1.35rem; }
+.guide { position: fixed; right: max(20px, env(safe-area-inset-right, 0px)); bottom: max(20px, env(safe-area-inset-bottom, 0px)); z-index: 71; width: min(25rem, calc(100vw - 32px)); height: min(38rem, calc(100dvh - 40px)); display: flex; flex-direction: column; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3); overflow: hidden; }
+.guide[hidden] { display: none; }
+.guide-head { display: flex; align-items: center; gap: .7rem; padding: .85rem 1rem; border-bottom: 1px solid var(--line); }
+.guide-head .mark { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: 50%; background: var(--brand); color: var(--on-brand); flex: none; }
+.guide-head .mark svg { width: 1.2rem; height: 1.2rem; }
+.guide-head div { flex: 1; display: grid; line-height: 1.25; }
+.guide-head b { font-weight: 600; }
+.guide-head small { color: var(--muted); font-size: .82rem; }
+.guide-x { width: 2.2rem; height: 2.2rem; border: 0; border-radius: 50%; background: none; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.guide-x:hover { background: var(--soft); }
+.guide-x svg { width: 1.15rem; height: 1.15rem; }
+.guide-log { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .7rem; overscroll-behavior: contain; }
+.msg-b { max-width: 88%; padding: .65rem .9rem; border-radius: 16px; font-size: .95rem; line-height: 1.5; overflow-wrap: anywhere; }
+.msg-b.bot { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 5px; }
+.msg-b.me { align-self: flex-end; background: var(--brand); color: var(--on-brand); border-bottom-right-radius: 5px; white-space: pre-wrap; }
+.msg-b p { margin: 0 0 .5rem; } .msg-b p:last-child { margin-bottom: 0; }
+.msg-b ul { margin: .2rem 0 .5rem; padding-left: 1.15rem; } .msg-b ul:last-child { margin-bottom: 0; }
+.msg-b li { margin: .15rem 0; }
+.msg-b.err { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.typing { display: inline-flex; gap: .3rem; padding: .2rem 0; }
+.typing i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.guide-chips[hidden] { display: none; }
+.guide-chips { display: flex; flex-wrap: wrap; gap: .45rem; padding: 0 1rem .8rem; }
+.guide-chips button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: .4rem .8rem; font: 400 .85rem var(--body); cursor: pointer; text-align: left; }
+.guide-chips button:hover { border-color: var(--brand); }
+.guide-form { display: flex; align-items: flex-end; gap: .5rem; padding: .7rem; border-top: 1px solid var(--line); }
+.guide-form textarea { flex: 1; resize: none; max-height: 7rem; border: 1px solid var(--line); border-radius: 14px; padding: .6rem .8rem; background: var(--bg); color: var(--ink); font: 400 .95rem/1.4 var(--body); }
+.guide-form textarea:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: transparent; }
+.guide-form button { width: 2.6rem; height: 2.6rem; flex: none; border: 0; border-radius: 50%; background: var(--brand); color: var(--on-brand); cursor: pointer; display: grid; place-items: center; }
+.guide-form button:disabled { opacity: .45; cursor: default; }
+.guide-form button svg { width: 1.15rem; height: 1.15rem; }
+@media (max-width: 560px) {
+  .guide { right: 0; bottom: 0; width: 100vw; height: 100dvh; border-radius: 0; border: 0; }
+  .guide-fab span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .guide-fab { width: 3.6rem; height: 3.6rem; padding: 0; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { .guide-fab { transition: none; } .typing i { animation: none; opacity: .6; } }
 </style>
 <style>body{margin:0}img{max-width:100%}</style>
 </head>
@@ -772,6 +817,89 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
       em.classList.remove('instant');
     }, SWAP_MS);
   }, 4400);
+})();
+</script>
+<button class="guide-fab" type="button" id="guide-fab" aria-haspopup="dialog" aria-controls="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 11 3.2 7.6l15.6-3.7.8 3.4z"/><path d="m8 7 2.5 3M13 5.8l2.5 3"/></svg><span>Fråga Filmguiden</span></button>
+<section class="guide" id="guide" role="dialog" aria-modal="false" aria-labelledby="guide-title" hidden>
+  <div class="guide-head">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 11 3.2 7.6l15.6-3.7.8 3.4z"/><path d="m8 7 2.5 3M13 5.8l2.5 3"/></svg></span>
+    <div><b id="guide-title">Filmguiden</b><small>Hitta rätt filmset för din budget</small></div>
+    <button class="guide-x" type="button" id="guide-close" aria-label="Stäng Filmguiden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="guide-log" id="guide-log" aria-live="polite"></div>
+  <div class="guide-chips" id="guide-chips">
+    <button type="button">Jag vill börja med YouTube och har 5 000 kr</button>
+    <button type="button">Ett set för en kortfilm för 20 000 kr</button>
+    <button type="button">Hur filmar jag en musikvideo med liten budget?</button>
+    <button type="button">Vad behövs för en större film?</button>
+  </div>
+  <form class="guide-form" id="guide-form" novalidate>
+    <label class="visually-hidden" for="guide-text">Din fråga</label>
+    <textarea id="guide-text" rows="1" maxlength="1200" placeholder="Vad ska du filma, och vad är budgeten?"></textarea>
+    <button type="submit" id="guide-send" aria-label="Skicka" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  </form>
+</section>
+
+<script>
+// Filmguiden: chattar med AI:n via /api/bot och hjälper besökaren hitta ett filmset i rätt prisklass.
+(function () {
+  var fab = document.getElementById('guide-fab'), box = document.getElementById('guide'), log = document.getElementById('guide-log');
+  var form = document.getElementById('guide-form'), ta = document.getElementById('guide-text'), sendBtn = document.getElementById('guide-send');
+  var chips = document.getElementById('guide-chips');
+  var history = [], busy = false;
+
+  function esc(t) { return t.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // Enkel formatering av AI:ns svar: stycken, punktlistor och fetstil.
+  function format(text) {
+    var out = '', list = false;
+    esc(text).split(/\n/).forEach(function (line) {
+      var l = line.trim().replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^#{1,4}\s*/, '');
+      var item = /^([-*•]|\d+[.)])\s+/.test(l);
+      if (item && !list) { out += '<ul>'; list = true; }
+      if (!item && list) { out += '</ul>'; list = false; }
+      if (item) out += '<li>' + l.replace(/^([-*•]|\d+[.)])\s+/, '') + '</li>';
+      else if (l) out += '<p>' + l + '</p>';
+    });
+    return out + (list ? '</ul>' : '');
+  }
+  function bubble(cls, html) {
+    var d = document.createElement('div');
+    d.className = 'msg-b ' + cls;
+    d.innerHTML = html;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+  function open() {
+    box.hidden = false; fab.hidden = true;
+    if (!log.childNodes.length) bubble('bot', format('Hej! Jag är Filmguiden från Film Power. Berätta vad du vill filma och ungefär hur mycket du kan lägga, så föreslår jag ett filmset som passar och hur du kan gå till väga.'));
+    ta.focus();
+  }
+  function close() { box.hidden = true; fab.hidden = false; fab.focus(); }
+  fab.addEventListener('click', open);
+  document.getElementById('guide-close').addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !box.hidden) close(); });
+
+  function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 112) + 'px'; sendBtn.disabled = busy || !ta.value.trim(); }
+  ta.addEventListener('input', grow);
+  ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+
+  function ask(text) {
+    text = text.trim();
+    if (!text || busy) return;
+    busy = true; chips.hidden = true;
+    bubble('me', esc(text));
+    history.push({ role: 'user', content: text });
+    ta.value = ''; grow();
+    var wait = bubble('bot', '<span class="typing" aria-label="Filmguiden skriver"><i></i><i></i><i></i></span>');
+    fetch('/api/bot?action=guide', { method: 'POST', headers: { 'content-type': 'application/json', 'x-fp': '1' }, body: JSON.stringify({ messages: history.slice(-12) }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'Filmguiden svarar inte just nu.'); return d; }); })
+      .then(function (d) { wait.innerHTML = format(d.reply); history.push({ role: 'assistant', content: d.reply }); })
+      .catch(function (err) { wait.className = 'msg-b err'; wait.textContent = err.message === 'Failed to fetch' ? 'Ingen kontakt just nu. Kolla uppkopplingen och försök igen.' : err.message; history.pop(); })
+      .then(function () { busy = false; grow(); log.scrollTop = log.scrollHeight; ta.focus(); });
+  }
+  form.addEventListener('submit', function (e) { e.preventDefault(); ask(ta.value); });
+  Array.prototype.forEach.call(chips.querySelectorAll('button'), function (b) { b.addEventListener('click', function () { ask(b.textContent); }); });
 })();
 </script>
 </body>

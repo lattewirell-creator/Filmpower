@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import {
-  handle, send, requireAppHeader, getSession, HttpError, dbReady, redis, pipeline, CATEGORIES,
+  handle, send, requireAppHeader, getSession, HttpError, dbReady, redis, pipeline, CATEGORIES, readBody, rateLimit, clientIp,
 } from './_lib.js';
 
 // Nyhetsboten: hämtar filmnyheter från branschsajter en gång per dag och publicerar dem som Film Power.
@@ -430,9 +430,85 @@ function isCron(req) {
   return /vercel-cron/i.test(req.headers['user-agent'] || '');
 }
 
+// ---------- Filmguiden (chatten på startsidan) ----------
+
+const GUIDE_SYSTEM = `Du är Filmguiden hos Film Power, en svensk filmstudio för kortfilm och indieproduktioner. Du hjälper besökare att hitta ett filmset (utrustning) som passar deras budget och projekt, och ger konkreta råd om hur de ska gå till väga.
+
+Så jobbar du:
+- Ta reda på vad de ska filma (YouTube-video, vlogg, reklamfilm, musikvideo, kortfilm, dokumentär, långfilm eller större produktion) och budgeten i kronor. Saknas något, fråga kort om det innan du föreslår ett set. Fråga gärna om de redan har något, t.ex. en mobil eller kamera.
+- Föreslå ett komplett set inom budgeten: kamera, objektiv, ljud (mikrofon), ljus, stativ eller gimbal, lagring och eventuell programvara för klippning. Ange ungefärliga priser i kronor och summera totalen. Var tydlig med att priserna är ungefärliga och varierar mellan butiker och begagnat.
+- Tipsa om att hyra eller köpa begagnat när det ger mer för pengarna, och om var budgeten gör mest nytta (ljud och ljus slår ofta en dyrare kamera).
+- Anpassa råden efter projektet: för YouTube enkelhet och bra ljud, för kortfilm och musikvideo bildkänsla och ljus, för större filmer planering, team, tillstånd, försäkring och att hyra proffsutrustning.
+- Ge gärna en kort plan i steg: förberedelse, inspelning, klippning.
+- När det passar, nämn att Film Power kan hjälpa till med inspelning och klippning. Priser: reklamfilm 150 kr, kortfilm 250 kr, långfilm 500 kr för filmning. Kontakt: FILMPOWER.vercel@gmail.com.
+
+Skriv på naturlig, vänlig svenska (eller på besökarens språk om de skriver på ett annat). Var konkret och kortfattad, högst cirka 200 ord, och använd korta punktlistor för set och priser. Använd inga tankstreck (—). Svara bara om film, video och foto. Hitta inte på specifika butikspriser som säkra fakta.`;
+
+const MAX_TURNS = 12, MAX_CHARS = 1200;
+
+async function guideReply(history) {
+  if (aiProvider() === 'claude') {
+    const client = new Anthropic();
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      output_config: { effort: 'low' },
+      system: GUIDE_SYSTEM,
+      messages: history,
+    });
+    if (response.stop_reason === 'refusal') return 'Det kan jag tyvärr inte hjälpa till med. Fråga mig gärna om filmutrustning och inspelning!';
+    return response.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+  }
+  const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
+  const errors = [];
+  for (const model of models) {
+    try {
+      const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
+        method: 'POST',
+        headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          temperature: 0.5,
+          max_tokens: 3000,
+          ...(model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
+          messages: [{ role: 'system', content: GUIDE_SYSTEM }, ...history],
+        }),
+        signal: AbortSignal.timeout(40000),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error('Groq ' + r.status + ': ' + ((data.error && data.error.message) || ''));
+      const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (text && text.trim()) return text.trim();
+      throw new Error('tomt svar');
+    } catch (err) { errors.push(model + ': ' + err.message); }
+  }
+  throw new Error(errors.join(' | '));
+}
+
+async function guideChat(req, res) {
+  requireAppHeader(req);
+  if (!aiProvider()) throw new HttpError(503, 'Filmguiden är inte igång än.');
+  await rateLimit('rl:guide:' + clientIp(req), 40, 3600, 'Du har frågat mycket på kort tid. Vänta en stund och försök igen.');
+  const b = await readBody(req, 40_000);
+  const history = (Array.isArray(b.messages) ? b.messages : [])
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
+    .slice(-MAX_TURNS)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, m.role === 'user' ? MAX_CHARS : 4000) }));
+  while (history.length && history[0].role !== 'user') history.shift();
+  if (!history.length || history[history.length - 1].role !== 'user') throw new HttpError(400, 'Skriv en fråga först.');
+  try {
+    return send(res, 200, { reply: (await guideReply(history)).replace(/\s*—\s*/g, ', ') });
+  } catch (err) {
+    console.error('Filmguiden:', err);
+    throw new HttpError(502, 'Filmguiden svarar inte just nu. Försök igen om en stund.');
+  }
+}
+
 export default handle(async (req, res) => {
   if (!dbReady()) throw new HttpError(503, 'Databasen är inte kopplad än.');
   const url = new URL(req.url, 'http://x');
+
+  if (req.method === 'POST' && url.searchParams.get('action') === 'guide') return guideChat(req, res);
 
   if (req.method === 'GET' && url.searchParams.get('status')) {
     const s = await getSession(req);

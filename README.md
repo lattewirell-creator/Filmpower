@@ -40,6 +40,10 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.
 - **Byta adminkod:** Ändra `ADMIN_CODE` i Vercel och gör en ny Redeploy. Alla som är inloggade loggas då ut.
 
+## Filmguiden på startsidan
+
+Knappen **Fråga Filmguiden** nere till höger på startsidan öppnar en AI-chatt som föreslår filmset (kamera, ljud, ljus, stativ) inom besökarens budget och ger råd för olika projekt, från YouTube-videor till större filmer. Den använder samma AI-nyckel som nyhetsboten (`GROQ_API_KEY` eller `ANTHROPIC_API_KEY`) och tillåter högst 40 frågor i timmen per besökare.
+
 ## Nyhetsboten
 
 Varje morgon runt klockan 06–07 hämtar boten färska filmnyheter från Variety, IndieWire, Deadline, The Hollywood Reporter, No Film School och DiscussingFilm och publicerar dem som Film Power, med artikelbild och länken "Källa: Variety" till originalartikeln. Den tar bara nyheter från de senaste två dygnen och publicerar aldrig samma nyhet två gånger.

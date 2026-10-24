@@ -9,5 +9,6 @@
     "api/bot.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude).github' ':(exclude)scripts' ':(exclude)README.md'"
 }
