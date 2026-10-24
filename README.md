@@ -29,3 +29,9 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - Lösenord sparas med scrypt och unikt salt per konto.
 - Efter 10 felaktiga inloggningsförsök på en kvart spärras IP-adressen i 15 minuter. Lyckade inloggningar räknas inte.
 - Sessionen ligger i en signerad, HttpOnly-cookie som gäller i 30 dagar.
+
+## Felsökning
+
+- **Kolla inställningarna:** Öppna `/api/me`. Under `setup` ser du om databas och adminkod är inställda i den miljö som körs.
+- **Ändrat en variabel i Vercel?** Ändringen syns först efter en ny deployment. Klicka **⋯** på den översta raden under **Deployments** (inte menyn uppe till höger) och välj **Redeploy**. En ny rad ska dyka upp överst.
+- **Bytt adminkod:** Alla som var inloggade som admin loggas ut när den nya koden har slagit igenom.
