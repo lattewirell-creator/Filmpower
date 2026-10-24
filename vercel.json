@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/bot",
+      "schedule": "0 5 * * *"
+    }
+  ],
+  "functions": {
+    "api/bot.js": {
+      "maxDuration": 60
+    }
+  }
+}

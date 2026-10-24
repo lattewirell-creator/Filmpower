@@ -371,6 +371,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stat b { font-family: var(--display); font-size: 2.1rem; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .stat span { color: var(--muted); font-size: .9rem; }
 .top-list { margin-top: 2rem; display: grid; }
+.bot-card { border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 1.4rem; }
+.bot-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.bot-head div { display: grid; gap: .2rem; }
+.bot-head small { color: var(--muted); font-size: .88rem; }
+.bot-card .msg:empty { display: none; }
 .top-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding-block: .8rem; border-top: 1px solid var(--line); text-decoration: none; }
 .top-row:hover b { text-decoration: underline; }
 .top-row b { font-weight: 500; overflow-wrap: anywhere; }
@@ -629,6 +634,13 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     </div>
 
     <div id="panel-stats" role="tabpanel" hidden>
+      <div class="bot-card" id="bot-card">
+        <div class="bot-head">
+          <div><b>Nyhetsboten</b><small id="bot-status">Publicerar dagens filmnyheter som Film Power varje morgon.</small></div>
+          <button class="btn btn-primary btn-small" type="button" id="bot-run">Hämta nyheter nu</button>
+        </div>
+        <p class="msg" id="bot-msg" role="status" aria-live="polite"></p>
+      </div>
       <div class="stats" id="stats"></div>
       <div class="top-list" id="top-list"></div>
     </div>
@@ -2269,7 +2281,32 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
 
   // ---------- Statistik ----------
+  // ---------- Nyhetsboten ----------
+  function botText(d) {
+    var t = 'Publicerar ' + d.perDay + ' filmnyheter som Film Power varje morgon' + (d.ai ? ', skrivna på svenska av Claude.' : '. Lägg till ANTHROPIC_API_KEY på Vercel för svenska sammanfattningar.');
+    if (d.last) {
+      var when = new Date(d.last.at).toLocaleString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      t += ' Senast ' + when + ': ' + d.last.posted + ' ' + (d.last.posted === 1 ? 'nyhet' : 'nyheter') + '.';
+      if (d.last.failed && d.last.failed.length) t += ' Svarade inte: ' + d.last.failed.join(', ') + '.';
+    }
+    return t;
+  }
+  function loadBot() {
+    api('bot?status=1').then(function (d) { $('bot-status').textContent = botText(d); }).catch(function () {});
+  }
+  $('bot-run').addEventListener('click', function () {
+    var b = this;
+    b.disabled = true;
+    setMsg($('bot-msg'), 'Hämtar och skriver nyheter, det kan ta en halv minut…');
+    api('bot', { method: 'POST' }).then(function (d) {
+      setMsg($('bot-msg'), d.posted ? 'Klart! ' + d.posted + ' nya ' + (d.posted === 1 ? 'nyhet' : 'nyheter') + ' publicerade.' : 'Inga nya nyheter hittades just nu.', d.posted ? 'ok' : '');
+      loadBot();
+      if (d.posted && typeof loadNews === 'function') loadNews();
+    }).catch(function (err) { setMsg($('bot-msg'), err.message, 'error'); }).then(function () { b.disabled = false; });
+  });
+
   function loadStats() {
+    loadBot();
     var items = state.items;
     var sum = function (k) { return items.reduce(function (s, i) { return s + (i[k] || 0); }, 0); };
     var cards = [

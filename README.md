@@ -27,12 +27,22 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Profiler:** Fliken **Medlemmar** listar alla godkända medlemmar med sökruta. Klicka på en person, eller på någons profilbild eller namn på ett inlägg eller vid en kommentar, för att se profilen och personens inlägg. Film Power har en egen profil.
 - **Taggar:** Skriv @användarnamn, till exempel @filmpower, i en bio, ett inlägg eller en kommentar så blir det en länk till profilen. Bara användarnamn som finns blir länkar.
 - **Affiliates:** Under **Konton** väljer du i listan vilket konto personen är affiliate till, till exempel Film Power eller ett annat konto. Personen får ett litet märke med det kontots profilbild efter sitt namn, som på Twitter. Klick på märket öppnar kontots profil.
-- **Mitt konto:** Klicka på ditt namn uppe till höger. Profilen ser ut som på Twitter med banner, profilbild, bio och flikarna Inlägg, Gillade och Sparade. Under **Redigera profil** byter du banner (kameraknappen på bannern), profilbild (klicka på bilden), namn, bio och lösenord. När du väljer en ny bild öppnas **Justera bild**, där du drar bilden på plats zoomar med reglaget (eller nyp med två fingrar på mobilen) och vrider den med pilknappen innan du trycker **Använd**. Med **Justera** kan du också flytta och zooma bilden du redan har. Film Power har en egen banner med loggan och kameran.
+- **Mitt konto:** Klicka på ditt namn uppe till höger. Profilen ser ut som på Twitter med banner, profilbild, bio och flikarna Inlägg, Gillade och Sparade. Under **Redigera profil** byter du banner (kameraknappen på bannern), profilbild (klicka på bilden), namn, bio och lösenord. När du väljer en ny bild öppnas **Justera bild**, där du drar bilden på plats, zoomar med reglaget (eller nyp med två fingrar på mobilen) och vrider den med pilknappen innan du trycker **Använd**. Med **Justera** kan du också flytta och zooma bilden du redan har. Film Power har en egen banner med loggan och kameran.
 - **Anonymt läge:** Kryssa i **Logga in anonymt** vid inloggningen, eller slå på det under Redigera profil. Kommentarerna visas då som **Anonym** utan namn och bild. Admin ser fortfarande vem som skrivit. Inlägg publiceras alltid med namn.
 - **Fler admins:** Låt personen skapa ett eget konto. Klicka **Gör till admin** under **Konton**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
 - **Medlemmar med kod:** Klickar **Logga in med kod** under **Medlem** och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.
 - **Byta adminkod:** Ändra `ADMIN_CODE` i Vercel och gör en ny Redeploy. Alla som är inloggade loggas då ut.
+
+## Nyhetsboten
+
+Varje morgon runt klockan 06–07 hämtar boten färska filmnyheter från Variety, IndieWire, Deadline, The Hollywood Reporter, No Film School och Cineuropa och publicerar dem som Film Power, med länk till källan. Den tar bara nyheter från de senaste två dygnen och publicerar aldrig samma nyhet två gånger.
+
+- **Svenska texter:** Lägg till miljövariabeln `ANTHROPIC_API_KEY` (en API-nyckel från console.anthropic.com) på Vercel och gör en redeploy. Då väljer Claude ut de bästa nyheterna för filmskapare och skriver rubrik och text på svenska. Utan nyckel publiceras originalrubrik och ingress på engelska.
+- **Antal per dag:** Standard är 3. Ändra med miljövariabeln `BOT_POSTS_PER_DAY` (1–10).
+- **Köra direkt:** Admin hittar **Nyhetsboten** under **Statistik** med knappen **Hämta nyheter nu** och status för senaste körningen.
+- **Extra skydd (valfritt):** Sätt `CRON_SECRET` på Vercel, så tar boten bara emot schemalagda anrop som bär den hemligheten.
+- **Egna källor (valfritt):** `BOT_FEEDS` ersätter listan, till exempel `Variety|https://variety.com/v/film/feed/,Cineuropa|https://cineuropa.org/en/rss/`.
 
 ## Säkerhet
 

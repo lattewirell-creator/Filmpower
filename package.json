@@ -1,5 +1,8 @@
 {
   "name": "filmpower",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
 }
