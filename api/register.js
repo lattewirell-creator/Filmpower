@@ -16,6 +16,8 @@ export default handle(async (req, res) => {
   if (!USERNAME_RE.test(key)) {
     throw new HttpError(400, 'Användarnamnet ska vara 3–20 tecken: bokstäver a–z, siffror, punkt, bindestreck eller understreck.');
   }
+  // Namn som hör till Film Power kan ingen annan ta.
+  if (['filmpower', 'ceo', 'admin', 'anonym'].includes(key)) throw new HttpError(409, 'Användarnamnet är upptaget. Välj ett annat.');
   if (password.length < 8) throw new HttpError(400, 'Lösenordet behöver minst 8 tecken.');
   if (password.length > 200) throw new HttpError(400, 'Lösenordet är för långt.');
 

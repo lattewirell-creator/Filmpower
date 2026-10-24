@@ -889,16 +889,20 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
 
   // Gör om text till noder där @användarnamn blir klickbara länkar till profilen.
+  // Extra handles som leder till ett konto: @ceo går till Film Power.
+  var MENTION_ALIASES = { ceo: 'filmpower' };
+
   function linkify(text) {
     var frag = document.createDocumentFragment();
     var re = /(^|[^A-Za-z0-9_.@-])@([A-Za-z0-9_.-]{3,20})/g, last = 0, m;
     while ((m = re.exec(text))) {
       var name = m[2].replace(/[.-]+$/, '');
       var start = m.index + m[1].length;
-      if (!knownUsers[name.toLowerCase()]) continue;
+      var target = MENTION_ALIASES[name.toLowerCase()] || name.toLowerCase();
+      if (!knownUsers[target]) continue;
       frag.appendChild(document.createTextNode(text.slice(last, start)));
       var a = el('a', 'mention', '@' + name);
-      a.href = '#profil-' + name.toLowerCase();
+      a.href = '#profil-' + target;
       frag.appendChild(a);
       last = start + 1 + name.length;
       re.lastIndex = last;
@@ -2049,7 +2053,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (!state.user && location.hash === '#konto') { needLogin('se ditt konto'); return; }
     if (m) openPost(m[1]);
     else if (location.hash === '#konto') openAccount();
-    else if (/^#profil-[a-z0-9_.-]+$/.test(location.hash)) openProfile(location.hash.slice(8));
+    else if (/^#profil-[a-z0-9_.-]+$/.test(location.hash)) openProfile(MENTION_ALIASES[location.hash.slice(8)] || location.hash.slice(8));
     else if (state.panel === 'panel-post' || state.panel === 'panel-account' || state.panel === 'panel-profile') selectTab(state.lastTab || 'tab-all');
   }
   window.addEventListener('hashchange', function () {
