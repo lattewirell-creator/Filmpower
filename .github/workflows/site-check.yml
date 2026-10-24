@@ -13,3 +13,12 @@ jobs:
           for m in CLAP_STRIPES SEAL_PATH p-runby compose-fab tab-following; do printf "%s: " $m; grep -c "$m" app.html || true; done
           echo "--- utan cache-buster"; curl -s -D h2.txt -o app2.html https://filmpower.vercel.app/nyheter/; grep -iE "^(age|x-vercel-cache|cache-control)" h2.txt; printf "CLAP_STRIPES: "; grep -c CLAP_STRIPES app2.html || true
           echo "--- api"; curl -s https://filmpower.vercel.app/api/me; echo
+      - name: Vercels status för de senaste commitarna
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for sha in $(gh api "repos/${{ github.repository }}/commits?per_page=12" --jq '.[].sha'); do
+            msg=$(gh api "repos/${{ github.repository }}/commits/$sha" --jq '.commit.message' | head -1)
+            echo "== ${sha:0:7} $msg"
+            gh api "repos/${{ github.repository }}/commits/$sha/statuses" --jq '.[] | "   \(.context): \(.state) - \(.description)"' | sort -u
+          done
