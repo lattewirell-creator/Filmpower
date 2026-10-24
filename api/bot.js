@@ -317,7 +317,7 @@ function smaller(url) {
 }
 
 // Artikelns delningsbild (og:image), när flödet saknar bild.
-async function pageImage(link) {
+export async function pageImage(link) {
   try {
     const r = await fetch(link, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; FilmPowerNewsBot/1.0; +https://filmpower.vercel.app)', accept: 'text/html' }, signal: AbortSignal.timeout(8000) });
     if (!r.ok) return '';

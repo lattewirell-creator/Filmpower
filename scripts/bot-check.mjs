@@ -1,5 +1,5 @@
 // Testar nyhetsbotens källor: hämtar varje RSS-flöde med botens egen kod och visar vad den hittar.
-import { parseFeed, FEEDS, articleImage } from '../api/bot.js';
+import { parseFeed, FEEDS, articleImage, pageImage } from '../api/bot.js';
 
 const now = Date.now();
 let total = 0;
@@ -13,7 +13,7 @@ for (const f of FEEDS) {
     console.log(`\n${f.name}: HTTP ${r.status}, ${items.length} nyheter, ${fresh.length} färska`);
     for (const i of fresh.slice(0, 3)) {
       const img = await articleImage(i);
-      console.log(`  - ${i.title}\n    ${i.link}\n    flödesbild: ${i.image || 'ingen'}\n    bild i texten: ${i.inlineImage || 'ingen'}\n    -> ${img ? Math.round(img.length * 0.75 / 1024) + ' kB sparad' : 'kunde inte sparas'}`);
+      console.log(`  - ${i.title}\n    ${i.link}\n    flödesbild: ${i.image || 'ingen'}\n    delningsbild: ${(await pageImage(i.link)) || 'ingen'}\n    bild i texten: ${i.inlineImage || 'ingen'}\n    -> ${img ? Math.round(img.length * 0.75 / 1024) + ' kB sparad' : 'kunde inte sparas'}`);
     }
   } catch (err) {
     console.log(`\n${f.name}: FEL ${err.message}`);
