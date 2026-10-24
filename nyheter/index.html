@@ -249,6 +249,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .crop-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .crop-zoom { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.3rem .3rem; color: var(--muted); }
 .crop-zoom svg { width: 1.2rem; height: 1.2rem; flex: none; }
+.crop-zoom .crop-rot { margin-left: .3rem; border: 1px solid var(--line); width: 2.4rem; height: 2.4rem; color: var(--ink); }
 .crop-zoom input { flex: 1; accent-color: var(--brand); height: 1.6rem; cursor: pointer; }
 .crop-hint { padding: 0 1.3rem 1.2rem; color: var(--muted); font-size: .88rem; text-align: center; }
 @media (max-width: 560px) { .crop-back { place-items: stretch; } .crop-stage { height: min(68vh, 30rem); } }
@@ -288,19 +289,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .c-reply:hover { color: var(--brand); text-decoration: underline; }
 .status.verified-chip { border-color: var(--brand); color: var(--on-brand); background: var(--brand); }
 .verified { overflow: visible; filter: drop-shadow(0 .8px .6px rgba(0,0,0,.4)); }
-.verified .wax { fill: url(#wax-red); }
+.verified .wax { fill: url(#wax-green); }
 .verified.gold .wax { fill: url(#wax-gold); }
 .verified .rim-lo, .verified .rim-hi { fill: none; stroke-width: 1.1; }
 .verified .rim-lo { stroke: rgba(0,0,0,.35); }
-.verified .rim-hi { stroke: rgba(255,225,215,.45); }
+.verified .rim-hi { stroke: rgba(225,255,210,.45); }
 .verified.gold .rim-hi { stroke: rgba(255,248,215,.6); }
-.verified .well { fill: url(#wax-red-in); }
+.verified .well { fill: url(#wax-green-in); }
 .verified.gold .well { fill: url(#wax-gold-in); }
 .verified .dots { fill: none; stroke: rgba(0,0,0,.28); stroke-width: .55; stroke-dasharray: .01 1.4; stroke-linecap: round; }
 .verified .tick, .verified .tick-sh { fill: none; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
-.verified .tick { stroke: #ffd6cc; }
+.verified .tick { stroke: #e4ffd6; }
 .verified.gold .tick { stroke: #fff4c9; }
-.verified .tick-sh { stroke: rgba(40,0,0,.55); }
+.verified .tick-sh { stroke: rgba(5,30,0,.55); }
 .verified.gold .tick-sh { stroke: rgba(60,35,0,.55); }
 .verified .shine { fill: rgba(255,255,255,.4); }
 .t-cat { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); font-weight: 500; margin-top: .15rem; }
@@ -646,8 +647,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg>
       <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" aria-label="Zooma">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg>
+      <button class="icon-btn crop-rot" type="button" id="crop-rotate" aria-label="Rotera 90 grader" title="Rotera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
     </div>
-    <p class="crop-hint">Dra i bilden för att flytta den och zooma med reglaget.</p>
+    <p class="crop-hint">Dra i bilden för att flytta den, zooma med reglaget och vrid med pilen.</p>
   </div>
 </div>
 
@@ -664,6 +666,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           <div class="cover-actions">
             <label class="cam-btn" for="acc-banner-file" title="Byt banner"><span class="visually-hidden">Byt banner</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/></svg></label>
             <input id="acc-banner-file" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
+            <button class="cam-btn" type="button" id="acc-banner-adjust" title="Justera banner" aria-label="Justera banner" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
             <button class="cam-btn" type="button" id="acc-banner-remove" title="Ta bort banner" aria-label="Ta bort banner" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
           </div>
         </div>
@@ -676,6 +679,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           <div class="avatar-actions" id="avatar-actions">
             <label class="btn btn-ghost btn-small" for="acc-avatar-file">Byt profilbild</label>
             <input id="acc-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
+            <button class="btn btn-ghost btn-small" type="button" id="acc-avatar-adjust" hidden>Justera</button>
             <button class="btn btn-ghost btn-small" type="button" id="acc-avatar-remove" hidden>Ta bort bild</button>
           </div>
         </div>
@@ -763,8 +767,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return 'M' + pts.join('L') + 'Z';
   })();
   document.body.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' +
-    '<radialGradient id="wax-red" cx="38%" cy="32%" r="78%"><stop offset="0" stop-color="#e2584b"/><stop offset=".5" stop-color="#b3261e"/><stop offset="1" stop-color="#5c0c09"/></radialGradient>' +
-    '<radialGradient id="wax-red-in" cx="62%" cy="66%" r="70%"><stop offset="0" stop-color="#c9372c"/><stop offset="1" stop-color="#7d1410"/></radialGradient>' +
+    '<radialGradient id="wax-green" cx="38%" cy="32%" r="78%"><stop offset="0" stop-color="#8fd06a"/><stop offset=".5" stop-color="#3d8a2c"/><stop offset="1" stop-color="#173f10"/></radialGradient>' +
+    '<radialGradient id="wax-green-in" cx="62%" cy="66%" r="70%"><stop offset="0" stop-color="#4f9e3a"/><stop offset="1" stop-color="#235a18"/></radialGradient>' +
     '<radialGradient id="wax-gold" cx="38%" cy="32%" r="78%"><stop offset="0" stop-color="#ffe28f"/><stop offset=".5" stop-color="#cf9a1c"/><stop offset="1" stop-color="#6e4704"/></radialGradient>' +
     '<radialGradient id="wax-gold-in" cx="62%" cy="66%" r="70%"><stop offset="0" stop-color="#e4b23a"/><stop offset="1" stop-color="#94640b"/></radialGradient>' +
     '</defs></svg>');
@@ -1320,7 +1324,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var big = avatarEl('big', (acc.displayName || '?').charAt(0), acc.avatar, false);
       big.id = 'acc-avatar';
       $('acc-avatar').replaceWith(big);
-      $('acc-avatar-remove').hidden = !acc.avatar;
+      $('acc-avatar-remove').hidden = $('acc-avatar-adjust').hidden = !acc.avatar;
       showEditBanner(acc.banner);
       $('acc-display').value = acc.displayName || '';
       $('acc-bio').value = acc.bio || '';
@@ -1346,6 +1350,15 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function updateBioCount() { $('bio-count').textContent = $('acc-bio').value.length + ' / 160'; }
   $('acc-bio').addEventListener('input', updateBioCount);
+
+  function loadStored(id) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('Bilden gick inte att hämta. Försök igen.')); };
+      img.src = '/api/image?id=' + encodeURIComponent(id);
+    });
+  }
 
   function loadImage(file) {
     return new Promise(function (resolve, reject) {
@@ -1373,7 +1386,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function openCrop(img, ratio) {
     return new Promise(function (resolve) {
-      crop = { img: img, ratio: ratio, zoom: 1, cx: img.naturalWidth / 2, cy: img.naturalHeight / 2, done: resolve, back: document.activeElement };
+      crop = { img: img, ratio: ratio, zoom: 1, cx: imgW(img) / 2, cy: imgH(img) / 2, done: resolve, back: document.activeElement };
       $('crop-title').textContent = ratio === 1 ? 'Justera profilbild' : 'Justera banner';
       $('crop-zoom').value = 1;
       $('crop-modal').hidden = false;
@@ -1401,14 +1414,14 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     else { fw = w - 32; fh = fw / crop.ratio; if (fh > h - 32) { fh = h - 32; fw = fh * crop.ratio; } }
     crop.w = w; crop.h = h; crop.dpr = dpr;
     crop.frame = { x: (w - fw) / 2, y: (h - fh) / 2, w: fw, h: fh };
-    crop.base = Math.max(fw / crop.img.naturalWidth, fh / crop.img.naturalHeight);
+    crop.base = Math.max(fw / imgW(crop.img), fh / imgH(crop.img));
     drawCrop();
   }
 
   // Håller bilden inom ramen så att det aldrig blir tomma kanter.
   function clampCrop() {
     var s = crop.base * crop.zoom, hw = crop.frame.w / 2 / s, hh = crop.frame.h / 2 / s;
-    var iw = crop.img.naturalWidth, ih = crop.img.naturalHeight;
+    var iw = imgW(crop.img), ih = imgH(crop.img);
     crop.cx = Math.min(Math.max(crop.cx, hw), iw - hw);
     crop.cy = Math.min(Math.max(crop.cy, hh), ih - hh);
   }
@@ -1419,7 +1432,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     ctx.setTransform(crop.dpr, 0, 0, crop.dpr, 0, 0);
     ctx.clearRect(0, 0, crop.w, crop.h);
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(crop.img, f.x + f.w / 2 - crop.cx * s, f.y + f.h / 2 - crop.cy * s, crop.img.naturalWidth * s, crop.img.naturalHeight * s);
+    ctx.drawImage(crop.img, f.x + f.w / 2 - crop.cx * s, f.y + f.h / 2 - crop.cy * s, imgW(crop.img) * s, imgH(crop.img) * s);
     // Mörka allt utanför ramen.
     ctx.beginPath();
     ctx.rect(0, 0, crop.w, crop.h);
@@ -1434,9 +1447,27 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     ctx.stroke();
   }
 
+  // Utsnittet i bildens egna pixlar, plus källan (som kan vara roterad).
   function cropRegion() {
     var s = crop.base * crop.zoom, w = crop.frame.w / s, h = crop.frame.h / s;
-    return { x: crop.cx - w / 2, y: crop.cy - h / 2, w: w, h: h };
+    return { x: crop.cx - w / 2, y: crop.cy - h / 2, w: w, h: h, src: crop.img };
+  }
+
+  function imgW(img) { return img.naturalWidth || img.width; }
+  function imgH(img) { return img.naturalHeight || img.height; }
+
+  // Vrider bilden 90 grader medurs och behåller samma punkt i mitten.
+  function rotateCrop() {
+    if (!crop) return;
+    var iw = imgW(crop.img), ih = imgH(crop.img), c = document.createElement('canvas');
+    c.width = ih; c.height = iw;
+    var ctx = c.getContext('2d');
+    ctx.translate(ih, 0); ctx.rotate(Math.PI / 2);
+    ctx.drawImage(crop.img, 0, 0);
+    var cx = crop.cx;
+    crop.cx = ih - crop.cy; crop.cy = cx;
+    crop.img = c;
+    layoutCrop();
   }
 
   function setZoom(z) {
@@ -1501,6 +1532,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   })();
 
   $('crop-zoom').addEventListener('input', function () { setZoom(Number(this.value)); });
+  $('crop-rotate').addEventListener('click', rotateCrop);
   $('crop-cancel').addEventListener('click', function () { closeCrop(null); });
   $('crop-apply').addEventListener('click', function () { closeCrop(cropRegion()); });
   $('crop-modal').addEventListener('click', function (e) { if (e.target === this) closeCrop(null); });
@@ -1515,7 +1547,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var big = avatarEl('big', (state.account.displayName || '?').charAt(0), d.avatar, false);
       big.id = 'acc-avatar';
       $('acc-avatar').replaceWith(big);
-      $('acc-avatar-remove').hidden = !d.avatar;
+      $('acc-avatar-remove').hidden = $('acc-avatar-adjust').hidden = !d.avatar;
       setMsg($('avatar-msg'), value ? 'Profilbilden är sparad.' : 'Profilbilden är borttagen.', 'ok');
       refreshAccount();
     }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
@@ -1526,17 +1558,22 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     this.value = '';
     if (!file) return;
     loadImage(file).then(function (img) {
-      return openCrop(img, 1).then(function (r) { if (r) return saveAvatar(cropToData(img, r, 400, 400, 0.85)); });
+      return openCrop(img, 1).then(function (r) { if (r) return saveAvatar(cropToData(r.src, r, 400, 400, 0.85)); });
     }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
   });
   $('acc-avatar-remove').addEventListener('click', function () { saveAvatar(null); });
+  $('acc-avatar-adjust').addEventListener('click', function () {
+    loadStored(state.account.avatar).then(function (img) {
+      return openCrop(img, 1).then(function (r) { if (r) return saveAvatar(cropToData(r.src, r, 400, 400, 0.85)); });
+    }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
+  });
 
   // ---------- Banner ----------
   function showEditBanner(id) {
     var c = $('edit-cover');
     c.classList.toggle('has-img', !!id);
     c.style.backgroundImage = id ? 'url(/api/image?id=' + encodeURIComponent(id) + ')' : '';
-    $('acc-banner-remove').hidden = !id;
+    $('acc-banner-remove').hidden = $('acc-banner-adjust').hidden = !id;
   }
 
   // Sparar utsnittet i 3:1 och krymper tills bilden är lagom stor.
@@ -1566,10 +1603,15 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     this.value = '';
     if (!file) return;
     loadImage(file).then(function (img) {
-      return openCrop(img, 3).then(function (r) { if (r) return saveBanner(bannerData(img, r)); });
+      return openCrop(img, 3).then(function (r) { if (r) return saveBanner(bannerData(r.src, r)); });
     }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
   });
   $('acc-banner-remove').addEventListener('click', function () { saveBanner(null); });
+  $('acc-banner-adjust').addEventListener('click', function () {
+    loadStored(state.account.banner).then(function (img) {
+      return openCrop(img, 3).then(function (r) { if (r) return saveBanner(bannerData(r.src, r)); });
+    }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
+  });
 
   $('profile-form').addEventListener('submit', function (e) {
     e.preventDefault();
