@@ -1,13 +1,12 @@
 import crypto from 'node:crypto';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
-  HttpError, redis, pipeline, CATEGORIES, withStats,
+  HttpError, redis, pipeline, CATEGORIES, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
 } from './_lib.js';
 
 const MAX_LIST = 200;
 // Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
 const MAX_IMAGE_CHARS = 900_000;
-const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 
 function clean(s, max) {
   return String(s || '').replace(/\r\n/g, '\n').trim().slice(0, max);
@@ -20,13 +19,16 @@ export default handle(async (req, res) => {
     if (!ids.length) return send(res, 200, { items: [] });
     const raws = await redis('HMGET', 'news', ...ids);
     const items = raws.filter(Boolean).map((r) => JSON.parse(r));
-    return send(res, 200, { items: await withStats(items, s) });
+    return send(res, 200, { items: await withStats(await withAuthors(items, s), s) });
   }
 
   requireAppHeader(req);
-  const s = await requireSession(req, 'admin');
+  const s = await requireSession(req);
+  const admin = s.role === 'admin';
 
   if (req.method === 'POST') {
+    if (!admin && !s.verified) throw new HttpError(403, 'Bara verifierade konton kan publicera inlägg.');
+    if (!admin) await rateLimit('rl:post:' + actorId(s), 10, 3600, 'Du har publicerat många inlägg på kort tid. Vänta en stund.');
     const b = await readBody(req, 1_000_000);
     const title = clean(b.title, 140);
     const body = clean(b.body, 5000);
@@ -57,17 +59,20 @@ export default handle(async (req, res) => {
       id: crypto.randomBytes(6).toString('hex'),
       title, body, category, link, image,
       author: s.label,
+      authorKey: s.user || '',
       createdAt: Date.now(),
     };
     await pipeline([
       ['HSET', 'news', item.id, JSON.stringify(item)],
       ['ZADD', 'news:idx', item.createdAt, item.id],
     ]);
-    return send(res, 201, { item });
+    const [created] = await withAuthors([item], s);
+    return send(res, 201, { item: created });
   }
 
   // Fäst eller lossa ett inlägg. Fästa inlägg visas överst.
   if (req.method === 'PATCH') {
+    if (!admin) throw new HttpError(403, 'Bara admin kan fästa inlägg.');
     const id = queryParam(req, 'id');
     const raw = id && (await redis('HGET', 'news', id));
     if (!raw) throw new HttpError(404, 'Nyheten finns inte.');
@@ -81,14 +86,14 @@ export default handle(async (req, res) => {
     const id = queryParam(req, 'id');
     if (!id) throw new HttpError(400, 'Id saknas.');
     const raw = await redis('HGET', 'news', id);
+    if (!raw) throw new HttpError(404, 'Nyheten finns inte.');
+    if (!admin && JSON.parse(raw).authorKey !== s.user) throw new HttpError(403, 'Du kan bara ta bort dina egna inlägg.');
     const cmds = [
       ['HDEL', 'news', id], ['ZREM', 'news:idx', id], ['DEL', 'comments:' + id],
       ['HDEL', 'news:likes', id], ['HDEL', 'news:comments', id], ['HDEL', 'news:views', id],
     ];
-    if (raw) {
-      const { image } = JSON.parse(raw);
-      if (image) cmds.push(['DEL', 'img:' + image]);
-    }
+    const { image } = JSON.parse(raw);
+    if (image) cmds.push(['DEL', 'img:' + image]);
     await pipeline(cmds);
     return send(res, 200, { ok: true });
   }

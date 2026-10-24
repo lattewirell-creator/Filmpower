@@ -45,7 +45,7 @@ async function attempt(b, req, res) {
 
     const role = user.role === 'admin' ? 'admin' : 'member';
     const label = user.displayName || user.username;
-    return send(res, 200, { role, label }, {
+    return send(res, 200, { role, label, verified: Boolean(user.verified), avatar: user.avatar || '' }, {
       'Set-Cookie': sessionCookie(req, { role, label, user: key }),
     });
   }

@@ -191,7 +191,7 @@ export async function getSession(req) {
     if (!raw) return null;
     const u = JSON.parse(raw);
     if (u.status !== 'active') return null;
-    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified) };
+    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified), avatar: u.avatar || '' };
   }
   if (s.role === 'member') {
     // Spärrade koder loggas ut direkt.
@@ -274,3 +274,25 @@ export async function withStats(items, s) {
     saved: S.has(it.id),
   }));
 }
+
+// Lägger till författarens aktuella namn, profilbild och bock på inlägg skrivna från ett konto.
+export async function withAuthors(items, s) {
+  const keys = [...new Set(items.map((i) => i.authorKey).filter(Boolean))];
+  const accounts = new Map();
+  if (keys.length) {
+    const rows = await redis('HMGET', 'users', ...keys);
+    rows.forEach((r, i) => { if (r) accounts.set(keys[i], JSON.parse(r)); });
+  }
+  return items.map((it) => {
+    const out = { ...it, mine: Boolean(s.user && it.authorKey === s.user) };
+    if (!it.authorKey) return out;
+    const u = accounts.get(it.authorKey);
+    out.authorName = u ? u.displayName || u.username : it.author || 'Borttaget konto';
+    out.authorUsername = u ? u.username : '';
+    out.authorAvatar = u ? u.avatar || '' : '';
+    out.authorVerified = Boolean(u && u.verified);
+    return out;
+  });
+}
+
+export const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;

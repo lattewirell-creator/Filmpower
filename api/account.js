@@ -1,7 +1,10 @@
 import {
   handle, send, readBody, requireAppHeader, requireSession, HttpError, redis, pipeline,
-  actorId, hashPassword, checkPassword,
+  actorId, hashPassword, checkPassword, IMAGE_RE,
 } from './_lib.js';
+import crypto from 'node:crypto';
+
+const MAX_AVATAR_CHARS = 300_000;
 
 // Den inloggades egen profil: visa, byta visningsnamn och byta lösenord.
 export default handle(async (req, res) => {
@@ -18,6 +21,7 @@ export default handle(async (req, res) => {
       displayName: u ? u.displayName || u.username : s.label,
       role: s.role,
       verified: Boolean(u && u.verified),
+      avatar: u ? u.avatar || '' : '',
       createdAt: u ? u.createdAt : null,
       liked: Number(liked) || 0,
       saved: Number(saved) || 0,
@@ -28,7 +32,20 @@ export default handle(async (req, res) => {
   if (req.method !== 'PATCH') throw new HttpError(405, 'Metoden stöds inte.');
   if (!u) throw new HttpError(400, 'Bara den som har ett eget konto kan ändra namn och lösenord.');
 
-  const b = await readBody(req);
+  const b = await readBody(req, 400_000);
+  const oldAvatar = u.avatar || '';
+
+  if (b.avatar !== undefined) {
+    if (b.avatar === null || b.avatar === '') {
+      u.avatar = '';
+    } else {
+      const data = String(b.avatar);
+      if (!IMAGE_RE.test(data)) throw new HttpError(400, 'Profilbilden måste vara JPG, PNG eller WebP.');
+      if (data.length > MAX_AVATAR_CHARS) throw new HttpError(413, 'Bilden är för stor. Prova en mindre bild.');
+      u.avatar = crypto.randomBytes(8).toString('hex');
+      await redis('SET', 'img:' + u.avatar, data);
+    }
+  }
 
   if (b.displayName !== undefined) {
     const name = String(b.displayName).replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim();
@@ -48,5 +65,6 @@ export default handle(async (req, res) => {
   }
 
   await redis('HSET', 'users', s.user, JSON.stringify(u));
-  send(res, 200, { ok: true, displayName: u.displayName || u.username });
+  if (oldAvatar && oldAvatar !== u.avatar) await redis('DEL', 'img:' + oldAvatar);
+  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '' });
 });

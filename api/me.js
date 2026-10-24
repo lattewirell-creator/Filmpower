@@ -3,7 +3,7 @@ import { handle, send, getSession, dbReady, CATEGORIES } from './_lib.js';
 export default handle(async (req, res) => {
   const s = await getSession(req);
   send(res, 200, {
-    user: s ? { role: s.role, label: s.label, verified: Boolean(s.verified) } : null,
+    user: s ? { role: s.role, label: s.label, verified: Boolean(s.verified), avatar: s.avatar || '' } : null,
     dbReady: dbReady(),
     categories: CATEGORIES,
     // Felsökning: visar bara om inställningarna finns, aldrig deras värden.
