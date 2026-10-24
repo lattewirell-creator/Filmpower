@@ -64,14 +64,14 @@ export function send(res, status, data, headers = {}) {
   res.end(JSON.stringify(data));
 }
 
-export async function readBody(req) {
+export async function readBody(req, maxBytes = 100_000) {
   if (req.body && typeof req.body === 'object') return req.body;
   if (typeof req.body === 'string') return JSON.parse(req.body || '{}');
   const chunks = [];
   let size = 0;
   for await (const c of req) {
     size += c.length;
-    if (size > 100_000) throw new HttpError(413, 'För mycket data.');
+    if (size > maxBytes) throw new HttpError(413, 'För mycket data.');
     chunks.push(c);
   }
   const raw = Buffer.concat(chunks).toString('utf8');

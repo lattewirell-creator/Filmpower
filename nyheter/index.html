@@ -149,6 +149,14 @@ textarea.input { resize: vertical; min-height: 11rem; line-height: 1.6; }
 .code-row small { color: var(--muted); font-family: var(--mono); font-size: .8rem; }
 .code-row .confirm { display: flex; gap: .5rem; align-items: center; font-size: .9rem; }
 
+.field-label { font-size: .9rem; font-weight: 500; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.img-pick { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
+.img-pick label { font-weight: 500; }
+.img-pick:focus-within label { outline: 2px solid var(--brand); outline-offset: 3px; }
+.img-preview { display: grid; gap: .7rem; justify-items: start; }
+.img-preview img { max-width: 100%; max-height: 22rem; border-radius: 10px; border: 1px solid var(--line); }
+.post-img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 10px; background: var(--soft); margin-bottom: .4rem; }
 .row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 .status { display: inline-block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; padding: .15rem .55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: .5rem; font-family: var(--body); font-weight: 500; }
 .status.pending { border-color: var(--brand); color: var(--brand); }
@@ -261,6 +269,18 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           <div class="field">
             <label for="p-link">Länk <span class="muted">(valfri)</span></label>
             <input class="input" id="p-link" type="url" placeholder="https://">
+          </div>
+        </div>
+        <div class="field">
+          <span class="field-label">Bild <span class="muted">(valfri)</span></span>
+          <div class="img-pick" id="img-pick">
+            <label class="btn btn-ghost btn-small" for="p-image">Lägg till bild</label>
+            <input id="p-image" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
+            <span class="help" id="img-help">JPG, PNG eller WebP. Stora bilder krymps automatiskt.</span>
+          </div>
+          <div class="img-preview" id="img-preview" hidden>
+            <img id="img-preview-el" alt="Förhandsvisning av bilden">
+            <button type="button" class="btn btn-ghost btn-small" id="img-remove">Ta bort bild</button>
           </div>
         </div>
         <div class="field">
@@ -437,6 +457,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       $('new-code').hidden = true;
       $('new-code-value').textContent = '';
       $('post-form').reset();
+      clearImage();
       setMsg($('post-msg'), ''); setMsg($('code-msg'), '');
       show('view-login');
       $('u-name').focus();
@@ -526,6 +547,14 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function renderPost(item) {
     var art = el('article', 'post');
+    if (item.image) {
+      var im = el('img', 'post-img');
+      im.src = '/api/image?id=' + encodeURIComponent(item.image);
+      im.alt = '';
+      im.loading = 'lazy';
+      im.decoding = 'async';
+      art.appendChild(im);
+    }
     var meta = el('div', 'post-meta');
     meta.appendChild(el('span', 'label', item.category));
     meta.appendChild(el('time', null, fmtDate(item.createdAt)));
@@ -591,21 +620,85 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     state.categories.forEach(function (c) { var o = el('option', null, c); o.value = c; sel.appendChild(o); });
   }
 
+  // ---------- Bild till nyhet ----------
+  var MAX_IMAGE_CHARS = 880000;
+
+  // Krymper bilden i webbläsaren så att uppladdningen blir liten och snabb.
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var sizes = [1600, 1280, 1024, 800], qualities = [0.82, 0.72, 0.62];
+        var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+        for (var i = 0; i < sizes.length; i++) {
+          var scale = Math.min(1, sizes[i] / Math.max(img.naturalWidth, img.naturalHeight));
+          canvas.width = Math.round(img.naturalWidth * scale);
+          canvas.height = Math.round(img.naturalHeight * scale);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          for (var j = 0; j < qualities.length; j++) {
+            var data = canvas.toDataURL('image/jpeg', qualities[j]);
+            if (data.length <= MAX_IMAGE_CHARS) return resolve(data);
+          }
+        }
+        reject(new Error('Bilden är för stor. Prova en mindre bild.'));
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('Bilden gick inte att läsa. Prova en JPG eller PNG.'));
+      };
+      img.src = url;
+    });
+  }
+
+  function clearImage() {
+    state.image = '';
+    $('p-image').value = '';
+    $('img-preview').hidden = true;
+    $('img-preview-el').removeAttribute('src');
+    $('img-pick').hidden = false;
+    $('img-help').textContent = 'JPG, PNG eller WebP. Stora bilder krymps automatiskt.';
+    $('img-help').className = 'help';
+  }
+
+  $('p-image').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    $('img-help').textContent = 'Förbereder bilden…';
+    $('img-help').className = 'help';
+    compressImage(file).then(function (data) {
+      state.image = data;
+      $('img-preview-el').src = data;
+      $('img-preview').hidden = false;
+      $('img-pick').hidden = true;
+    }).catch(function (err) {
+      clearImage();
+      $('img-help').textContent = err.message;
+      $('img-help').className = 'help msg error';
+    });
+  });
+  $('img-remove').addEventListener('click', clearImage);
+
   $('post-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var body = { title: $('p-title').value, category: $('p-cat').value, link: $('p-link').value, body: $('p-body').value };
+    var body = { title: $('p-title').value, category: $('p-cat').value, link: $('p-link').value, body: $('p-body').value, image: state.image || '' };
     if (!body.title.trim() || !body.body.trim()) { setMsg($('post-msg'), 'Fyll i rubrik och text.', 'error'); return; }
     $('post-btn').disabled = true;
+    $('post-btn').textContent = 'Publicerar…';
     api('news', { method: 'POST', body: body }).then(function (d) {
       state.items.unshift(d.item);
       $('post-form').reset();
+      clearImage();
       setMsg($('post-msg'), 'Publicerad.', 'ok');
       setTimeout(function () { setMsg($('post-msg'), ''); }, 3000);
       state.filter = 'Alla';
       renderChips();
       selectTab('panel-feed');
     }).catch(function (err) { setMsg($('post-msg'), err.message, 'error'); })
-      .then(function () { $('post-btn').disabled = false; });
+      .then(function () { $('post-btn').disabled = false; $('post-btn').textContent = 'Publicera'; });
   });
 
   // ---------- Konton ----------

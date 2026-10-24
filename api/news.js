@@ -5,6 +5,9 @@ import {
 } from './_lib.js';
 
 const MAX_LIST = 100;
+// Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
+const MAX_IMAGE_CHARS = 900_000;
+const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 
 function clean(s, max) {
   return String(s || '').replace(/\r\n/g, '\n').trim().slice(0, max);
@@ -24,7 +27,7 @@ export default handle(async (req, res) => {
   const s = await requireSession(req, 'admin');
 
   if (req.method === 'POST') {
-    const b = await readBody(req);
+    const b = await readBody(req, 1_000_000);
     const title = clean(b.title, 140);
     const body = clean(b.body, 5000);
     const category = CATEGORIES.includes(b.category) ? b.category : CATEGORIES[0];
@@ -40,9 +43,19 @@ export default handle(async (req, res) => {
         throw new HttpError(400, 'Länken måste börja med https://');
       }
     }
+
+    let image = '';
+    if (b.image) {
+      const data = String(b.image);
+      if (!IMAGE_RE.test(data)) throw new HttpError(400, 'Bilden måste vara JPG, PNG eller WebP.');
+      if (data.length > MAX_IMAGE_CHARS) throw new HttpError(413, 'Bilden är för stor. Prova en mindre bild.');
+      image = crypto.randomBytes(8).toString('hex');
+      await redis('SET', 'img:' + image, data);
+    }
+
     const item = {
       id: crypto.randomBytes(6).toString('hex'),
-      title, body, category, link,
+      title, body, category, link, image,
       author: s.label,
       createdAt: Date.now(),
     };
@@ -56,7 +69,13 @@ export default handle(async (req, res) => {
   if (req.method === 'DELETE') {
     const id = queryParam(req, 'id');
     if (!id) throw new HttpError(400, 'Id saknas.');
-    await pipeline([['HDEL', 'news', id], ['ZREM', 'news:idx', id]]);
+    const raw = await redis('HGET', 'news', id);
+    const cmds = [['HDEL', 'news', id], ['ZREM', 'news:idx', id]];
+    if (raw) {
+      const { image } = JSON.parse(raw);
+      if (image) cmds.push(['DEL', 'img:' + image]);
+    }
+    await pipeline(cmds);
     return send(res, 200, { ok: true });
   }
 
