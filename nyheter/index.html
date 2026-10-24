@@ -247,6 +247,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .fab svg { width: 1.3rem; height: 1.3rem; }
 #view-app[hidden] ~ .fab { display: none; }
 .compose-body { padding-top: 1.1rem; }
+.reply-guest { display: flex; align-items: center; justify-content: space-between; gap: .6rem 1rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.reply-guest .muted { flex: 1 1 10rem; }
+.topbar #guest-login { margin-left: auto; }
 @media (max-width: 560px) { .fab { width: 3.6rem; height: 3.6rem; padding: 0; justify-content: center; } .fab span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 @media (prefers-reduced-motion: reduce) { .fab { transition: none; } }
 /* Justera bild (beskärning) */
@@ -445,6 +448,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       <span class="badge" id="who-badge"></span>
       <button class="btn btn-ghost btn-small" type="button" id="logout-btn">Logga ut</button>
     </div>
+    <button class="btn btn-primary btn-small" type="button" id="guest-login" hidden>Logga in</button>
   </div>
 </header>
 
@@ -455,7 +459,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   <section class="login wrap" id="view-login" hidden>
     <p class="label">För filmskapare</p>
     <h1>Nyheter från <em>filmvärlden</em></h1>
-    <p class="lead">Festivaler, jobb, teknik och tips, samlat på ett ställe. Logga in med ditt konto eller med koden du har fått av Film Power.</p>
+    <p class="lead">Festivaler, jobb, teknik och tips, samlat på ett ställe. Logga in för att gilla, spara och kommentera, eller läs nyheterna direkt.</p>
+    <p><button class="linklike" type="button" id="guest-read">Läs nyheterna utan konto →</button></p>
 
     <div class="seg" aria-label="Sätt att logga in">
       <button type="button" class="seg-btn" id="mode-member" aria-pressed="true">Medlem</button>
@@ -964,7 +969,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     api('me').then(function (d) {
       state.categories = d.categories || [];
       state.dbReady = d.dbReady;
-      if (d.user) enterApp(d.user); else show('view-login');
+      if (d.user) enterApp(d.user); else enterGuest();
     }).catch(function () {
       show('view-login');
       setMsg($('user-msg'), 'Ingen kontakt med servern just nu.', 'error');
@@ -1051,16 +1056,44 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       clearImage();
       setMsg($('post-msg'), ''); setMsg($('code-msg'), '');
       if (location.hash) history.replaceState(null, '', location.pathname);
-      setMode('user');
-      show('view-login');
-      $('u-name').focus();
+      enterGuest();
     });
   });
+
+  // ---------- Besökare utan konto ----------
+  // Alla kan läsa nyheterna. Att gilla, spara, kommentera och skriva kräver inloggning.
+  function enterGuest() {
+    state.user = null;
+    $('who').hidden = true;
+    $('guest-login').hidden = false;
+    $('greeting').textContent = 'Nyheter för filmskapare';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = true; });
+    ['tab-write', 'compose-fab', 'tab-saved'].forEach(function (id) { $(id).hidden = true; });
+    document.querySelector('.tab-sep').hidden = true;
+    $('db-notice').hidden = true;
+    show('view-app');
+    selectTab('tab-all');
+    loadKnownUsers().then(loadNews).then(route);
+  }
+
+  function showLogin(message) {
+    closeCompose();
+    setMode('user');
+    show('view-login');
+    setMsg($('user-msg'), message || '');
+    window.scrollTo(0, 0);
+    $('u-name').focus();
+  }
+  function needLogin(what) { showLogin('Logga in för att ' + what + '.'); }
+  $('guest-login').addEventListener('click', function () { showLogin(); });
+  $('guest-read').addEventListener('click', function () { if (state.user) show('view-app'); else enterGuest(); });
 
   function enterApp(user) {
     state.user = user;
     var admin = isAdmin();
     $('who').hidden = false;
+    $('guest-login').hidden = true;
+    $('tab-saved').hidden = false;
     renderWho();
     $('who-badge').textContent = admin ? 'Admin' : 'Medlem';
     $('who-badge').className = 'badge' + (admin ? ' admin' : '');
@@ -1915,6 +1948,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
 
   function toggleLike(item) {
+    if (!state.user) { needLogin('gilla inlägg'); return; }
     var on = !item.liked;
     item.liked = on; item.likes = Math.max(0, item.likes + (on ? 1 : -1));
     refreshItem(item);
@@ -1924,6 +1958,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
 
   function toggleSave(item) {
+    if (!state.user) { needLogin('spara inlägg'); return; }
     var on = !item.saved;
     item.saved = on;
     refreshItem(item);
@@ -2011,7 +2046,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   // ---------- Inläggsvy ----------
   function route() {
     var m = /^#inlagg-([a-f0-9]+)$/.exec(location.hash);
-    if (!state.user) return;
+    if (!state.user && location.hash === '#konto') { needLogin('se ditt konto'); return; }
     if (m) openPost(m[1]);
     else if (location.hash === '#konto') openAccount();
     else if (/^#profil-[a-z0-9_.-]+$/.test(location.hash)) openProfile(location.hash.slice(8));
@@ -2110,7 +2145,22 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     actions.appendChild(actionBar(item, true));
     box.appendChild(actions);
 
-    // Svarsruta
+    // Svarsruta. Besökare får en knapp för att logga in i stället.
+    if (!state.user) {
+      var guest = el('div', 'reply-guest');
+      guest.appendChild(el('span', 'muted', 'Vill du kommentera?'));
+      var gl = el('button', 'btn btn-primary btn-small', 'Logga in för att svara');
+      gl.type = 'button';
+      gl.addEventListener('click', function () { needLogin('kommentera'); });
+      guest.appendChild(gl);
+      box.appendChild(guest);
+      var glist = el('div');
+      glist.id = 'comment-list';
+      box.appendChild(glist);
+      if (comments) renderComments(item);
+      else glist.appendChild(el('p', 'no-comments', 'Hämtar kommentarer…'));
+      return;
+    }
     var reply = el('form', 'reply');
     reply.noValidate = true;
     reply.appendChild(state.user.anon ? avatarEl('anon', '?', '', false) : avatarEl('', myInitial(), state.user.avatar, myInitial() === 'FP'));

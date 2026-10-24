@@ -234,6 +234,11 @@ export async function requireSession(req, role) {
   return s;
 }
 
+// För sådant som alla får läsa: inloggad session, annars en besökare utan konto.
+export async function readerSession(req) {
+  return (await getSession(req)) || { guest: true, role: 'guest' };
+}
+
 export function clientIp(req) {
   return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'okänd').split(',')[0].trim();
 }
@@ -242,6 +247,7 @@ export function clientIp(req) {
 
 // Stabil identitet för den inloggade, oavsett om hen loggat in med konto, kod eller adminkod.
 export function actorId(s) {
+  if (s.guest) return 'guest';
   if (s.user) return 'u:' + s.user;
   if (s.code) return 'c:' + s.code.slice(0, 16);
   return 'admin';

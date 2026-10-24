@@ -1,5 +1,5 @@
 import {
-  handle, send, queryParam, requireSession, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo,
+  handle, send, queryParam, readerSession, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo,
 } from './_lib.js';
 
 const MAX_LIST = 200;
@@ -7,7 +7,7 @@ const MAX_LIST = 200;
 // Profiler för inloggade: en enskild profil med inlägg, eller listan över alla medlemmar.
 export default handle(async (req, res) => {
   if (req.method !== 'GET') throw new HttpError(405, 'Använd GET.');
-  const s = await requireSession(req);
+  const s = await readerSession(req);
   const key = usernameKey(queryParam(req, 'u'));
 
   // Utan användarnamn: lista alla godkända medlemmar, Film Power först.

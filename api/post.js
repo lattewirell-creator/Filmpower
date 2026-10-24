@@ -1,14 +1,15 @@
 import crypto from 'node:crypto';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession, HttpError,
-  redis, pipeline, rateLimit, actorId, displayName, withStats, withAuthors, affKey, orgInfo,
+  redis, pipeline, rateLimit, readerSession, actorId, displayName, withStats, withAuthors, affKey, orgInfo,
 } from './_lib.js';
 
 const MAX_COMMENT = 1000;
 
 // Ett enskilt inlägg: läsa (räknar en visning), gilla, spara, kommentera och ta bort kommentarer.
 export default handle(async (req, res) => {
-  const s = await requireSession(req);
+  // Alla får läsa inlägg och kommentarer. Gilla, spara och kommentera kräver inloggning.
+  const s = req.method === 'GET' ? await readerSession(req) : await requireSession(req);
   const a = actorId(s);
   const id = queryParam(req, 'id') || '';
   const raw = id && (await redis('HGET', 'news', id));

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
-  HttpError, redis, pipeline, CATEGORIES, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
+  HttpError, redis, pipeline, CATEGORIES, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
 } from './_lib.js';
 
 const MAX_LIST = 200;
@@ -13,8 +13,9 @@ function clean(s, max) {
 }
 
 export default handle(async (req, res) => {
+  // Nyheterna är öppna för alla. Att skriva kräver inloggning.
   if (req.method === 'GET') {
-    const s = await requireSession(req);
+    const s = await readerSession(req);
     const ids = await redis('ZREVRANGE', 'news:idx', 0, MAX_LIST - 1);
     if (!ids.length) return send(res, 200, { items: [] });
     const raws = await redis('HMGET', 'news', ...ids);

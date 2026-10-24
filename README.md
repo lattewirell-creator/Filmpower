@@ -16,6 +16,8 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 ## Så används appen
 
+- **Öppet för alla:** Vem som helst kan läsa nyheterna, öppna inlägg, se kommentarer och profiler på filmpower.vercel.app/nyheter utan konto. Knappen **Logga in** uppe till höger behövs bara för att gilla, spara, kommentera och skriva.
+
 - **Admin:** Gå till `/nyheter/`, välj **Admin** och logga in med din `ADMIN_CODE`. Under **Skriv nyhet** publicerar du nyheter. Under **Koder** skapar du en personlig kod till varje medlem. Koden visas bara en gång, så kopiera den och skicka den till personen.
 - **Medlemmar med konto:** Går till `/nyheter/`, klickar **Skapa konto** och väljer användarnamn och lösenord. Kontot är aktivt direkt och personen loggas in automatiskt. Under fliken **Konton** kan du verifiera, spärra eller ta bort konton.
 - **Bilder:** Under **Skriv nyhet** klickar du **Lägg till bild**. Bilden krymps automatiskt till max 1600 pixlar och sparas i databasen. Bara inloggade ser bilderna. Tar du bort nyheten försvinner bilden också.
