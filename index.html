@@ -12,7 +12,7 @@
 <title>Film Power Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&family=Syne:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&family=Syne:wght@700;800&family=Zilla+Slab:wght@700&family=Rubik+Mono+One&family=Pacifico&display=swap">
 <script>
   // Kameraintro: en gång per besök, aldrig för den som valt minskade animationer.
   (function () {
@@ -115,6 +115,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 /* Bilder inne i bokstäverna: varje bokstav visar en egen målad bild som glider och byts */
 .hero h1 em.photo .l { color: transparent; -webkit-background-clip: text; background-clip: text; background-size: auto 118%; background-position: 0% 50%; background-repeat: no-repeat; -webkit-text-stroke: .018em color-mix(in srgb, var(--ink) 30%, transparent);
   animation: hop 1.9s cubic-bezier(.3,.7,.4,1) infinite, pan 7s ease-in-out infinite alternate; animation-delay: calc(var(--i) * .1s), calc(var(--i) * -.8s); }
+.hero h1 em .l { padding: .14em 0 .26em; margin: -.14em 0 -.26em; text-align: center; }
 .hero h1 em .layer-b { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; pointer-events: none; }
 .hero h1 em .layer-b.on { opacity: 1; }
 @keyframes pan { from { background-position: 0% 40%; } to { background-position: 100% 60%; } }
@@ -720,11 +721,41 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
   var layerB = Array.prototype.slice.call(b.querySelectorAll('.l'));
   em.classList.add('photo');
 
+  // Typsnitten som bokstäverna växlar mellan. Storleken jämkas så att de upplevs lika stora.
+  var FONTS = [
+    ['"Syne", sans-serif', 'normal', 800, 1],
+    ['"Bodoni Moda", serif', 'italic', 700, 1.2],
+    ['"Zilla Slab", serif', 'normal', 700, 1.12],
+    ['"Rubik Mono One", sans-serif', 'normal', 400, .86],
+    ['"Pacifico", cursive', 'normal', 400, 1.08],
+  ];
   function apply(letters, offset) {
-    letters.forEach(function (l, i) { l.style.backgroundImage = 'url(' + images[(offset + i) % images.length] + ')'; });
+    letters.forEach(function (l, i) {
+      l.style.backgroundImage = 'url(' + images[(offset + i) % images.length] + ')';
+      if (offset === 0) { l.style.fontFamily = ''; l.style.fontStyle = ''; l.style.fontWeight = ''; l.style.fontSize = ''; return; }
+      var f = FONTS[(offset * 2 + i * 3) % FONTS.length];
+      l.style.fontFamily = f[0]; l.style.fontStyle = f[1]; l.style.fontWeight = f[2]; l.style.fontSize = f[3] + 'em';
+    });
   }
   var offset = 0;
   apply(layerA, offset);
+
+  // Varje bokstav får en fast bredd (mätt i grundtypsnittet), så att ordet inte hoppar när typsnitten byts.
+  function lockWidths() {
+    layerA.forEach(function (l, i) {
+      var w = l.getBoundingClientRect().width + 'px';
+      l.style.width = w;
+      if (layerB[i]) layerB[i].style.width = w;
+    });
+  }
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(lockWidths);
+  window.addEventListener('resize', function () {
+    layerA.concat(layerB).forEach(function (l) { l.style.width = ''; });
+    var saved = layerA.map(function (l) { return [l.style.fontFamily, l.style.fontStyle, l.style.fontWeight, l.style.fontSize]; });
+    layerA.forEach(function (l) { l.style.fontFamily = l.style.fontStyle = l.style.fontWeight = l.style.fontSize = ''; });
+    lockWidths();
+    layerA.forEach(function (l, i) { l.style.fontFamily = saved[i][0]; l.style.fontStyle = saved[i][1]; l.style.fontWeight = saved[i][2]; l.style.fontSize = saved[i][3]; });
+  });
 
   // Byt bilder med mjuk övertoning med jämna mellanrum.
   setInterval(function () {
