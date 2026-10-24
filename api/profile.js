@@ -19,7 +19,7 @@ export default handle(async (req, res) => {
       if (u.status !== 'active') continue;
       members.push({
         name: u.displayName || u.username, username: u.username, avatar: u.avatar || '',
-        verified: Boolean(u.verified), role: u.role === 'admin' ? 'admin' : 'member', isMe: flat[i] === s.user, bio: u.bio || '',
+        verified: Boolean(u.verified), role: u.role === 'admin' ? 'admin' : 'member', isMe: flat[i] === s.user, bio: u.bio || '', affiliate: Boolean(u.affiliate),
       });
     }
     members.sort((a, b) => (b.verified - a.verified) || a.name.localeCompare(b.name, 'sv'));
@@ -43,6 +43,7 @@ export default handle(async (req, res) => {
       role: u.role === 'admin' ? 'admin' : 'member',
       createdAt: u.createdAt,
       bio: u.bio || '',
+      affiliate: Boolean(u.affiliate),
       authorKey: key,
     };
   }
@@ -55,9 +56,24 @@ export default handle(async (req, res) => {
     items = await withStats(await withAuthors(items, s), s);
   }
 
+  // Film Powers profil listar också de anslutna kontona.
+  let affiliates;
+  if (profile.brand) {
+    const flat = await redis('HGETALL', 'users');
+    affiliates = [];
+    for (let i = 0; i < flat.length; i += 2) {
+      const u = JSON.parse(flat[i + 1]);
+      if (u.status === 'active' && u.affiliate) {
+        affiliates.push({ name: u.displayName || u.username, username: u.username, avatar: u.avatar || '', verified: Boolean(u.verified), bio: u.bio || '', affiliate: true });
+      }
+    }
+    affiliates.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+  }
+
   const { authorKey, ...pub } = profile;
   send(res, 200, {
     profile: { ...pub, isMe: Boolean(authorKey && authorKey === s.user) },
     items,
+    affiliates,
   });
 });

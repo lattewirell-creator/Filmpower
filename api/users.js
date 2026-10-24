@@ -12,7 +12,7 @@ export default handle(async (req, res) => {
     const users = [];
     for (let i = 0; i < flat.length; i += 2) {
       const u = JSON.parse(flat[i + 1]);
-      users.push({ id: flat[i], username: u.username, displayName: u.displayName || '', status: u.status, role: u.role === 'admin' ? 'admin' : 'member', verified: Boolean(u.verified), createdAt: u.createdAt });
+      users.push({ id: flat[i], username: u.username, displayName: u.displayName || '', status: u.status, role: u.role === 'admin' ? 'admin' : 'member', verified: Boolean(u.verified), affiliate: Boolean(u.affiliate), createdAt: u.createdAt });
     }
     users.sort((a, b) => ORDER[a.status] - ORDER[b.status] || b.createdAt - a.createdAt);
     return send(res, 200, { users });
@@ -25,7 +25,7 @@ export default handle(async (req, res) => {
   if (!raw) throw new HttpError(404, 'Kontot finns inte.');
 
   if (req.method === 'PATCH') {
-    const { status, role, verified } = await readBody(req);
+    const { status, role, verified, affiliate } = await readBody(req);
     const user = JSON.parse(raw);
     if (status !== undefined) {
       if (!['active', 'blocked'].includes(status)) throw new HttpError(400, 'Ogiltig status.');
@@ -39,6 +39,10 @@ export default handle(async (req, res) => {
     if (verified !== undefined) {
       if (verified && user.status !== 'active') throw new HttpError(400, 'Godkänn kontot innan det verifieras.');
       user.verified = Boolean(verified);
+    }
+    if (affiliate !== undefined) {
+      if (affiliate && user.status !== 'active') throw new HttpError(400, 'Kontot måste vara aktivt för att anslutas.');
+      user.affiliate = Boolean(affiliate);
     }
     await redis('HSET', 'users', id, JSON.stringify(user));
     return send(res, 200, { ok: true });

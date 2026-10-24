@@ -240,6 +240,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .modal { border-radius: 0; min-height: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .toggle, .toggle::before { transition: none; } }
+.mention { color: var(--brand); font-weight: 500; text-decoration: none; }
+.mention:hover { text-decoration: underline; text-underline-offset: 2px; }
+.aff { display: inline-grid; place-items: center; flex: none; width: 1.05rem; height: 1.05rem; border-radius: 3px; background: var(--ink); color: var(--bg); font: 700 .5rem/1 var(--display); letter-spacing: -.04em; text-decoration: none; }
+.aff:hover { opacity: .8; }
+.p-name .aff { width: 1.3rem; height: 1.3rem; font-size: .62rem; }
+.p-aff { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; color: var(--muted); font-size: .93rem; }
+.member .m-bio { color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .c-actions { display: flex; gap: 1rem; margin-top: .3rem; }
 .c-reply { background: none; border: 0; padding: 0; color: var(--muted); font-size: .85rem; cursor: pointer; }
 .c-reply:hover { color: var(--brand); text-decoration: underline; }
@@ -725,11 +732,47 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return a;
   }
 
+  // Kända användarnamn, så att bara @-taggar som finns blir länkar.
+  var knownUsers = { filmpower: true };
+  function loadKnownUsers() {
+    return api('profile').then(function (d) {
+      (d.members || []).forEach(function (m) { knownUsers[m.username.toLowerCase()] = true; });
+    }).catch(function () {});
+  }
+
+  // Gör om text till noder där @användarnamn blir klickbara länkar till profilen.
+  function linkify(text) {
+    var frag = document.createDocumentFragment();
+    var re = /(^|[^A-Za-z0-9_.@-])@([A-Za-z0-9_.-]{3,20})/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      var name = m[2].replace(/[.-]+$/, '');
+      var start = m.index + m[1].length;
+      if (!knownUsers[name.toLowerCase()]) continue;
+      frag.appendChild(document.createTextNode(text.slice(last, start)));
+      var a = el('a', 'mention', '@' + name);
+      a.href = '#profil-' + name.toLowerCase();
+      frag.appendChild(a);
+      last = start + 1 + name.length;
+      re.lastIndex = last;
+    }
+    frag.appendChild(document.createTextNode(text.slice(last)));
+    return frag;
+  }
+
+  // Litet FP-märke för konton som är anslutna till Film Power, som affiliates på Twitter.
+  function affBadge() {
+    var a = el('a', 'aff', 'FP');
+    a.href = '#profil-filmpower';
+    a.title = 'Ansluten till Film Power';
+    a.setAttribute('aria-label', 'Ansluten till Film Power');
+    return a;
+  }
+
   // Vem som står bakom ett inlägg: ett konto eller Film Power (adminkoden).
   function postAuthor(item) {
     if (item.authorKey) {
       var name = item.authorName || 'Okänd';
-      return { name: name, username: item.authorUsername || '', handle: item.authorUsername ? '@' + item.authorUsername : '', avatar: item.authorAvatar, verified: item.authorVerified, brand: false, initial: name.charAt(0) };
+      return { name: name, username: item.authorUsername || '', handle: item.authorUsername ? '@' + item.authorUsername : '', avatar: item.authorAvatar, verified: item.authorVerified, affiliate: item.authorAffiliate, brand: false, initial: name.charAt(0) };
     }
     return { name: 'Film Power', username: 'filmpower', handle: '@filmpower', avatar: '', verified: true, brand: true, initial: 'FP' };
   }
@@ -887,7 +930,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     fillCategorySelect();
     show('view-app');
     selectTab('tab-all');
-    loadNews().then(route);
+    loadKnownUsers().then(loadNews).then(route);
     if (admin && state.dbReady) loadUsers();
   }
 
@@ -937,9 +980,19 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var nm = el('div', 'p-name');
     nm.appendChild(el('span', null, p.name));
     if (p.verified) nm.appendChild(verified());
+    if (p.affiliate) nm.appendChild(affBadge());
     box.appendChild(nm);
     box.appendChild(el('div', 'p-handle', p.handle || '@' + p.username));
-    if (p.bio) box.appendChild(el('p', 'p-bio', p.bio));
+    if (p.bio) { var bio = el('p', 'p-bio'); bio.appendChild(linkify(p.bio)); box.appendChild(bio); }
+    if (p.affiliate) {
+      var af = el('div', 'p-aff');
+      af.appendChild(affBadge());
+      af.appendChild(document.createTextNode('Ansluten till '));
+      var fl = el('a', 'mention', '@filmpower');
+      fl.href = '#profil-filmpower';
+      af.appendChild(fl);
+      box.appendChild(af);
+    }
 
     var meta = el('div', 'p-meta');
     if (p.createdAt) {
@@ -965,12 +1018,22 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     var tabsDef = [['posts', 'Inlägg']];
     if (opts.me) tabsDef.push(['liked', 'Gillade'], ['saved', 'Sparade']);
+    if (opts.affiliates) tabsDef.push(['affiliates', 'Anslutna']);
     var tabBar = el('div', 'p-tabs');
     tabBar.setAttribute('role', 'tablist');
     var list = el('div', 'p-list');
     function show(key) {
       Array.prototype.forEach.call(tabBar.children, function (t) { t.setAttribute('aria-selected', String(t.dataset.k === key)); });
       list.replaceChildren();
+      if (key === 'affiliates') {
+        if (!opts.affiliates.length) {
+          var none = el('div', 'empty');
+          none.appendChild(el('h3', null, 'Inga anslutna konton än'));
+          none.appendChild(el('p', null, 'Admin kan ansluta konton till Film Power under fliken Konton.'));
+          list.appendChild(none);
+        } else opts.affiliates.forEach(function (m) { list.appendChild(memberRow(m)); });
+        return;
+      }
       var rows = key === 'posts' ? items.map(function (it) { return findItem(it.id) || it; })
         : state.items.filter(function (i) { return key === 'liked' ? i.liked : i.saved; });
       if (!rows.length) {
@@ -1006,7 +1069,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return api('profile?u=' + encodeURIComponent(username)).then(function (d) {
       var items = (d.items || []).map(norm);
       items.forEach(function (it) { var ex = findItem(it.id); if (ex) Object.assign(ex, it); });
-      return { profile: d.profile, items: items };
+      return { profile: d.profile, items: items, affiliates: d.affiliates };
     });
   }
 
@@ -1015,6 +1078,23 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     e.appendChild(el('h3', null, 'Profilen går inte att visa'));
     e.appendChild(el('p', null, err.message));
     box.replaceChildren(e);
+  }
+
+  function memberRow(m) {
+    var a = el('a', 'member');
+    a.href = '#profil-' + m.username.toLowerCase();
+    a.appendChild(avatarEl('', m.name.charAt(0), m.avatar, false));
+    var txt = el('div', 'm-txt');
+    var nm = el('div', 'm-name');
+    nm.appendChild(el('span', null, m.name));
+    if (m.verified) nm.appendChild(verified());
+    nm.appendChild(affBadge());
+    txt.appendChild(nm);
+    txt.appendChild(el('span', 'handle', '@' + m.username));
+    if (m.bio) txt.appendChild(el('span', 'm-bio', m.bio));
+    a.appendChild(txt);
+    a.appendChild(el('span'));
+    return a;
   }
 
   // ---------- Profil ----------
@@ -1026,7 +1106,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     loadProfile(username).then(function (d) {
       $('prof-title').textContent = d.profile.name;
       $('prof-count').textContent = countText(d.items.length);
-      profileView($('prof-body'), d.profile, d.items, { me: d.profile.isMe, edit: d.profile.isMe });
+      profileView($('prof-body'), d.profile, d.items, { me: d.profile.isMe, edit: d.profile.isMe, affiliates: d.affiliates });
     }).catch(function (err) { profileError($('prof-body'), err); });
   }
   $('prof-back').addEventListener('click', goBack);
@@ -1053,6 +1133,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var nm = el('div', 'm-name');
       nm.appendChild(el('span', null, m.name));
       if (m.verified) nm.appendChild(verified());
+      if (m.affiliate) nm.appendChild(affBadge());
       txt.appendChild(nm);
       txt.appendChild(el('span', 'handle', '@' + m.username));
       a.appendChild(txt);
@@ -1332,6 +1413,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var head = el('div', 't-head');
     head.appendChild(profileLink(pa.username, el('b', null, pa.name)));
     if (pa.verified) head.appendChild(verified());
+    if (pa.affiliate) head.appendChild(affBadge());
     var handle = [pa.handle, withTime ? timeAgo(item.createdAt) : ''].filter(Boolean).join(' · ');
     head.appendChild(el('span', 'handle', handle));
     return head;
@@ -1364,9 +1446,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var body = item.body;
     var text = el('p', 't-text');
     if (body.length > 280) {
-      text.textContent = body.slice(0, 260).replace(/\s+\S*$/, '') + '… ';
+      text.appendChild(linkify(body.slice(0, 260).replace(/\s+\S*$/, '') + '… '));
       text.appendChild(el('span', 't-more', 'Visa mer'));
-    } else text.textContent = body;
+    } else text.appendChild(linkify(body));
     main.appendChild(text);
 
     if (item.link) main.appendChild(linkChip(item.link));
@@ -1600,6 +1682,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var row = el('span', 'row');
     row.appendChild(profileLink(pa.username, el('b', null, pa.name)));
     if (pa.verified) row.appendChild(verified());
+    if (pa.affiliate) row.appendChild(affBadge());
     who.appendChild(row);
     if (pa.handle) who.appendChild(el('span', 'handle', pa.handle));
     author.appendChild(who);
@@ -1618,7 +1701,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     cat.style.marginTop = '1rem';
     box.appendChild(cat);
     box.appendChild(el('h1', 'd-title', item.title));
-    box.appendChild(el('p', 'd-text', item.body));
+    var dText = el('p', 'd-text');
+    dText.appendChild(linkify(item.body));
+    box.appendChild(dText);
     if (item.link) box.appendChild(linkChip(item.link));
     if (item.image) {
       var im = el('img', 'd-img');
@@ -1710,6 +1795,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var head = el('div', 't-head');
       head.appendChild(profileLink(cUser, el('b', null, c.author)));
       if (c.isAdmin || c.verified) head.appendChild(verified());
+      if (c.affiliate) head.appendChild(affBadge());
       if (c.anon && c.realAuthor) head.appendChild(el('span', 'handle', '(' + c.realAuthor + ')'));
       head.appendChild(el('span', 'handle', '· ' + timeAgo(c.createdAt)));
       if (c.canDelete) {
@@ -1727,7 +1813,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         head.appendChild(del);
       }
       main.appendChild(head);
-      main.appendChild(el('p', null, c.text));
+      var cText = el('p');
+      cText.appendChild(linkify(c.text));
+      main.appendChild(cText);
       var ca = el('div', 'c-actions');
       var rb = el('button', 'c-reply', 'Svara');
       rb.type = 'button';
@@ -1950,6 +2038,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       meta.appendChild(el('span', 'status ' + u.status, STATUS_TEXT[u.status] || u.status));
       if (u.role === 'admin') meta.appendChild(el('span', 'status pending', 'Admin'));
       if (u.verified) meta.appendChild(el('span', 'status verified-chip', 'Verifierad'));
+      if (u.affiliate) meta.appendChild(el('span', 'status pending', 'Ansluten'));
       meta.appendChild(document.createTextNode('Skapat ' + fmtDate(u.createdAt)));
       info.appendChild(meta);
       row.appendChild(info);
@@ -1963,6 +2052,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         }));
         actions.appendChild(smallButton(u.verified ? 'Ta bort verifiering' : 'Verifiera', 'btn-ghost', function () {
           return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { verified: !u.verified } }).then(loadUsers);
+        }));
+        actions.appendChild(smallButton(u.affiliate ? 'Ta bort anslutning' : 'Anslut till Film Power', 'btn-ghost', function () {
+          return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { affiliate: !u.affiliate } }).then(loadUsers);
         }));
         actions.appendChild(smallButton('Spärra', 'btn-danger', function () { return setStatus(u.id, 'blocked'); }));
       }

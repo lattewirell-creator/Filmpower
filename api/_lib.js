@@ -191,7 +191,7 @@ export async function getSession(req) {
     if (!raw) return null;
     const u = JSON.parse(raw);
     if (u.status !== 'active') return null;
-    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified), avatar: u.avatar || '' };
+    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified), avatar: u.avatar || '', affiliate: Boolean(u.affiliate) };
   }
   if (s.role === 'member') {
     // Spärrade koder loggas ut direkt.
@@ -291,6 +291,7 @@ export async function withAuthors(items, s) {
     out.authorUsername = u ? u.username : '';
     out.authorAvatar = u ? u.avatar || '' : '';
     out.authorVerified = Boolean(u && u.verified);
+    out.authorAffiliate = Boolean(u && u.affiliate);
     return out;
   });
 }
