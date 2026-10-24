@@ -2,7 +2,7 @@ name: Testa nyhetsboten
 on:
   workflow_dispatch:
   push:
-    paths: ['api/bot.js', 'scripts/bot-check.mjs']
+    paths: ['api/bot.js', 'scripts/**']
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -13,3 +13,4 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: node scripts/bot-check.mjs
+      - run: node scripts/feed-probe.mjs
