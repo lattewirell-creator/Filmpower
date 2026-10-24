@@ -1,14 +1,41 @@
 import {
-  handle, send, queryParam, readerSession, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo,
+  handle, send, queryParam, readerSession, requireSession, requireAppHeader, actorId, pipeline, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo,
 } from './_lib.js';
 
 const MAX_LIST = 200;
 
-// Profiler för inloggade: en enskild profil med inlägg, eller listan över alla medlemmar.
+// Profiler: en enskild profil med inlägg, listan över alla medlemmar, och att följa konton.
+// Följa sparas i två mängder: following:<den som följer> och followers:<kontot som följs>.
 export default handle(async (req, res) => {
-  if (req.method !== 'GET') throw new HttpError(405, 'Använd GET.');
-  const s = await readerSession(req);
   const key = usernameKey(queryParam(req, 'u'));
+
+  if (req.method === 'POST') {
+    requireAppHeader(req);
+    const s = await requireSession(req);
+    const action = queryParam(req, 'action');
+    if (action !== 'follow' && action !== 'unfollow') throw new HttpError(400, 'Okänd åtgärd.');
+    if (!key) throw new HttpError(400, 'Vem vill du följa?');
+    if (key === s.user || (key === 'filmpower' && !s.user && !s.code)) throw new HttpError(400, 'Du kan inte följa dig själv.');
+    if (key !== 'filmpower') {
+      const raw = await redis('HGET', 'users', key);
+      if (!raw || JSON.parse(raw).status !== 'active') throw new HttpError(404, 'Kontot finns inte.');
+    }
+    const a = actorId(s), on = action === 'follow';
+    const [, , followers] = await pipeline([
+      [on ? 'SADD' : 'SREM', 'following:' + a, key],
+      [on ? 'SADD' : 'SREM', 'followers:' + key, a],
+      ['SCARD', 'followers:' + key],
+    ]);
+    return send(res, 200, { following: on, followers: Number(followers) || 0 });
+  }
+
+  if (req.method !== 'GET') throw new HttpError(405, 'Metoden stöds inte.');
+  const s = await readerSession(req);
+
+  // Vilka konton den inloggade följer.
+  if (queryParam(req, 'following')) {
+    return send(res, 200, { following: s.guest ? [] : await redis('SMEMBERS', 'following:' + actorId(s)) });
+  }
 
   // Utan användarnamn: lista alla godkända medlemmar, Film Power först.
   if (!key) {
@@ -72,9 +99,17 @@ export default handle(async (req, res) => {
   }
   affiliates.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
 
+  // Följare och vilka kontot själv följer. Film Power följer som admin.
+  const selfActor = profile.brand ? 'admin' : 'u:' + key;
+  const [followers, following, isFollowing] = await pipeline([
+    ['SCARD', 'followers:' + orgKey],
+    ['SCARD', 'following:' + selfActor],
+    ['SISMEMBER', 'followers:' + orgKey, s.guest ? 'guest' : actorId(s)],
+  ]);
+
   const { authorKey, ...pub } = profile;
   send(res, 200, {
-    profile: { ...pub, isMe: Boolean(authorKey && authorKey === s.user) },
+    profile: { ...pub, isMe: Boolean(authorKey && authorKey === s.user), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing) },
     items,
     affiliates,
   });

@@ -153,7 +153,7 @@ async function askClaude(system, user, schema) {
 // Groq (OpenAI-kompatibelt API). GROQ_MODEL väljer modell, annars provas två vanliga i tur och ordning.
 async function askGroq(system, user, hint) {
   const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
-  let lastError;
+  const errors = [];
   for (const model of models) {
     try {
       const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
@@ -162,7 +162,9 @@ async function askGroq(system, user, hint) {
         body: JSON.stringify({
           model,
           temperature: 0.4,
-          max_tokens: 4000,
+          max_tokens: 8000,
+          // gpt-oss tänker innan den svarar. Lite tänkande räcker och lämnar plats åt själva svaret.
+          ...(model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: system + '\n\n' + hint },
@@ -177,9 +179,9 @@ async function askGroq(system, user, hint) {
       const parsed = JSON.parse(text || '{}');
       if (parsed.posts && parsed.posts.length) return parsed;
       throw new Error('Groq gav inga inlägg.');
-    } catch (err) { lastError = err; }
+    } catch (err) { errors.push(model + ': ' + err.message); }
   }
-  throw lastError;
+  throw new Error(errors.join(' | '));
 }
 
 function askAI(system, user, schema, hint) {
@@ -337,12 +339,13 @@ async function run() {
   const candidates = unique.filter((_, i) => !seen[i]).slice(0, 30);
 
   const count = postsPerDay();
-  let picked = [], mode = 'plain';
+  let picked = [], mode = 'plain', aiError = '';
   if (candidates.length) {
     if (aiProvider()) {
-      try { picked = await writeSwedish(candidates, count); mode = aiProvider(); } catch (err) { console.error('Nyhetsboten:', err); }
+      try { picked = await writeSwedish(candidates, count); mode = aiProvider(); } catch (err) { console.error('Nyhetsboten:', err); aiError = String(err.message || err).slice(0, 300); }
     }
-    if (!picked.length) picked = pickPlain(candidates, count);
+    // Med en AI-nyckel publiceras inget på engelska. Går AI:n inte att nå försöker boten igen nästa gång.
+    if (!picked.length && !aiProvider()) picked = pickPlain(candidates, count);
   }
 
   // Hämta artikelbilderna och spara dem en och en (varje bild är ett eget, stort anrop).
@@ -379,10 +382,10 @@ async function run() {
   // Översätt det som tidigare publicerats på engelska, nu när en AI-nyckel finns.
   let translated = 0;
   if (aiProvider()) {
-    try { translated = await translateOld(); } catch (err) { console.error('Nyhetsboten översättning:', err); }
+    try { translated = await translateOld(); } catch (err) { console.error('Nyhetsboten översättning:', err); aiError = aiError || String(err.message || err).slice(0, 300); }
   }
 
-  const status = { at: now, posted: picked.length, translated, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
+  const status = { at: now, posted: picked.length, translated, error: aiError, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }

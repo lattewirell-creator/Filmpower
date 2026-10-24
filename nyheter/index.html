@@ -247,6 +247,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .fab svg { width: 1.3rem; height: 1.3rem; }
 #view-app[hidden] ~ .fab { display: none; }
 .compose-body { padding-top: 1.1rem; }
+.follow-btn { min-width: 6.2rem; }
+.follow-btn.on:hover { border-color: var(--danger); color: var(--danger); }
 .reply-guest { display: flex; align-items: center; justify-content: space-between; gap: .6rem 1rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid var(--line); }
 .reply-guest .muted { flex: 1 1 10rem; }
 .topbar #guest-login { margin-left: auto; }
@@ -518,6 +520,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <div class="tabs" role="tablist" id="tabs" aria-label="Vyer">
       <button class="tab" role="tab" id="tab-all" data-panel="panel-feed" data-view="all" aria-selected="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Nyheter</button>
+      <button class="tab" role="tab" id="tab-following" data-panel="panel-feed" data-view="following" aria-selected="false" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 11l2 2 3.5-4"/></svg>Följer</button>
       <button class="tab" role="tab" id="tab-popular" data-panel="panel-feed" data-view="popular" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9 11 10.5 11C10.5 7 12 2 12 2z"/></svg>Populärt</button>
       <button class="tab" role="tab" id="tab-saved" data-panel="panel-feed" data-view="saved" aria-selected="false">
@@ -1064,6 +1068,51 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     });
   });
 
+  // ---------- Följa konton ----------
+  state.following = {};
+  function loadFollowing() {
+    return api('profile?following=1').then(function (d) {
+      state.following = {};
+      (d.following || []).forEach(function (k) { state.following[k] = true; });
+    }).catch(function () {});
+  }
+
+  function setFollow(username, on) {
+    var key = username.toLowerCase();
+    return api('profile?u=' + encodeURIComponent(key) + '&action=' + (on ? 'follow' : 'unfollow'), { method: 'POST' }).then(function (d) {
+      if (d.following) state.following[key] = true; else delete state.following[key];
+      return d;
+    });
+  }
+
+  // Följ-knappen på en profil. Hovrar man på "Följer" står det "Sluta följa", som på Twitter.
+  function followButton(p, onChange) {
+    var b = el('button', 'btn btn-small follow-btn');
+    b.type = 'button';
+    function paint() {
+      var on = !!state.following[p.username.toLowerCase()];
+      b.className = 'btn btn-small follow-btn ' + (on ? 'btn-ghost on' : 'btn-primary');
+      b.textContent = on ? 'Följer' : 'Följ';
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-label', (on ? 'Sluta följa ' : 'Följ ') + p.name);
+    }
+    if (p.isFollowing) state.following[p.username.toLowerCase()] = true;
+    paint();
+    b.addEventListener('mouseenter', function () { if (state.following[p.username.toLowerCase()]) b.textContent = 'Sluta följa'; });
+    b.addEventListener('mouseleave', paint);
+    b.addEventListener('click', function () {
+      if (!state.user) { needLogin('följa ' + p.name); return; }
+      var on = !state.following[p.username.toLowerCase()];
+      b.disabled = true;
+      setFollow(p.username, on).then(function (d) {
+        p.followers = d.followers;
+        paint();
+        if (onChange) onChange();
+      }).catch(function (err) { toast(err.message); }).then(function () { b.disabled = false; });
+    });
+    return b;
+  }
+
   // ---------- Besökare utan konto ----------
   // Alla kan läsa nyheterna. Att gilla, spara, kommentera och skriva kräver inloggning.
   function enterGuest() {
@@ -1072,7 +1121,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('guest-login').hidden = false;
     $('greeting').textContent = 'Nyheter för filmskapare';
     Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = true; });
-    ['tab-write', 'compose-fab', 'tab-saved'].forEach(function (id) { $(id).hidden = true; });
+    state.following = {};
+    ['tab-write', 'compose-fab', 'tab-saved', 'tab-following'].forEach(function (id) { $(id).hidden = true; });
     document.querySelector('.tab-sep').hidden = true;
     $('db-notice').hidden = true;
     show('view-app');
@@ -1098,6 +1148,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('who').hidden = false;
     $('guest-login').hidden = true;
     $('tab-saved').hidden = false;
+    $('tab-following').hidden = false;
     renderWho();
     $('who-badge').textContent = admin ? 'Admin' : 'Medlem';
     $('who-badge').className = 'badge' + (admin ? ' admin' : '');
@@ -1114,7 +1165,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     fillCategorySelect();
     show('view-app');
     selectTab('tab-all');
-    loadKnownUsers().then(loadNews).then(route);
+    loadKnownUsers().then(loadFollowing).then(loadNews).then(route);
     if (admin && state.dbReady) loadUsers();
   }
 
@@ -1161,6 +1212,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       eb.type = 'button';
       eb.addEventListener('click', openEdit);
       head.appendChild(eb);
+    } else if (!opts.me && p.username && !p.isMe && !(p.brand && state.user && myInitial() === 'FP')) {
+      head.appendChild(followButton(p, function () { if (fcount) fcount.textContent = (p.followers || 0).toLocaleString('sv-SE'); }));
     }
     box.appendChild(head);
 
@@ -1187,9 +1240,14 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     var sum = function (k) { return items.reduce(function (t, i) { return t + (i[k] || 0); }, 0); };
     var stats = el('div', 'p-stats');
-    [[items.length, 'Inlägg'], [sum('likes'), 'Gillningar'], [sum('views'), 'Visningar']].forEach(function (c) {
+    var fcount = null;
+    var statDefs = [[items.length, 'Inlägg'], [sum('likes'), 'Gillningar'], [sum('views'), 'Visningar']];
+    if (p.followers !== undefined) statDefs.unshift([p.following || 0, 'Följer'], [p.followers, 'Följare']);
+    statDefs.forEach(function (c) {
       var sp = el('span');
-      sp.appendChild(el('b', null, c[0].toLocaleString('sv-SE')));
+      var num = el('b', null, c[0].toLocaleString('sv-SE'));
+      if (c[1] === 'Följare') fcount = num;
+      sp.appendChild(num);
       sp.appendChild(document.createTextNode(' ' + c[1]));
       stats.appendChild(sp);
     });
@@ -1728,7 +1786,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
 
   // ---------- Flikar ----------
-  var TITLES = { all: 'Nyheter', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik' };
+  var TITLES = { all: 'Nyheter', following: 'Följer', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik' };
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
   tabs.forEach(function (t) {
     t.addEventListener('click', function () {
@@ -1770,6 +1828,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   function viewItems() {
     var list = state.items.filter(function (i) { return state.filter === 'Alla' || i.category === state.filter; });
     if (state.view === 'saved') list = list.filter(function (i) { return i.saved; });
+    if (state.view === 'following') list = list.filter(function (i) { return state.following[i.authorKey || 'filmpower']; });
     var dir = state.sort === 'old' ? 1 : -1;
     return list.slice().sort(function (a, b) {
       if (state.view === 'popular') return (b.likes - a.likes) || (b.comments - a.comments) || (b.views - a.views) || (b.createdAt - a.createdAt);
@@ -1807,6 +1866,16 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       if (state.view === 'saved') {
         empty.appendChild(el('h3', null, 'Inga sparade inlägg'));
         empty.appendChild(el('p', null, 'Tryck på bokmärket under ett inlägg så hamnar det här.'));
+      } else if (state.view === 'following') {
+        var none = !Object.keys(state.following).length;
+        empty.appendChild(el('h3', null, none ? 'Du följer ingen än' : 'Inga inlägg här än'));
+        empty.appendChild(el('p', null, none ? 'Följ konton så samlas deras inlägg här. Börja med Film Power, som lägger ut dagens filmnyheter varje morgon.' : 'De du följer har inte publicerat något än.'));
+        if (none && myInitial() !== 'FP') {
+          var fp = el('button', 'btn btn-primary btn-small', 'Följ Film Power');
+          fp.type = 'button';
+          fp.addEventListener('click', function () { setFollow('filmpower', true).then(renderFeed); });
+          empty.appendChild(fp);
+        }
       } else {
         empty.appendChild(el('h3', null, 'Inga nyheter än'));
         empty.appendChild(el('p', null, canWrite() ? 'Skriv det första inlägget under fliken Skriv.' : 'Titta in snart. Nya inlägg publiceras löpande.'));
@@ -2394,6 +2463,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var when = new Date(d.last.at).toLocaleString('sv-SE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       t += ' Senast ' + when + ': ' + d.last.posted + ' ' + (d.last.posted === 1 ? 'nyhet' : 'nyheter') + '.';
       if (d.last.failed && d.last.failed.length) t += ' Svarade inte: ' + d.last.failed.join(', ') + '.';
+      if (d.last.error) t += ' Fel från ' + (d.ai === 'claude' ? 'Claude' : 'Groq') + ': ' + d.last.error;
     }
     return t;
   }
@@ -2408,7 +2478,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var parts = [];
       if (d.posted) parts.push(d.posted + ' nya ' + (d.posted === 1 ? 'nyhet' : 'nyheter') + ' publicerade');
       if (d.translated) parts.push(d.translated + ' ' + (d.translated === 1 ? 'äldre nyhet översatt' : 'äldre nyheter översatta') + ' till svenska');
-      setMsg($('bot-msg'), parts.length ? 'Klart! ' + parts.join(' och ') + '.' : 'Inga nya nyheter hittades just nu.', parts.length ? 'ok' : '');
+      if (d.error) setMsg($('bot-msg'), 'AI:n gick inte att nå, så inget publicerades på engelska. Fel: ' + d.error, 'error');
+      else setMsg($('bot-msg'), parts.length ? 'Klart! ' + parts.join(' och ') + '.' : 'Inga nya nyheter hittades just nu.', parts.length ? 'ok' : '');
       if (d.translated && !d.posted) loadNews();
       loadBot();
       if (d.posted && typeof loadNews === 'function') loadNews();
