@@ -88,7 +88,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .login form { margin-top: 1.6rem; text-align: left; }
 .login form .btn { margin-top: .3rem; }
-.login form#login-form { text-align: center; }
+.login form#login-form, .login form#admin-form { text-align: center; }
 .login .switch { font-size: .92rem; text-align: center; }
 .linklike { background: none; border: 0; padding: 0; color: var(--brand); font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .back { display: inline-block; margin-top: 2.5rem; font-size: .92rem; color: var(--muted); }
@@ -176,8 +176,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <p class="lead">Festivaler, jobb, teknik och tips, samlat på ett ställe. Logga in med ditt konto eller med koden du har fått av Film Power.</p>
 
     <div class="seg" aria-label="Sätt att logga in">
-      <button type="button" class="seg-btn" id="mode-user" aria-pressed="true">Användarnamn</button>
-      <button type="button" class="seg-btn" id="mode-code" aria-pressed="false">Kod</button>
+      <button type="button" class="seg-btn" id="mode-member" aria-pressed="true">Medlem</button>
+      <button type="button" class="seg-btn" id="mode-admin" aria-pressed="false">Admin</button>
     </div>
 
     <form id="user-form" novalidate>
@@ -186,6 +186,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       <button class="btn btn-primary" type="submit" id="user-btn">Logga in</button>
       <p class="msg" id="user-msg" role="alert" aria-live="polite"></p>
       <p class="muted switch">Inget konto än? <button type="button" class="linklike" id="show-register">Skapa konto</button></p>
+      <p class="muted switch">Har du fått en kod? <button type="button" class="linklike" id="show-code">Logga in med kod</button></p>
     </form>
 
     <form id="register-form" novalidate hidden>
@@ -202,8 +203,17 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       <input class="code-input" id="code" name="code" placeholder="FP-XXXX-XXXX" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required>
       <button class="btn btn-primary" type="submit" id="login-btn">Logga in</button>
       <p class="msg" id="login-msg" role="alert" aria-live="polite"></p>
+      <p class="muted switch"><button type="button" class="linklike" id="code-back">Logga in med användarnamn i stället</button></p>
     </form>
-    <p class="muted" style="font-size:.92rem">Frågor? Ring Film Power på 070-270 25 51.</p>
+
+    <form id="admin-form" novalidate hidden>
+      <label class="muted" for="admin-code" style="font-size:.9rem">Adminkod</label>
+      <input class="code-input" id="admin-code" type="password" autocomplete="current-password" spellcheck="false" required>
+      <button class="btn btn-primary" type="submit" id="admin-btn">Logga in som admin</button>
+      <p class="msg" id="admin-msg" role="alert" aria-live="polite"></p>
+      <p class="muted switch" style="text-align:center">Har du ett eget konto med adminbehörighet? Välj Medlem och logga in med användarnamn och lösenord, så får du adminverktygen automatiskt.</p>
+    </form>
+    <p class="muted" style="font-size:.92rem;margin-top:1.5rem">Frågor? Ring Film Power på 070-270 25 51.</p>
     <a class="back" href="/">← Till startsidan</a>
   </section>
 
@@ -349,16 +359,32 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   // Växla mellan användarnamn, nytt konto och kod
   function setMode(mode) {
-    $('mode-user').setAttribute('aria-pressed', String(mode !== 'code'));
-    $('mode-code').setAttribute('aria-pressed', String(mode === 'code'));
+    $('mode-member').setAttribute('aria-pressed', String(mode !== 'admin'));
+    $('mode-admin').setAttribute('aria-pressed', String(mode === 'admin'));
     $('user-form').hidden = mode !== 'user';
     $('register-form').hidden = mode !== 'register';
     $('login-form').hidden = mode !== 'code';
+    $('admin-form').hidden = mode !== 'admin';
   }
-  $('mode-user').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
-  $('mode-code').addEventListener('click', function () { setMode('code'); $('code').focus(); });
+  $('mode-member').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
+  $('mode-admin').addEventListener('click', function () { setMode('admin'); $('admin-code').focus(); });
   $('show-register').addEventListener('click', function () { setMode('register'); $('r-name').focus(); });
   $('show-login').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
+  $('show-code').addEventListener('click', function () { setMode('code'); $('code').focus(); });
+  $('code-back').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
+
+  $('admin-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = $('admin-code').value.trim();
+    if (!code) { setMsg($('admin-msg'), 'Skriv in adminkoden.', 'error'); return; }
+    $('admin-btn').disabled = true;
+    setMsg($('admin-msg'), '');
+    api('login', { method: 'POST', body: { code: code, as: 'admin' } }).then(function (user) {
+      $('admin-code').value = '';
+      enterApp(user);
+    }).catch(function (err) { setMsg($('admin-msg'), err.message, 'error'); })
+      .then(function () { $('admin-btn').disabled = false; });
+  });
 
   $('user-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -415,7 +441,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('who-name').textContent = user.label;
     $('who-badge').textContent = admin ? 'Admin' : 'Medlem';
     $('who-badge').className = 'badge' + (admin ? ' admin' : '');
-    $('greeting').textContent = admin ? 'Inloggad som admin' : 'Välkommen, ' + user.label;
+    $('greeting').textContent = admin
+      ? (user.label === 'Admin' ? 'Inloggad som admin' : 'Inloggad som admin, ' + user.label)
+      : 'Välkommen, ' + user.label;
     $('admin-tabs').hidden = !admin;
     $('db-notice').hidden = state.dbReady;
     fillCategorySelect();
@@ -611,13 +639,20 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       info.appendChild(el('b', null, u.username));
       var meta = el('small');
       meta.appendChild(el('span', 'status ' + u.status, STATUS_TEXT[u.status] || u.status));
+      if (u.role === 'admin') meta.appendChild(el('span', 'status pending', 'Admin'));
       meta.appendChild(document.createTextNode('Skapat ' + fmtDate(u.createdAt)));
       info.appendChild(meta);
       row.appendChild(info);
 
       var actions = el('div', 'row-actions');
       if (u.status === 'pending') actions.appendChild(smallButton('Godkänn', 'btn-primary', function () { return setStatus(u.id, 'active'); }));
-      if (u.status === 'active') actions.appendChild(smallButton('Spärra', 'btn-danger', function () { return setStatus(u.id, 'blocked'); }));
+      if (u.status === 'active') {
+        var makeAdmin = u.role !== 'admin';
+        actions.appendChild(smallButton(makeAdmin ? 'Gör till admin' : 'Ta bort admin', 'btn-ghost', function () {
+          return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { role: makeAdmin ? 'admin' : 'member' } }).then(loadUsers);
+        }));
+        actions.appendChild(smallButton('Spärra', 'btn-danger', function () { return setStatus(u.id, 'blocked'); }));
+      }
       if (u.status === 'blocked') actions.appendChild(smallButton('Aktivera', 'btn-ghost', function () { return setStatus(u.id, 'active'); }));
       actions.appendChild(confirmButton('Ta bort', 'Ta bort kontot?', function () {
         return api('users?id=' + encodeURIComponent(u.id), { method: 'DELETE' }).then(loadUsers);

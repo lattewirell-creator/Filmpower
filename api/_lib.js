@@ -184,16 +184,20 @@ function readCookie(req, name) {
 export async function getSession(req) {
   const s = verify(readCookie(req, COOKIE));
   if (!s) return null;
-  if (s.role === 'member') {
-    // Spärrade koder och konton loggas ut direkt.
+  // Konton läses om vid varje anrop, så att spärr och ändrad behörighet gäller direkt.
+  if (s.user) {
     if (!dbReady()) return null;
-    if (s.user) {
-      const raw = await redis('HGET', 'users', s.user);
-      if (!raw || JSON.parse(raw).status !== 'active') return null;
-    } else {
-      const exists = await redis('HEXISTS', 'codes', s.code);
-      if (!exists) return null;
-    }
+    const raw = await redis('HGET', 'users', s.user);
+    if (!raw) return null;
+    const u = JSON.parse(raw);
+    if (u.status !== 'active') return null;
+    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.username };
+  }
+  if (s.role === 'member') {
+    // Spärrade koder loggas ut direkt.
+    if (!dbReady()) return null;
+    const exists = await redis('HEXISTS', 'codes', s.code);
+    if (!exists) return null;
   }
   return s;
 }

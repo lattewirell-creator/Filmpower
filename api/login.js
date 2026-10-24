@@ -1,16 +1,33 @@
 import {
-  handle, send, readBody, requireAppHeader, HttpError, dbReady, redis, rateLimit,
+  handle, send, readBody, requireAppHeader, HttpError, dbReady, redis, pipeline,
   normalizeCode, hashCode, safeEqual, sessionCookie, clientIp,
   usernameKey, hashPassword, checkPassword,
 } from './_lib.js';
+
+const MAX_FAILS = 10; // misslyckade försök per IP och kvart
 
 export default handle(async (req, res) => {
   if (req.method !== 'POST') throw new HttpError(405, 'Använd POST.');
   requireAppHeader(req);
 
   const b = await readBody(req);
-  await rateLimit('rl:login:' + clientIp(req), 10, 900, 'För många försök. Vänta en kvart och prova igen.');
+  const rlKey = 'rl:login:' + clientIp(req);
+  if (dbReady() && Number(await redis('GET', rlKey) || 0) >= MAX_FAILS) {
+    throw new HttpError(429, 'För många felaktiga försök. Vänta en kvart och prova igen.');
+  }
 
+  try {
+    await attempt(b, req, res);
+  } catch (err) {
+    // Bara misslyckade inloggningar räknas mot spärren.
+    if (err instanceof HttpError && err.status === 401 && dbReady()) {
+      await pipeline([['INCR', rlKey], ['EXPIRE', rlKey, 900, 'NX']]);
+    }
+    throw err;
+  }
+});
+
+async function attempt(b, req, res) {
   // Inloggning med användarnamn och lösenord
   if (b.username !== undefined) {
     if (!dbReady()) throw new HttpError(503, 'Databasen är inte kopplad än.');
@@ -26,8 +43,9 @@ export default handle(async (req, res) => {
     if (user.status === 'pending') throw new HttpError(403, 'Ditt konto väntar på att admin godkänner det.');
     if (user.status === 'blocked') throw new HttpError(403, 'Ditt konto är spärrat. Kontakta Film Power.');
 
-    return send(res, 200, { role: 'member', label: user.username }, {
-      'Set-Cookie': sessionCookie(req, { role: 'member', label: user.username, user: key }),
+    const role = user.role === 'admin' ? 'admin' : 'member';
+    return send(res, 200, { role, label: user.username }, {
+      'Set-Cookie': sessionCookie(req, { role, label: user.username, user: key }),
     });
   }
 
@@ -44,6 +62,9 @@ export default handle(async (req, res) => {
     });
   }
 
+  // Från Admin-fliken godtas bara adminkoden.
+  if (b.as === 'admin') throw new HttpError(401, 'Det är inte adminkoden. Är du medlem? Välj Medlem ovanför.');
+
   if (dbReady()) {
     const hash = hashCode(entered);
     const raw = await redis('HGET', 'codes', hash);
@@ -56,4 +77,4 @@ export default handle(async (req, res) => {
   }
 
   throw new HttpError(401, 'Koden stämmer inte. Kolla stavningen och försök igen.');
-});
+}

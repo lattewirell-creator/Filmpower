@@ -16,9 +16,10 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 ## Så används appen
 
-- **Admin:** Gå till `/nyheter/` och logga in med din `ADMIN_CODE`. Under **Skriv nyhet** publicerar du nyheter. Under **Koder** skapar du en personlig kod till varje medlem. Koden visas bara en gång, så kopiera den och skicka den till personen.
+- **Admin:** Gå till `/nyheter/`, välj **Admin** och logga in med din `ADMIN_CODE`. Under **Skriv nyhet** publicerar du nyheter. Under **Koder** skapar du en personlig kod till varje medlem. Koden visas bara en gång, så kopiera den och skicka den till personen.
 - **Medlemmar med konto:** Går till `/nyheter/`, klickar **Skapa konto** och väljer användarnamn och lösenord. Kontot väntar sedan på godkännande. Du godkänner, spärrar eller tar bort konton under fliken **Konton**. Siffran på fliken visar hur många som väntar.
-- **Medlemmar med kod:** Väljer **Kod** på inloggningssidan och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
+- **Fler admins:** Låt personen skapa ett eget konto. Godkänn det under **Konton** och klicka **Gör till admin**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
+- **Medlemmar med kod:** Klickar **Logga in med kod** under **Medlem** och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.
 - **Byta adminkod:** Ändra `ADMIN_CODE` i Vercel och gör en ny Redeploy. Alla som är inloggade loggas då ut.
 
@@ -26,5 +27,5 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 - Koderna sparas som hashar i databasen, inte i klartext.
 - Lösenord sparas med scrypt och unikt salt per konto.
-- Inloggningen är begränsad till 10 försök per kvart per IP-adress.
+- Efter 10 felaktiga inloggningsförsök på en kvart spärras IP-adressen i 15 minuter. Lyckade inloggningar räknas inte.
 - Sessionen ligger i en signerad, HttpOnly-cookie som gäller i 30 dagar.
