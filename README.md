@@ -36,7 +36,7 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 ## Nyhetsboten
 
-Varje morgon runt klockan 06–07 hämtar boten färska filmnyheter från Variety, IndieWire, Deadline, The Hollywood Reporter, No Film School och Cineuropa och publicerar dem som Film Power, med länk till källan. Den tar bara nyheter från de senaste två dygnen och publicerar aldrig samma nyhet två gånger.
+Varje morgon runt klockan 06–07 hämtar boten färska filmnyheter från Variety, IndieWire, Deadline, The Hollywood Reporter, No Film School, Cineuropa, Culture Crave och DiscussingFilm och publicerar dem som Film Power, med länk till källan. Den tar bara nyheter från de senaste två dygnen och publicerar aldrig samma nyhet två gånger.
 
 - **Svenska texter:** Lägg till miljövariabeln `ANTHROPIC_API_KEY` (en API-nyckel från console.anthropic.com) på Vercel och gör en redeploy. Då väljer Claude ut de bästa nyheterna för filmskapare och skriver rubrik och text på svenska. Utan nyckel publiceras originalrubrik och ingress på engelska.
 - **Antal per dag:** Standard är 3. Ändra med miljövariabeln `BOT_POSTS_PER_DAY` (1–10).

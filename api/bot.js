@@ -14,6 +14,8 @@ export const FEEDS = [
   { name: 'The Hollywood Reporter', url: 'https://www.hollywoodreporter.com/c/movies/feed/' },
   { name: 'No Film School', url: 'https://nofilmschool.com/rss.xml' },
   { name: 'Cineuropa', url: 'https://cineuropa.org/en/rss/' },
+  { name: 'Culture Crave', url: 'https://culturecrave.co/feed/' },
+  { name: 'DiscussingFilm', url: 'https://discussingfilm.net/feed/' },
 ];
 const MAX_AGE = 48 * 3600 * 1000;
 const MODEL = 'claude-opus-5-5';
