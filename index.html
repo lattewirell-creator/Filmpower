@@ -12,7 +12,7 @@
 <title>Film Power Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&family=Zilla+Slab:wght@700&display=swap">
 <script>
   // Kameraintro: en gång per besök, aldrig för den som valt minskade animationer.
   (function () {
@@ -155,6 +155,28 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .three { gap: 2rem; }
 }
 
+/* Filmnedräkning och animerad logga */
+.reel-wrap { display: grid; gap: 1.2rem; }
+.screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border-radius: 14px; background: #161613; color: #e9e4d6; box-shadow: 0 30px 60px -30px rgba(0,0,0,.6); isolation: isolate; }
+.screen canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; mix-blend-mode: screen; }
+.screen .vignette { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.65) 100%); }
+.leader { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; }
+.leader svg { width: 100%; height: 100%; }
+.leader .ring { fill: none; stroke: #d9d3c2; }
+.leader .cross { stroke: #d9d3c2; stroke-width: 2; opacity: .7; }
+.leader .sweep { fill: rgba(233,228,214,.16); }
+.leader .num { font-family: var(--display); font-weight: 700; font-size: 230px; fill: #f1ece0; }
+.title-card { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; align-content: center; gap: .6em; background: #0f100e; text-align: center; padding: 1rem; }
+.title-card .wm { font-family: "Zilla Slab", "Rockwell", "Courier New", serif; font-weight: 700; font-size: clamp(2.2rem, 8vw, 5.2rem); line-height: 1; color: #f4f1e8; letter-spacing: -.01em; white-space: nowrap; }
+.title-card .wm .sep { color: #86bb6c; }
+.title-card .wm .ch { opacity: 1; }
+.title-card .wm .caret { display: inline-block; width: .08em; height: .9em; margin-left: .04em; background: #86bb6c; vertical-align: -.08em; opacity: 0; }
+.title-card .tag { margin: 0; font-family: var(--body); font-size: clamp(.9rem, 2.2vw, 1.25rem); letter-spacing: .32em; text-transform: uppercase; color: #b9b5a8; }
+.screen.playing .title-card { opacity: 0; }
+.screen .burn { position: absolute; inset: 0; z-index: 5; background: #fffbe8; opacity: 0; pointer-events: none; }
+.reel-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; }
+.reel-bar p { color: var(--muted); font-size: .95rem; margin: 0; }
+
 /* Kameraintro */
 .intro, .flash { display: none; }
 html.intro-on { overflow: hidden; background: #0b0d0b; }
@@ -260,6 +282,34 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
         <span>Manus från 100 kr</span>
         <span>Filmning från 150 kr</span>
         <span>Ljud och ljus ingår</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="film" aria-label="Film Power, animation">
+    <div class="wrap reel-wrap">
+      <div class="screen" id="screen">
+        <div class="leader" aria-hidden="true">
+          <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+            <line class="cross" x1="0" y1="450" x2="1600" y2="450"/>
+            <line class="cross" x1="800" y1="0" x2="800" y2="900"/>
+            <path class="sweep" id="sweep" d=""/>
+            <circle class="ring" cx="800" cy="450" r="330" stroke-width="6"/>
+            <circle class="ring" cx="800" cy="450" r="290" stroke-width="3"/>
+            <text class="num" id="leader-num" x="800" y="450" text-anchor="middle" dominant-baseline="central">3</text>
+          </svg>
+        </div>
+        <div class="title-card" id="title-card">
+          <div class="wm" id="reel-wm" aria-label="film://power">film<span class="sep">://</span>power</div>
+          <p class="tag" id="reel-tag">Din idé. Vår film.</p>
+        </div>
+        <canvas id="grain" aria-hidden="true"></canvas>
+        <div class="vignette" aria-hidden="true"></div>
+        <div class="burn" id="burn" aria-hidden="true"></div>
+      </div>
+      <div class="reel-bar">
+        <p>Från första nedräkning till sluttext. Så ser det ut när vi gör film.</p>
+        <button class="btn btn-ghost" type="button" id="reel-play">Spela igen</button>
       </div>
     </div>
   </section>
@@ -426,6 +476,126 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
   });
   document.getElementById('intro-skip').addEventListener('click', function () { finish(false); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !done) finish(false); });
+})();
+</script>
+<script>
+// Filmnedräkning 3-2-1 med filmkorn, följt av att loggan skrivs fram.
+(function () {
+  var screen = document.getElementById('screen');
+  if (!screen) return;
+  var canvas = document.getElementById('grain'), ctx = canvas.getContext('2d');
+  var sweep = document.getElementById('sweep'), num = document.getElementById('leader-num');
+  var burn = document.getElementById('burn'), wm = document.getElementById('reel-wm'), tag = document.getElementById('reel-tag');
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var WORD = [['f'], ['i'], ['l'], ['m'], [':', 1], ['/', 1], ['/', 1], ['p'], ['o'], ['w'], ['e'], ['r']];
+  var raf = 0, t0 = 0, playing = false;
+
+  // Lågupplöst brus som skalas upp ger korn som på riktig film.
+  var gw = 384, gh = 216, noise = document.createElement('canvas');
+  noise.width = gw; noise.height = gh;
+  var nctx = noise.getContext('2d'), img = nctx.createImageData(gw, gh);
+  function grain(strength) {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    var d = img.data;
+    for (var i = 0; i < d.length; i += 4) { var v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255 * strength; }
+    nctx.putImageData(img, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(noise, 0, 0, w, h);
+    // Repor och damm
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    if (Math.random() < .5) ctx.fillRect(Math.random() * w, 0, 1, h);
+    for (var k = 0; k < 4; k++) ctx.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 3, 1 + Math.random() * 2);
+  }
+
+  function wedge(frac) {
+    if (frac <= 0) return '';
+    if (frac >= 1) frac = 0.9999;
+    var a = frac * Math.PI * 2 - Math.PI / 2, r = 1200;
+    var x = 800 + r * Math.cos(a), y = 450 + r * Math.sin(a);
+    return 'M800 450 L800 ' + (450 - r) + ' A' + r + ' ' + r + ' 0 ' + (frac > .5 ? 1 : 0) + ' 1 ' + x.toFixed(1) + ' ' + y.toFixed(1) + ' Z';
+  }
+
+  function buildWord(n) {
+    wm.replaceChildren();
+    var sep = null;
+    WORD.forEach(function (c, i) {
+      if (i >= n) return;
+      if (c[1]) { if (!sep) { sep = document.createElement('span'); sep.className = 'sep'; wm.appendChild(sep); } sep.appendChild(document.createTextNode(c[0])); }
+      else { sep = null; wm.appendChild(document.createTextNode(c[0])); }
+    });
+    var caret = document.createElement('span');
+    caret.className = 'caret';
+    wm.appendChild(caret);
+    return caret;
+  }
+
+  function frame(now) {
+    var t = (now - t0) / 1000;
+    if (t < 3) {
+      // Nedräkning: en sekund per siffra
+      var n = 3 - Math.floor(t), f = t % 1;
+      num.textContent = n;
+      sweep.setAttribute('d', wedge(f));
+      screen.style.filter = 'brightness(' + (0.92 + Math.random() * 0.16) + ')';
+      grain(.22);
+    } else if (t < 3.35) {
+      screen.classList.remove('playing');
+      screen.style.filter = '';
+      burn.style.opacity = String(1 - (t - 3) / 0.35);
+      buildWord(0).style.opacity = 1;
+      tag.style.opacity = 0;
+      grain(.16);
+    } else if (t < 5.2) {
+      burn.style.opacity = 0;
+      var shown = Math.min(WORD.length, Math.floor((t - 3.45) / 0.12) + 1);
+      var caret = buildWord(Math.max(0, shown));
+      caret.style.opacity = (Math.floor(t * 3) % 2) ? 1 : 0;
+      tag.style.opacity = Math.max(0, Math.min(1, (t - 4.9) / 0.5));
+      grain(.12);
+    } else if (t < 6.4) {
+      buildWord(WORD.length).style.opacity = (Math.floor(t * 3) % 2) ? 1 : 0;
+      tag.style.opacity = Math.min(1, (t - 4.9) / 0.5);
+      grain(.12 * (1 - (t - 5.2) / 1.2));
+    } else {
+      stop();
+      return;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function stop() {
+    playing = false;
+    cancelAnimationFrame(raf);
+    screen.classList.remove('playing');
+    screen.style.filter = '';
+    burn.style.opacity = 0;
+    buildWord(WORD.length).remove();
+    tag.style.opacity = 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function play() {
+    if (calm) return;
+    cancelAnimationFrame(raf);
+    playing = true;
+    screen.classList.add('playing');
+    tag.style.opacity = 0;
+    t0 = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+
+  document.getElementById('reel-play').addEventListener('click', play);
+  if (calm) { document.getElementById('reel-play').hidden = true; return; }
+  // Spelas automatiskt första gången duken syns. Tills dess visas slutbilden.
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !document.documentElement.classList.contains('intro-on')) { io.disconnect(); play(); }
+    }, { threshold: 0.6 });
+    io.observe(screen);
+  }
+  window.__playReel = play;
 })();
 </script>
 </body>
