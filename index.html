@@ -127,9 +127,6 @@ section.block { padding-block: clamp(4rem, 10vw, 7rem); border-top: 1px solid va
 .item h3 { font-size: 1.5rem; }
 .item p { color: var(--muted); }
 
-.work { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem 3rem; }
-.work .item { padding-top: 1.4rem; border-top: 1px solid var(--line); }
-.work .tag { font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 
 /* Priser */
 .prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3rem; }
@@ -154,7 +151,7 @@ footer { border-top: 1px solid var(--line); padding-block: 2rem; font-size: .9re
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
 
 @media (max-width: 820px) {
-  .three, .work, .prices { grid-template-columns: 1fr; }
+  .three, .prices { grid-template-columns: 1fr; }
   .three { gap: 2rem; }
 }
 
@@ -224,7 +221,6 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
   <nav aria-label="Huvudmeny">
     <a href="#top">Hem</a>
     <a href="#sa-funkar-det">Så funkar det</a>
-    <a href="#arbeten">Arbeten</a>
     <a href="#priser">Priser</a>
     <a href="#kontakt">Kontakt</a>
   </nav>
@@ -291,37 +287,6 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
           <h3>Klippning</h3>
           <p>Vi klipper, färgsätter och lägger ljud. Du får en färdig film att visa upp.</p>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="block" id="arbeten">
-    <div class="wrap">
-      <div class="head">
-        <p class="label">Arbeten</p>
-        <h2>Det här har vi gjort</h2>
-      </div>
-      <div class="work">
-        <article class="item">
-          <span class="tag">Kortfilm</span>
-          <h3>Kortfilm för streaming</h3>
-          <p>Tydlig story och tajt klippning för en publik som scrollar vidare snabbt.</p>
-        </article>
-        <article class="item">
-          <span class="tag">Reklamfilm</span>
-          <h3>Reklamfilm åt ett teknikbolag</h3>
-          <p>En krånglig produkt förklarad enkelt och visuellt, så att kunden fattar direkt.</p>
-        </article>
-        <article class="item">
-          <span class="tag">Musikvideo</span>
-          <h3>Musikvideo med en dansensemble</h3>
-          <p>Koreografi, kamerarörelser och klippning som följer musiken takt för takt.</p>
-        </article>
-        <article class="item">
-          <span class="tag">Dokumentär</span>
-          <h3>Dokumentär om en debutregissör</h3>
-          <p>Ett nära porträtt av någon som tar sina första steg i filmvärlden.</p>
-        </article>
       </div>
     </div>
   </section>
