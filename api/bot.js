@@ -13,8 +13,6 @@ export const FEEDS = [
   { name: 'Deadline', url: 'https://deadline.com/v/film/feed/' },
   { name: 'The Hollywood Reporter', url: 'https://www.hollywoodreporter.com/c/movies/feed/' },
   { name: 'No Film School', url: 'https://nofilmschool.com/rss.xml' },
-  { name: 'Cineuropa', url: 'https://cineuropa.org/en/rss/' },
-  { name: 'Culture Crave', url: 'https://culturecrave.co/feed/' },
   { name: 'DiscussingFilm', url: 'https://discussingfilm.net/feed/' },
 ];
 const MAX_AGE = 48 * 3600 * 1000;
@@ -184,7 +182,8 @@ async function run() {
     const item = {
       id: crypto.randomBytes(6).toString('hex'),
       title: p.title,
-      body: p.body + '\n\nKälla: ' + p.source,
+      body: p.body,
+      source: p.source,
       category: p.category,
       link: p.link,
       image: '',

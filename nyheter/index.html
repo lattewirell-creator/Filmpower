@@ -311,6 +311,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .t-text { white-space: pre-line; overflow-wrap: anywhere; }
 .t-more { color: var(--brand); font-weight: 500; }
 .t-link { display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem; font-size: .9rem; color: var(--brand); text-decoration: none; font-weight: 500; }
+.t-link-host { color: var(--muted); font-weight: 400; }
 .t-link:hover { text-decoration: underline; }
 .t-img { display: block; margin-top: .75rem; width: 100%; max-width: 100%; height: auto; max-height: 34rem; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); }
 .t-actions { display: flex; justify-content: space-between; max-width: 28rem; margin: .5rem 0 0 -.5rem; }
@@ -1806,7 +1807,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     } else text.appendChild(linkify(body));
     main.appendChild(text);
 
-    if (item.link) main.appendChild(linkChip(item.link));
+    if (item.link) main.appendChild(linkChip(item.link, item.source));
     if (item.image) {
       var im = el('img', 't-img');
       im.src = '/api/image?id=' + encodeURIComponent(item.image);
@@ -1827,13 +1828,18 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return art;
   }
 
-  function linkChip(href) {
+  // Länken under ett inlägg. Nyhetsbotens inlägg visar källan, t.ex. "Källa: Variety · variety.com".
+  function linkChip(href, source) {
     var a = el('a', 't-link');
     a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
     a.appendChild(icon('link'));
     var host = href;
     try { host = new URL(href).hostname.replace(/^www\./, ''); } catch (err) {}
-    a.appendChild(document.createTextNode(host));
+    if (source) {
+      a.title = 'Läs hela artikeln hos ' + source;
+      a.appendChild(document.createTextNode('Källa: ' + source));
+      a.appendChild(el('span', 't-link-host', ' · ' + host));
+    } else a.appendChild(document.createTextNode(host));
     return a;
   }
 
@@ -2059,7 +2065,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var dText = el('p', 'd-text');
     dText.appendChild(linkify(item.body));
     box.appendChild(dText);
-    if (item.link) box.appendChild(linkChip(item.link));
+    if (item.link) box.appendChild(linkChip(item.link, item.source));
     if (item.image) {
       var im = el('img', 'd-img');
       im.src = '/api/image?id=' + encodeURIComponent(item.image);

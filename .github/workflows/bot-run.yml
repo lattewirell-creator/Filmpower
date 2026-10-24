@@ -1,0 +1,17 @@
+name: Kör nyhetsboten nu
+# Startar dagens körning på filmpower.vercel.app direkt, i stället för att vänta till morgonen.
+on:
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vänta in senaste deployen
+        run: sleep 120
+      - name: Kör boten
+        run: |
+          code=$(curl -s -o out.json -w '%{http_code}' -A 'vercel-cron/1.0' ${CRON_SECRET:+-H "Authorization: Bearer $CRON_SECRET"} https://filmpower.vercel.app/api/bot)
+          echo "HTTP $code"; cat out.json; echo
+          test "$code" = 200
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
