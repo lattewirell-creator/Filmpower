@@ -64,6 +64,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .side nav a { display: block; padding: .6rem .85rem; border-radius: 8px; text-decoration: none; color: var(--muted); font-size: 1rem; transition: background-color .15s ease, color .15s ease; }
 .side nav a:hover { color: var(--ink); background: var(--soft); }
 .side nav a.active { color: var(--ink); background: var(--soft); font-weight: 500; }
+.news-link { display: grid; gap: .1rem; padding: .9rem 1rem; border-radius: 10px; border: 1px solid var(--line); text-decoration: none; transition: border-color .15s ease; }
+.news-link:hover { border-color: var(--brand); }
+.news-link span { font-weight: 500; }
+.news-link small { color: var(--brand); font-size: .85rem; }
 .side-foot { margin-top: auto; display: grid; gap: 1rem; }
 .side-foot .label { color: var(--muted); }
 .side-foot .tel { font-family: var(--display); font-size: 1.35rem; text-decoration: none; font-variant-numeric: tabular-nums; }
@@ -160,6 +164,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     <a href="#priser">Priser</a>
     <a href="#kontakt">Kontakt</a>
   </nav>
+  <a class="news-link" href="/nyheter/">
+    <span>Nyheter för filmskapare</span>
+    <small>Logga in med din kod →</small>
+  </a>
   <div class="side-foot">
     <span class="label">Ring oss</span>
     <a class="tel" href="tel:+46702702551">070-270 25 51</a>
@@ -315,7 +323,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
   side.addEventListener('click', function (e) { if (e.target.closest('a') && mobile.matches) setMenu(false); });
 
-  var links = Array.prototype.slice.call(side.querySelectorAll('nav a'));
+  var links = Array.prototype.slice.call(side.querySelectorAll('nav a[href^="#"]'));
   var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
   function markActive() {
     var y = window.scrollY + window.innerHeight * 0.35, idx = 0;
