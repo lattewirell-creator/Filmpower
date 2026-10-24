@@ -311,6 +311,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .t-text { white-space: pre-line; overflow-wrap: anywhere; }
 .t-more { color: var(--brand); font-weight: 500; }
 .t-link { display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem; font-size: .9rem; color: var(--brand); text-decoration: none; font-weight: 500; }
+.t-link svg { width: 1rem; height: 1rem; flex: none; }
 .t-link-host { color: var(--muted); font-weight: 400; }
 .t-link:hover { text-decoration: underline; }
 .t-img { display: block; margin-top: .75rem; width: 100%; max-width: 100%; height: auto; max-height: 34rem; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); }
@@ -1837,8 +1838,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     try { host = new URL(href).hostname.replace(/^www\./, ''); } catch (err) {}
     if (source) {
       a.title = 'Läs hela artikeln hos ' + source;
-      a.appendChild(document.createTextNode('Källa: ' + source));
-      a.appendChild(el('span', 't-link-host', ' · ' + host));
+      var t = el('span', null, 'Källa: ' + source);
+      t.appendChild(el('span', 't-link-host', ' · ' + host));
+      a.appendChild(t);
     } else a.appendChild(document.createTextNode(host));
     return a;
   }

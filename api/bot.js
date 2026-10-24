@@ -53,6 +53,18 @@ function tag(xml, name) {
   return m ? m[1] : '';
 }
 
+// Artikelbilden ur ett RSS-inlägg: media:content, media:thumbnail, enclosure eller första <img> i texten.
+function imageUrl(block) {
+  const pick = (re) => { const m = block.match(re); return m ? m[1].replace(/&amp;/g, '&') : ''; };
+  return pick(/<media:content[^>]*url="([^"]+)"[^>]*(?:medium="image"|type="image\/)/i)
+    || pick(/<media:content[^>]*(?:medium="image"|type="image\/)[^>]*url="([^"]+)"/i)
+    || pick(/<media:thumbnail[^>]*url="([^"]+)"/i)
+    || pick(/<enclosure[^>]*url="([^"]+)"[^>]*type="image\//i)
+    || pick(/<enclosure[^>]*type="image\/[^"]*"[^>]*url="([^"]+)"/i)
+    || pick(/<img[^>]*src=["'](https?:[^"']+)["']/i)
+    || pick(/&lt;img[^&]*?src=(?:&quot;|")(https?:[^&"]+)/i);
+}
+
 export function parseFeed(xml, source) {
   const items = [];
   for (const m of xml.matchAll(/<(item|entry)[\s>][\s\S]*?<\/\1>/gi)) {
@@ -63,7 +75,8 @@ export function parseFeed(xml, source) {
     const summary = text(tag(block, 'description') || tag(block, 'summary') || tag(block, 'content:encoded')).slice(0, 600);
     const when = Date.parse(text(tag(block, 'pubDate') || tag(block, 'published') || tag(block, 'updated') || tag(block, 'dc:date')));
     if (!title || !/^https?:\/\//.test(link)) continue;
-    items.push({ source, title: title.slice(0, 200), link, summary, publishedAt: Number.isFinite(when) ? when : 0 });
+    const image = imageUrl(block);
+    items.push({ source, title: title.slice(0, 200), link, summary, image: /^https:\/\//.test(image) ? image : '', publishedAt: Number.isFinite(when) ? when : 0 });
   }
   return items;
 }
@@ -151,6 +164,41 @@ function pickPlain(candidates, count) {
   return out;
 }
 
+// ---------- Bilder ----------
+
+const MAX_IMAGE_BYTES = 640_000; // Ryms som data-URL under appens bildtak.
+
+// Ber om en mindre version (WordPress-sajter skalar om med ?w=), annars originalet.
+function smaller(url) {
+  try {
+    const u = new URL(url);
+    if (u.searchParams.has('w') || /\.wp\.com$|wordpress|variety|deadline|hollywoodreporter|indiewire/.test(u.hostname)) {
+      u.searchParams.set('w', '1000');
+      u.searchParams.delete('h');
+      u.searchParams.delete('resize');
+      u.searchParams.delete('fit');
+      u.searchParams.delete('crop');
+      return [u.toString(), url];
+    }
+  } catch { /* ogiltig adress */ }
+  return [url];
+}
+
+export async function fetchImage(url) {
+  if (!url) return '';
+  for (const u of smaller(url)) {
+    try {
+      const r = await fetch(u, { headers: { 'user-agent': 'FilmPowerNewsBot/1.0 (+https://filmpower.vercel.app)', accept: 'image/webp,image/jpeg,image/png' }, signal: AbortSignal.timeout(8000) });
+      const type = (r.headers.get('content-type') || '').split(';')[0].trim();
+      if (!r.ok || !/^image\/(jpeg|png|webp)$/.test(type)) continue;
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > MAX_IMAGE_BYTES || buf.length < 2000) continue;
+      return `data:${type};base64,${buf.toString('base64')}`;
+    } catch { /* prova nästa */ }
+  }
+  return '';
+}
+
 // ---------- Körning ----------
 
 async function run() {
@@ -176,6 +224,15 @@ async function run() {
     if (!picked.length) picked = pickPlain(candidates, count);
   }
 
+  // Hämta artikelbilderna och spara dem en och en (varje bild är ett eget, stort anrop).
+  const images = await Promise.all(picked.map((p) => fetchImage(p.image)));
+  const imageIds = [];
+  for (const data of images) {
+    if (!data) { imageIds.push(''); continue; }
+    const id = crypto.randomBytes(8).toString('hex');
+    try { await redis('SET', 'img:' + id, data); imageIds.push(id); } catch (err) { console.error('Nyhetsboten bild:', err); imageIds.push(''); }
+  }
+
   // Lite olika tider, så att inläggen hamnar i rätt ordning i flödet.
   const cmds = [];
   picked.forEach((p, i) => {
@@ -186,7 +243,7 @@ async function run() {
       source: p.source,
       category: p.category,
       link: p.link,
-      image: '',
+      image: imageIds[i],
       author: 'Film Power',
       authorKey: '',
       bot: true,
@@ -197,7 +254,7 @@ async function run() {
   });
   if (cmds.length) await pipeline(cmds);
 
-  const status = { at: now, posted: picked.length, mode, found: all.length, failed };
+  const status = { at: now, posted: picked.length, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }
