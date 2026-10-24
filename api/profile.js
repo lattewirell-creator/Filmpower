@@ -43,6 +43,7 @@ export default handle(async (req, res) => {
       role: u.role === 'admin' ? 'admin' : 'member',
       createdAt: u.createdAt,
       bio: u.bio || '',
+      banner: u.banner || '',
       affiliate: Boolean(u.affiliate),
       authorKey: key,
     };

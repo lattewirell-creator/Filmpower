@@ -5,6 +5,7 @@ import {
 import crypto from 'node:crypto';
 
 const MAX_AVATAR_CHARS = 300_000;
+const MAX_BANNER_CHARS = 700_000;
 
 // Den inloggades egen profil: visa, byta visningsnamn och byta lösenord.
 export default handle(async (req, res) => {
@@ -22,6 +23,7 @@ export default handle(async (req, res) => {
       role: s.role,
       verified: Boolean(u && u.verified),
       avatar: u ? u.avatar || '' : '',
+      banner: u ? u.banner || '' : '',
       bio: u ? u.bio || '' : '',
       anon: Boolean(s.anon),
       createdAt: u ? u.createdAt : null,
@@ -32,7 +34,7 @@ export default handle(async (req, res) => {
 
   requireAppHeader(req);
   if (req.method !== 'PATCH') throw new HttpError(405, 'Metoden stöds inte.');
-  const b = await readBody(req, 400_000);
+  const b = await readBody(req, 900_000);
 
   // Anonymt läge sparas i sessionen och kan slås på eller av utan att logga ut.
   if (b.anon !== undefined) {
@@ -46,6 +48,19 @@ export default handle(async (req, res) => {
 
   if (!u) throw new HttpError(400, 'Bara den som har ett eget konto kan ändra namn och lösenord.');
   const oldAvatar = u.avatar || '';
+  const oldBanner = u.banner || '';
+
+  if (b.banner !== undefined) {
+    if (b.banner === null || b.banner === '') {
+      u.banner = '';
+    } else {
+      const data = String(b.banner);
+      if (!IMAGE_RE.test(data)) throw new HttpError(400, 'Bannern måste vara JPG, PNG eller WebP.');
+      if (data.length > MAX_BANNER_CHARS) throw new HttpError(413, 'Bannern är för stor. Prova en mindre bild.');
+      u.banner = crypto.randomBytes(8).toString('hex');
+      await redis('SET', 'img:' + u.banner, data);
+    }
+  }
 
   if (b.avatar !== undefined) {
     if (b.avatar === null || b.avatar === '') {
@@ -82,5 +97,6 @@ export default handle(async (req, res) => {
 
   await redis('HSET', 'users', s.user, JSON.stringify(u));
   if (oldAvatar && oldAvatar !== u.avatar) await redis('DEL', 'img:' + oldAvatar);
-  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', bio: u.bio || '' });
+  if (oldBanner && oldBanner !== u.banner) await redis('DEL', 'img:' + oldBanner);
+  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', banner: u.banner || '', bio: u.bio || '' });
 });
