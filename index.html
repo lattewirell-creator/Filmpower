@@ -78,7 +78,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .news-link span { font-weight: 500; }
 .side-foot { margin-top: auto; display: grid; gap: 1rem; }
 .side-foot .label { color: var(--muted); }
-.side-foot .tel { font-family: var(--display); font-size: 1.35rem; text-decoration: none; font-variant-numeric: tabular-nums; }
+.side-foot .tel { font-family: var(--body); font-size: .92rem; font-weight: 500; text-decoration: none; overflow-wrap: anywhere; }
+.side-foot .tel:hover { color: var(--brand); }
 .side-foot .btn { width: 100%; }
 .content { margin-left: var(--side-w); min-width: 0; }
 
@@ -145,7 +146,7 @@ section.block { padding-block: clamp(4rem, 10vw, 7rem); border-top: 1px solid va
 .contact { text-align: center; }
 .contact h2 { font-size: clamp(2.4rem, 6vw, 4rem); letter-spacing: -.02em; max-width: 16ch; margin: 1rem auto 0; }
 .contact p.lead { margin: 1.4rem auto 0; max-width: 32rem; color: var(--muted); font-size: 1.15rem; }
-.phone { display: inline-block; margin-top: 2.2rem; font-family: var(--display); font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: .01em; color: var(--brand); text-decoration: none; font-variant-numeric: tabular-nums; }
+.phone { display: inline-block; max-width: 100%; margin-top: 2.2rem; font-family: var(--display); font-size: clamp(1.25rem, 5vw, 2.4rem); letter-spacing: .01em; color: var(--brand); text-decoration: none; overflow-wrap: anywhere; }
 .copy { margin-top: 1rem; }
 .hint { margin-top: .8rem; font-size: .9rem; color: var(--muted); min-height: 1.4em; }
 
@@ -231,8 +232,8 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
     <span>Nyheter för filmskapare</span>
   </a>
   <div class="side-foot">
-    <span class="label">Ring oss</span>
-    <a class="tel" href="tel:+46702702551">070-270 25 51</a>
+    <span class="label">Mejla oss</span>
+    <a class="tel" href="mailto:FILMPOWER.vercel@gmail.com">FILMPOWER.vercel@gmail.com</a>
     <a class="btn btn-primary" href="#kontakt">Berätta om din idé</a>
   </div>
 </aside>
@@ -346,17 +347,17 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
           <div class="row"><div><b>Långfilm</b><small>Cirka 45–60 min, med ljud och ljus</small></div><span class="price">500 kr</span></div>
         </div>
       </div>
-      <p class="price-note">Klippning prissätts efter filmens längd. Ring så får du ett pris direkt.</p>
+      <p class="price-note">Klippning prissätts efter filmens längd. Mejla oss så får du ett pris direkt.</p>
     </div>
   </section>
 
   <section class="block contact" id="kontakt">
     <div class="wrap">
       <p class="label">Kontakt</p>
-      <h2>Har du en idé? Ring oss.</h2>
+      <h2>Har du en idé? Mejla oss.</h2>
       <p class="lead">Berätta vad du vill göra så berättar vi hur vi kan hjälpa dig. Det kostar inget att fråga.</p>
-      <a class="phone" href="tel:+46702702551" id="phone">070-270 25 51</a>
-      <div class="copy"><button class="btn btn-ghost" type="button" id="copy-btn">Kopiera numret</button></div>
+      <a class="phone" href="mailto:FILMPOWER.vercel@gmail.com" id="phone">FILMPOWER.vercel@gmail.com</a>
+      <div class="copy"><button class="btn btn-ghost" type="button" id="copy-btn">Kopiera adressen</button></div>
       <p class="hint" id="copy-hint" role="status" aria-live="polite"></p>
     </div>
   </section>
@@ -365,7 +366,7 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
 <footer>
   <div class="wrap">
     <span>© 2026 Film Power · Film studio</span>
-    <span>070-270 25 51</span>
+    <span>FILMPOWER.vercel@gmail.com</span>
   </div>
 </footer>
 </div>
@@ -399,12 +400,12 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
 (function () {
   var btn = document.getElementById('copy-btn'), hint = document.getElementById('copy-hint');
   btn.addEventListener('click', function () {
-    var num = '070-270 25 51';
-    var done = function () { hint.textContent = 'Numret är kopierat.'; };
+    var num = 'FILMPOWER.vercel@gmail.com';
+    var done = function () { hint.textContent = 'Adressen är kopierad.'; };
     var fallback = function () {
       var r = document.createRange(); r.selectNodeContents(document.getElementById('phone'));
       var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-      hint.textContent = 'Numret är markerat. Kopiera med Ctrl+C eller Cmd+C.';
+      hint.textContent = 'Adressen är markerad. Kopiera med Ctrl+C eller Cmd+C.';
     };
     try { navigator.clipboard.writeText(num).then(done, fallback); } catch (e) { fallback(); }
   });
