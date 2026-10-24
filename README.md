@@ -25,7 +25,8 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Verifiering:** Under **Konton** klickar du **Verifiera** på ett godkänt konto. Personen får en grön bock och kan publicera egna inlägg under **Skriv**. Inläggen visas med personens eget namn och profilbild. Man kan ta bort sina egna inlägg. Bara admin kan fästa inlägg.
 - **Kommentarer:** Alla inloggade kan kommentera och svara på kommentarer med **Svara**.
 - **Profiler:** Fliken **Medlemmar** listar alla godkända medlemmar med sökruta. Klicka på en person, eller på någons profilbild eller namn på ett inlägg eller vid en kommentar, för att se profilen och personens inlägg. Film Power har en egen profil.
-- **Mitt konto:** Klicka på ditt namn uppe till höger. Där byter du profilbild, visningsnamn och lösenord. Ändringarna syns även på gamla inlägg och kommentarer.
+- **Mitt konto:** Klicka på ditt namn uppe till höger. Profilen ser ut som på Twitter med banner, profilbild, bio och flikarna Inlägg, Gillade och Sparade. Under **Redigera profil** byter du profilbild, namn, bio och lösenord.
+- **Anonymt läge:** Kryssa i **Logga in anonymt** vid inloggningen, eller slå på det under Redigera profil. Kommentarerna visas då som **Anonym** utan namn och bild. Admin ser fortfarande vem som skrivit. Inlägg publiceras alltid med namn.
 - **Fler admins:** Låt personen skapa ett eget konto. Godkänn det under **Konton** och klicka **Gör till admin**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
 - **Medlemmar med kod:** Klickar **Logga in med kod** under **Medlem** och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.

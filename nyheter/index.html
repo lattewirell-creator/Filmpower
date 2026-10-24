@@ -154,8 +154,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .profile-txt .row { display: flex; align-items: center; gap: .35rem; }
 .profile-txt b { font-size: 1.45rem; font-weight: 600; overflow-wrap: anywhere; }
 .profile-txt .handle { color: var(--muted); }
-.acc-badges { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
-.acc-badges .status { margin: 0; }
 .acc-section { padding-block: 1.6rem; border-top: 1px solid var(--line); margin-top: 1.6rem; }
 .acc-section h3 { font-family: var(--body); font-size: 1.15rem; font-weight: 600; margin-bottom: .2rem; }
 .acc-section .form { padding-top: .6rem; }
@@ -182,6 +180,66 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .member .m-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .member .handle { color: var(--muted); font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .member .status { margin: 0; }
+/* Profil i Twitter-stil */
+.detail-head .dh-txt { display: grid; line-height: 1.2; min-width: 0; }
+.detail-head .dh-txt h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-head .dh-txt .muted { font-size: .85rem; }
+.cover { position: relative; height: clamp(8rem, 24vw, 12rem); margin-inline: -.75rem; background: linear-gradient(135deg, #1e3a17 0%, #3d7a2c 55%, #86bb6c 100%); overflow: hidden; }
+.cover.brand { background: linear-gradient(135deg, #0d0f0c 0%, #1d2a18 55%, #3d7a2c 100%); }
+.cover::before, .cover::after { content: ""; position: absolute; left: 0; right: 0; height: 12px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.2) 0 16px, transparent 16px 32px); }
+.cover::before { top: 10px; } .cover::after { bottom: 10px; }
+@media (min-width: 760px) { .cover { border-radius: 0 0 14px 14px; } }
+.p-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-top: calc(-1 * clamp(2.8rem, 7.5vw, 4.2rem)); position: relative; }
+.avatar.p-avatar { width: clamp(5.6rem, 15vw, 8.4rem); height: clamp(5.6rem, 15vw, 8.4rem); font-size: clamp(1.8rem, 4.5vw, 2.8rem); border: 4px solid var(--bg); box-sizing: border-box; }
+.p-head .btn { margin-bottom: .3rem; }
+.p-name { display: flex; align-items: center; gap: .35rem; margin-top: .7rem; font-size: 1.45rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.p-name .verified { width: 1.3rem; height: 1.3rem; }
+.p-handle { color: var(--muted); }
+.p-bio { margin-top: .75rem; white-space: pre-line; overflow-wrap: anywhere; }
+.p-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.1rem; margin-top: .7rem; color: var(--muted); font-size: .93rem; }
+.p-meta > span:not(.status) { display: inline-flex; align-items: center; gap: .35rem; }
+.p-meta svg { width: 1.05rem; height: 1.05rem; }
+.p-meta .status { margin: 0; }
+.status.anon-chip { border-color: var(--muted); color: var(--ink); }
+.p-stats { display: flex; flex-wrap: wrap; gap: .3rem 1.3rem; margin-top: .7rem; color: var(--muted); font-size: .95rem; }
+.p-stats b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.p-tabs { display: flex; margin-top: 1.1rem; border-bottom: 1px solid var(--line); }
+.p-tab { flex: 1; position: relative; background: none; border: 0; padding: .95rem .5rem; color: var(--muted); font-weight: 500; cursor: pointer; }
+.p-tab:hover { background: color-mix(in srgb, var(--soft) 60%, transparent); color: var(--ink); }
+.p-tab[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+.p-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 3.5rem; height: 4px; border-radius: 2px; background: var(--brand); }
+.avatar.anon { background: var(--line); color: var(--muted); font-family: var(--body); font-weight: 600; }
+
+/* Redigera profil */
+.modal-back { position: fixed; inset: 0; z-index: 60; display: grid; place-items: start center; overflow-y: auto; background: rgba(0, 0, 0, .55); padding: max(2.5rem, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 2.5rem max(16px, env(safe-area-inset-left, 0px)); }
+.modal { width: min(38rem, 100%); background: var(--bg); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
+.modal-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: .8rem; padding: .6rem 1rem; background: var(--bg); border-bottom: 1px solid var(--line); }
+.modal-head h2 { flex: 1; font-family: var(--body); font-size: 1.2rem; font-weight: 600; }
+.modal-head .icon-btn { color: var(--ink); }
+.modal-body { padding: 0 1.1rem 1.6rem; }
+.edit-cover { height: 7.5rem; margin-inline: -1.1rem; border-radius: 0; }
+.edit-avatar-row { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-top: -2.6rem; position: relative; }
+.edit-avatar-row .avatar.big { width: 5.4rem; height: 5.4rem; border: 4px solid var(--bg); box-sizing: border-box; }
+.edit-avatar-row .avatar-actions { margin-top: 0; margin-bottom: .2rem; }
+.bio-input { min-height: 5.5rem !important; }
+.edit-section { border-top: 1px solid var(--line); margin-top: 1.4rem; padding-top: 1.2rem; }
+.edit-section h3 { font-family: var(--body); font-size: 1.1rem; font-weight: 600; margin-bottom: .2rem; }
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; }
+.switch-row span { display: grid; gap: .15rem; }
+.switch-row small, .check-row small { color: var(--muted); font-size: .88rem; }
+.toggle { appearance: none; -webkit-appearance: none; flex: none; width: 2.9rem; height: 1.65rem; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background-color .15s ease; margin: 0; }
+.toggle::before { content: ""; position: absolute; top: .2rem; left: .2rem; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .15s ease; }
+.toggle:checked { background: var(--brand); }
+.toggle:checked::before { transform: translateX(1.25rem); }
+.toggle:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.check-row { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; font-size: .95rem; }
+.check-row input { margin-top: .3rem; accent-color: var(--brand); width: 1.05rem; height: 1.05rem; flex: none; }
+.check-row span { display: grid; gap: .1rem; }
+@media (max-width: 560px) {
+  .modal-back { padding: 0; }
+  .modal { border-radius: 0; min-height: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .toggle, .toggle::before { transition: none; } }
 .c-actions { display: flex; gap: 1rem; margin-top: .3rem; }
 .c-reply { background: none; border: 0; padding: 0; color: var(--muted); font-size: .85rem; cursor: pointer; }
 .c-reply:hover { color: var(--brand); text-decoration: underline; }
@@ -333,6 +391,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <form id="user-form" novalidate>
       <div class="field"><label for="u-name">Användarnamn</label><input class="input" id="u-name" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
       <div class="field"><label for="u-pass">Lösenord</label><input class="input" id="u-pass" type="password" autocomplete="current-password" required></div>
+      <label class="check-row"><input type="checkbox" id="u-anon"> <span><b>Logga in anonymt</b><small>Dina kommentarer visas som Anonym.</small></span></label>
       <button class="btn btn-primary" type="submit" id="user-btn">Logga in</button>
       <p class="msg" id="user-msg" role="alert" aria-live="polite"></p>
       <p class="muted switch">Inget konto än? <button type="button" class="linklike" id="show-register">Skapa konto</button></p>
@@ -351,6 +410,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <form id="login-form" novalidate hidden>
       <label class="muted" for="code" style="font-size:.9rem">Din kod</label>
       <input class="code-input" id="code" name="code" placeholder="FP-XXXX-XXXX" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required>
+      <label class="check-row" style="text-align:left"><input type="checkbox" id="c-anon"> <span><b>Logga in anonymt</b><small>Dina kommentarer visas som Anonym.</small></span></label>
       <button class="btn btn-primary" type="submit" id="login-btn">Logga in</button>
       <p class="msg" id="login-msg" role="alert" aria-live="polite"></p>
       <p class="muted switch"><button type="button" class="linklike" id="code-back">Logga in med användarnamn i stället</button></p>
@@ -429,62 +489,18 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     <div id="panel-profile" hidden>
       <div class="detail-head">
-        <button class="icon-btn" type="button" id="prof-back" aria-label="Tillbaka">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
-        <div class="who-txt" style="display:grid;line-height:1.2">
-          <h2 id="prof-title">Profil</h2>
-          <span class="muted" style="font-size:.85rem" id="prof-count"></span>
-        </div>
+        <button class="icon-btn" type="button" id="prof-back" aria-label="Tillbaka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="dh-txt"><h2 id="prof-title">Profil</h2><span class="muted" id="prof-count"></span></div>
       </div>
       <div id="prof-body"></div>
     </div>
 
     <div id="panel-account" hidden>
       <div class="detail-head">
-        <button class="icon-btn" type="button" id="acc-back" aria-label="Tillbaka">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
-        <h2>Mitt konto</h2>
+        <button class="icon-btn" type="button" id="acc-back" aria-label="Tillbaka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="dh-txt"><h2 id="acc-title">Mitt konto</h2><span class="muted" id="acc-count"></span></div>
       </div>
-      <div class="profile">
-        <div class="avatar big" id="acc-avatar"></div>
-        <div class="profile-txt">
-          <span class="row"><b id="acc-name"></b></span>
-          <span class="handle" id="acc-handle"></span>
-        </div>
-      </div>
-      <div class="avatar-actions" id="avatar-actions" hidden>
-        <label class="btn btn-ghost btn-small" for="acc-avatar-file">Byt profilbild</label>
-        <input id="acc-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
-        <button class="btn btn-ghost btn-small" type="button" id="acc-avatar-remove" hidden>Ta bort bild</button>
-        <span class="msg" id="avatar-msg" role="status" aria-live="polite"></span>
-      </div>
-      <div class="acc-badges" id="acc-badges"></div>
-      <div class="stats" id="acc-stats" style="margin-top:1.4rem"></div>
-
-      <div class="acc-section" id="acc-name-section" hidden>
-        <h3>Ändra namn</h3>
-        <p class="muted" style="font-size:.92rem">Namnet syns i dina kommentarer. Du loggar fortfarande in med ditt användarnamn.</p>
-        <form class="form" id="name-form" novalidate>
-          <div class="field"><label for="acc-display">Visningsnamn</label><input class="input" id="acc-display" maxlength="30" autocomplete="name"></div>
-          <div class="form-actions"><button class="btn btn-primary btn-small" type="submit" id="name-btn">Spara namn</button><p class="msg" id="name-msg" role="status" aria-live="polite"></p></div>
-        </form>
-      </div>
-
-      <div class="acc-section" id="acc-pw-section" hidden>
-        <h3>Byt lösenord</h3>
-        <form class="form" id="pw-form" novalidate>
-          <div class="field"><label for="pw-current">Nuvarande lösenord</label><input class="input" id="pw-current" type="password" autocomplete="current-password"></div>
-          <div class="row2">
-            <div class="field"><label for="pw-new">Nytt lösenord</label><input class="input" id="pw-new" type="password" autocomplete="new-password" minlength="8"></div>
-            <div class="field"><label for="pw-new2">Upprepa nytt lösenord</label><input class="input" id="pw-new2" type="password" autocomplete="new-password"></div>
-          </div>
-          <div class="form-actions"><button class="btn btn-primary btn-small" type="submit" id="pw-btn">Byt lösenord</button><p class="msg" id="pw-msg" role="status" aria-live="polite"></p></div>
-        </form>
-      </div>
-
-      <p class="notice acc-section" id="acc-note" hidden style="border-top:0"></p>
+      <div id="acc-view"></div>
     </div>
 
     <div id="panel-write" role="tabpanel" hidden>
@@ -561,6 +577,56 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   </section>
 </main>
 
+<div class="modal-back" id="edit-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <div class="modal-head">
+      <button class="icon-btn" type="button" id="edit-close" aria-label="Stäng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <h2 id="edit-title">Redigera profil</h2>
+      <button class="btn btn-primary btn-small" type="submit" form="profile-form" id="profile-save">Spara</button>
+    </div>
+    <div class="modal-body">
+      <div id="edit-profile-part">
+        <div class="cover edit-cover" aria-hidden="true"></div>
+        <div class="edit-avatar-row">
+          <div class="avatar big" id="acc-avatar"></div>
+          <div class="avatar-actions" id="avatar-actions">
+            <label class="btn btn-ghost btn-small" for="acc-avatar-file">Byt profilbild</label>
+            <input id="acc-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
+            <button class="btn btn-ghost btn-small" type="button" id="acc-avatar-remove" hidden>Ta bort bild</button>
+          </div>
+        </div>
+        <p class="msg" id="avatar-msg" role="status" aria-live="polite"></p>
+        <form class="form" id="profile-form" novalidate>
+          <div class="field"><label for="acc-display">Namn</label><input class="input" id="acc-display" maxlength="30" autocomplete="name"></div>
+          <div class="field">
+            <label for="acc-bio">Bio</label>
+            <textarea class="input bio-input" id="acc-bio" maxlength="160" rows="3" placeholder="Berätta kort om dig och vad du filmar"></textarea>
+            <span class="help" id="bio-count">0 / 160</span>
+          </div>
+          <p class="msg" id="name-msg" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <div class="edit-section" id="anon-part">
+        <label class="switch-row" for="acc-anon">
+          <span><b>Anonymt läge</b><small>Dina kommentarer visas som Anonym, utan namn och bild. Admin kan fortfarande se vem du är.</small></span>
+          <input type="checkbox" class="toggle" id="acc-anon">
+        </label>
+      </div>
+      <div class="edit-section" id="pw-part">
+        <h3>Byt lösenord</h3>
+        <form class="form" id="pw-form" novalidate>
+          <div class="field"><label for="pw-current">Nuvarande lösenord</label><input class="input" id="pw-current" type="password" autocomplete="current-password"></div>
+          <div class="row2">
+            <div class="field"><label for="pw-new">Nytt lösenord</label><input class="input" id="pw-new" type="password" autocomplete="new-password" minlength="8"></div>
+            <div class="field"><label for="pw-new2">Upprepa nytt lösenord</label><input class="input" id="pw-new2" type="password" autocomplete="new-password"></div>
+          </div>
+          <div class="form-actions"><button class="btn btn-ghost btn-small" type="submit" id="pw-btn">Byt lösenord</button><p class="msg" id="pw-msg" role="status" aria-live="polite"></p></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <footer>© 2026 Film Power · <a href="/">filmpower</a></footer>
 
@@ -584,6 +650,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
     trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+    cal: '<rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/>',
   };
   function icon(name, extra) {
     var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -745,7 +812,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     e.preventDefault();
     var code = $('code').value.trim();
     if (!code) { setMsg($('login-msg'), 'Skriv in din kod.', 'error'); return; }
-    loginWith(this, $('login-btn'), $('login-msg'), { code: code }, function () { $('code').value = ''; });
+    loginWith(this, $('login-btn'), $('login-msg'), { code: code, anon: $('c-anon').checked }, function () { $('code').value = ''; });
   });
 
   $('admin-form').addEventListener('submit', function (e) {
@@ -759,7 +826,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     e.preventDefault();
     var username = $('u-name').value.trim(), password = $('u-pass').value;
     if (!username || !password) { setMsg($('user-msg'), 'Fyll i användarnamn och lösenord.', 'error'); return; }
-    loginWith(this, $('user-btn'), $('user-msg'), { username: username, password: password }, function () { $('u-pass').value = ''; });
+    loginWith(this, $('user-btn'), $('user-msg'), { username: username, password: password, anon: $('u-anon').checked }, function () { $('u-pass').value = ''; });
   });
 
   $('register-form').addEventListener('submit', function (e) {
@@ -781,7 +848,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   $('logout-btn').addEventListener('click', function () {
     api('logout', { method: 'POST' }).catch(function () {}).then(function () {
-      state.user = null; state.items = []; state.current = null;
+      closeEdit();
+      state.user = null; state.items = []; state.current = null; state.account = null;
       $('who').hidden = true;
       ['feed', 'post-detail', 'code-list', 'user-list', 'stats', 'top-list'].forEach(function (id) { $(id).replaceChildren(); });
       $('pending-count').hidden = true;
@@ -823,89 +891,140 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   function renderWho() {
     var u = state.user, b = $('who-name');
     b.replaceChildren();
+    if (u.anon) {
+      b.appendChild(avatarEl('mini anon', '?', '', false));
+      b.appendChild(el('span', 'txt', 'Anonym'));
+      return;
+    }
     b.appendChild(avatarEl('mini', myInitial(), u.avatar, myInitial() === 'FP'));
     b.appendChild(el('span', 'txt', u.label));
     if (u.verified) b.appendChild(verified());
   }
   $('who-name').addEventListener('click', function () { location.hash = 'konto'; });
 
-  // ---------- Profil ----------
-  function openProfile(username) {
+  function hidePanels(except) {
     closeMenu();
-    ['panel-feed', 'panel-post', 'panel-account', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'].forEach(function (p) { $(p).hidden = true; });
-    $('panel-profile').hidden = false;
+    ['panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'].forEach(function (p) { $(p).hidden = p !== except; });
     $('tabs').hidden = true;
     $('app-head').hidden = true;
-    state.panel = 'panel-profile';
+    state.panel = except;
     window.scrollTo(0, 0);
+  }
+
+  function monthYear(ts) { return new Date(ts).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }); }
+  function countText(n) { return n + ' inlägg'; }
+
+  // ---------- Profilvy i Twitter-stil (delas av andras profiler och Mitt konto) ----------
+  function profileView(box, p, items, opts) {
+    opts = opts || {};
+    box.replaceChildren();
+    box.appendChild(el('div', 'cover' + (p.brand ? ' brand' : '')));
+
+    var head = el('div', 'p-head');
+    var anonMe = opts.me && state.user.anon;
+    head.appendChild(avatarEl('p-avatar', p.brand ? 'FP' : (p.name || '?').charAt(0), p.avatar, p.brand));
+    if (opts.edit) {
+      var eb = el('button', 'btn btn-ghost btn-small', 'Redigera profil');
+      eb.type = 'button';
+      eb.addEventListener('click', openEdit);
+      head.appendChild(eb);
+    }
+    box.appendChild(head);
+
+    var nm = el('div', 'p-name');
+    nm.appendChild(el('span', null, p.name));
+    if (p.verified) nm.appendChild(verified());
+    box.appendChild(nm);
+    box.appendChild(el('div', 'p-handle', p.handle || '@' + p.username));
+    if (p.bio) box.appendChild(el('p', 'p-bio', p.bio));
+
+    var meta = el('div', 'p-meta');
+    if (p.createdAt) {
+      var j = el('span');
+      j.appendChild(icon('cal'));
+      j.appendChild(document.createTextNode('Gick med ' + monthYear(p.createdAt)));
+      meta.appendChild(j);
+    }
+    if (p.brand) meta.appendChild(el('span', 'status pending', 'Officiellt konto'));
+    else if (p.role === 'admin') meta.appendChild(el('span', 'status pending', 'Admin'));
+    if (anonMe) meta.appendChild(el('span', 'status anon-chip', 'Anonymt läge på'));
+    if (meta.childNodes.length) box.appendChild(meta);
+
+    var sum = function (k) { return items.reduce(function (t, i) { return t + (i[k] || 0); }, 0); };
+    var stats = el('div', 'p-stats');
+    [[items.length, 'Inlägg'], [sum('likes'), 'Gillningar'], [sum('views'), 'Visningar']].forEach(function (c) {
+      var sp = el('span');
+      sp.appendChild(el('b', null, c[0].toLocaleString('sv-SE')));
+      sp.appendChild(document.createTextNode(' ' + c[1]));
+      stats.appendChild(sp);
+    });
+    box.appendChild(stats);
+
+    var tabsDef = [['posts', 'Inlägg']];
+    if (opts.me) tabsDef.push(['liked', 'Gillade'], ['saved', 'Sparade']);
+    var tabBar = el('div', 'p-tabs');
+    tabBar.setAttribute('role', 'tablist');
+    var list = el('div', 'p-list');
+    function show(key) {
+      Array.prototype.forEach.call(tabBar.children, function (t) { t.setAttribute('aria-selected', String(t.dataset.k === key)); });
+      list.replaceChildren();
+      var rows = key === 'posts' ? items.map(function (it) { return findItem(it.id) || it; })
+        : state.items.filter(function (i) { return key === 'liked' ? i.liked : i.saved; });
+      if (!rows.length) {
+        var empty = el('div', 'empty');
+        if (key === 'liked') { empty.appendChild(el('h3', null, 'Inga gillade inlägg än')); empty.appendChild(el('p', null, 'Tryck på hjärtat under ett inlägg så hamnar det här.')); }
+        else if (key === 'saved') { empty.appendChild(el('h3', null, 'Inga sparade inlägg än')); empty.appendChild(el('p', null, 'Tryck på bokmärket under ett inlägg så hamnar det här.')); }
+        else {
+          empty.appendChild(el('h3', null, 'Inga inlägg än'));
+          empty.appendChild(el('p', null, opts.me ? (canWrite() ? 'Skriv ditt första inlägg under fliken Skriv.' : 'Verifierade konton kan publicera inlägg.') : p.name + ' har inte publicerat något än.'));
+        }
+        list.appendChild(empty);
+        return;
+      }
+      var saveView = state.view;
+      state.view = 'profile';
+      rows.forEach(function (it) { list.appendChild(renderTweet(it)); });
+      state.view = saveView;
+    }
+    tabsDef.forEach(function (t) {
+      var b = el('button', 'p-tab', t[1]);
+      b.type = 'button';
+      b.dataset.k = t[0];
+      b.setAttribute('role', 'tab');
+      b.addEventListener('click', function () { show(t[0]); });
+      tabBar.appendChild(b);
+    });
+    box.appendChild(tabBar);
+    box.appendChild(list);
+    show('posts');
+  }
+
+  function loadProfile(username) {
+    return api('profile?u=' + encodeURIComponent(username)).then(function (d) {
+      var items = (d.items || []).map(norm);
+      items.forEach(function (it) { var ex = findItem(it.id); if (ex) Object.assign(ex, it); });
+      return { profile: d.profile, items: items };
+    });
+  }
+
+  function profileError(box, err) {
+    var e = el('div', 'empty');
+    e.appendChild(el('h3', null, 'Profilen går inte att visa'));
+    e.appendChild(el('p', null, err.message));
+    box.replaceChildren(e);
+  }
+
+  // ---------- Profil ----------
+  function openProfile(username) {
+    hidePanels('panel-profile');
     $('prof-title').textContent = 'Profil';
     $('prof-count').textContent = '';
     $('prof-body').replaceChildren(el('p', 'muted', 'Hämtar profilen…'));
-    api('profile?u=' + encodeURIComponent(username)).then(function (d) {
-      var p = d.profile, items = (d.items || []).map(norm);
-      items.forEach(function (it) { var ex = findItem(it.id); if (ex) Object.assign(ex, it); });
-      $('prof-title').textContent = p.name;
-      $('prof-count').textContent = items.length + (items.length === 1 ? ' inlägg' : ' inlägg');
-      var body = $('prof-body');
-      body.replaceChildren();
-
-      var top = el('div', 'prof-top');
-      var left = el('div', 'profile');
-      left.style.paddingTop = '0';
-      left.appendChild(avatarEl('big', p.brand ? 'FP' : p.name.charAt(0), p.avatar, p.brand));
-      var txt = el('div', 'profile-txt');
-      var row = el('span', 'row');
-      row.appendChild(el('b', null, p.name));
-      if (p.verified) row.appendChild(verified());
-      txt.appendChild(row);
-      txt.appendChild(el('span', 'handle', '@' + p.username));
-      left.appendChild(txt);
-      top.appendChild(left);
-      if (p.isMe) {
-        var edit = el('a', 'btn btn-ghost btn-small', 'Redigera profil');
-        edit.href = '#konto';
-        top.appendChild(edit);
-      }
-      body.appendChild(top);
-
-      var badges = el('div', 'acc-badges');
-      if (p.brand) badges.appendChild(el('span', 'status pending', 'Officiellt konto'));
-      else if (p.role === 'admin') badges.appendChild(el('span', 'status pending', 'Admin'));
-      if (p.verified && !p.brand) badges.appendChild(el('span', 'status verified-chip', 'Verifierad'));
-      if (p.createdAt) badges.appendChild(el('span', 'status', 'Medlem sedan ' + new Date(p.createdAt).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })));
-      body.appendChild(badges);
-
-      var sum = function (k) { return items.reduce(function (s, i) { return s + (i[k] || 0); }, 0); };
-      var stats = el('div', 'stats prof-stats');
-      stats.style.marginTop = '1.2rem';
-      [[items.length, 'Inlägg'], [sum('likes'), 'Gillningar'], [sum('views'), 'Visningar']].forEach(function (c) {
-        var s = el('div', 'stat');
-        s.appendChild(el('b', null, c[0].toLocaleString('sv-SE')));
-        s.appendChild(el('span', null, c[1]));
-        stats.appendChild(s);
-      });
-      body.appendChild(stats);
-
-      var feed = el('div', 'prof-feed');
-      feed.appendChild(el('div', 'prof-feed-label', 'Inlägg'));
-      if (!items.length) {
-        var empty = el('div', 'empty');
-        empty.appendChild(el('h3', null, 'Inga inlägg än'));
-        empty.appendChild(el('p', null, p.isMe ? (canWrite() ? 'Skriv ditt första inlägg under fliken Skriv.' : 'Verifierade konton kan publicera inlägg.') : p.name + ' har inte publicerat något än.'));
-        feed.appendChild(empty);
-      } else {
-        var saveView = state.view;
-        state.view = 'profile';
-        items.forEach(function (it) { feed.appendChild(renderTweet(findItem(it.id) || it)); });
-        state.view = saveView;
-      }
-      body.appendChild(feed);
-    }).catch(function (err) {
-      var box = el('div', 'empty');
-      box.appendChild(el('h3', null, 'Profilen går inte att visa'));
-      box.appendChild(el('p', null, err.message));
-      $('prof-body').replaceChildren(box);
-    });
+    loadProfile(username).then(function (d) {
+      $('prof-title').textContent = d.profile.name;
+      $('prof-count').textContent = countText(d.items.length);
+      profileView($('prof-body'), d.profile, d.items, { me: d.profile.isMe, edit: d.profile.isMe });
+    }).catch(function (err) { profileError($('prof-body'), err); });
   }
   $('prof-back').addEventListener('click', goBack);
 
@@ -945,65 +1064,83 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   // ---------- Mitt konto ----------
   function openAccount() {
-    closeMenu();
-    ['panel-feed', 'panel-post', 'panel-profile', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'].forEach(function (p) { $(p).hidden = true; });
-    $('panel-account').hidden = false;
-    $('tabs').hidden = true;
-    $('app-head').hidden = true;
-    state.panel = 'panel-account';
-    window.scrollTo(0, 0);
-    setMsg($('name-msg'), ''); setMsg($('pw-msg'), '');
-    $('pw-form').reset();
-    api('account').then(renderAccount).catch(function (err) { toast(err.message); });
+    hidePanels('panel-account');
+    $('acc-title').textContent = 'Mitt konto';
+    $('acc-count').textContent = '';
+    $('acc-view').replaceChildren(el('p', 'muted', 'Hämtar ditt konto…'));
+    refreshAccount();
   }
 
-  function renderAccount(acc) {
-    var initial = acc.kind === 'admin' ? 'FP' : (acc.displayName || '?').charAt(0);
-    var big = avatarEl('big', initial, acc.avatar, initial === 'FP');
-    big.id = 'acc-avatar';
-    $('acc-avatar').replaceWith(big);
-    $('avatar-actions').hidden = acc.kind !== 'account';
-    $('acc-avatar-remove').hidden = !acc.avatar;
-    setMsg($('avatar-msg'), '');
-    var nameBox = $('acc-name').parentNode;
-    $('acc-name').textContent = acc.displayName;
-    Array.prototype.forEach.call(nameBox.querySelectorAll('.verified'), function (v) { v.remove(); });
-    if (acc.verified || acc.kind === 'admin') nameBox.appendChild(verified());
-    $('acc-handle').textContent = acc.kind === 'account' ? '@' + acc.username : acc.kind === 'code' ? 'Inloggad med kod' : 'Inloggad med adminkod';
-
-    var badges = $('acc-badges');
-    badges.replaceChildren();
-    badges.appendChild(el('span', 'status' + (acc.role === 'admin' ? ' pending' : ''), acc.role === 'admin' ? 'Admin' : 'Medlem'));
-    if (acc.verified) badges.appendChild(el('span', 'status verified-chip', 'Verifierad'));
-    if (acc.createdAt) badges.appendChild(el('span', 'status', 'Medlem sedan ' + new Date(acc.createdAt).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })));
-
-    var stats = $('acc-stats');
-    stats.replaceChildren();
-    [[acc.liked, 'Gillade inlägg'], [acc.saved, 'Sparade inlägg']].forEach(function (c) {
-      var s = el('div', 'stat');
-      s.appendChild(el('b', null, c[0].toLocaleString('sv-SE')));
-      s.appendChild(el('span', null, c[1]));
-      stats.appendChild(s);
-    });
-
-    var own = acc.kind === 'account';
-    $('acc-name-section').hidden = !own;
-    $('acc-pw-section').hidden = !own;
-    $('acc-display').value = own ? acc.displayName : '';
-    var note = $('acc-note');
-    note.hidden = own;
-    note.textContent = acc.kind === 'code'
-      ? 'Du är inloggad med en kod. Vill du ha eget namn, profilbild och kunna bli verifierad? Logga ut och välj Skapa konto.'
-      : 'Adminkoden visas alltid som Film Power. Skapa ett eget konto om du vill ha ett personligt namn.';
-    if (!own || acc.verified || acc.role === 'admin') return;
-    var hint = el('p', 'muted');
-    hint.style.marginTop = '1rem';
-    hint.style.fontSize = '.92rem';
-    hint.textContent = 'Ditt konto är inte verifierat än. Verifierade konton får en grön bock och kan publicera egna inlägg. Fråga Film Power om du vill bli verifierad.';
-    $('acc-stats').after(hint);
+  function refreshAccount() {
+    return api('account').then(function (acc) {
+      state.account = acc;
+      var box = $('acc-view');
+      if (acc.kind === 'account') {
+        return loadProfile(acc.username.toLowerCase()).then(function (d) {
+          $('acc-title').textContent = d.profile.name;
+          $('acc-count').textContent = countText(d.items.length);
+          profileView(box, d.profile, d.items, { me: true, edit: true });
+        });
+      }
+      if (acc.kind === 'admin') {
+        return loadProfile('filmpower').then(function (d) {
+          $('acc-title').textContent = 'Film Power';
+          $('acc-count').textContent = countText(d.items.length);
+          var p = Object.assign({}, d.profile, { handle: '@filmpower · inloggad med adminkod' });
+          profileView(box, p, d.items, { me: true, edit: false });
+        });
+      }
+      // Inloggad med kod: ingen egen profil, men gillade, sparade och anonymt läge fungerar.
+      $('acc-title').textContent = acc.displayName;
+      profileView(box, { name: acc.displayName, handle: 'Inloggad med kod', avatar: '', verified: false, role: 'member' }, [], { me: true, edit: true });
+      var note = el('p', 'notice');
+      note.style.marginTop = '1.2rem';
+      note.textContent = 'Vill du ha eget namn, profilbild och bio, och kunna bli verifierad? Logga ut och välj Skapa konto.';
+      box.insertBefore(note, box.querySelector('.p-tabs'));
+    }).catch(function (err) { profileError($('acc-view'), err); });
   }
-
   $('acc-back').addEventListener('click', goBack);
+
+  // ---------- Redigera profil ----------
+  var lastFocus = null;
+  function openEdit() {
+    var acc = state.account;
+    if (!acc) { api('account').then(function (a) { state.account = a; openEdit(); }).catch(function (err) { toast(err.message); }); return; }
+    var own = acc.kind === 'account';
+    $('edit-profile-part').hidden = !own;
+    $('pw-part').hidden = !own;
+    $('profile-save').hidden = !own;
+    $('anon-part').hidden = acc.kind === 'admin';
+    $('edit-title').textContent = own ? 'Redigera profil' : 'Inställningar';
+    if (own) {
+      var big = avatarEl('big', (acc.displayName || '?').charAt(0), acc.avatar, false);
+      big.id = 'acc-avatar';
+      $('acc-avatar').replaceWith(big);
+      $('acc-avatar-remove').hidden = !acc.avatar;
+      $('acc-display').value = acc.displayName || '';
+      $('acc-bio').value = acc.bio || '';
+      updateBioCount();
+    }
+    $('acc-anon').checked = !!state.user.anon;
+    setMsg($('avatar-msg'), ''); setMsg($('name-msg'), ''); setMsg($('pw-msg'), '');
+    $('pw-form').reset();
+    lastFocus = document.activeElement;
+    $('edit-modal').hidden = false;
+    document.body.style.overflow = 'hidden';
+    (own ? $('acc-display') : $('acc-anon')).focus();
+  }
+  function closeEdit() {
+    if ($('edit-modal').hidden) return;
+    $('edit-modal').hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('edit-close').addEventListener('click', closeEdit);
+  $('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEdit(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeEdit(); });
+
+  function updateBioCount() { $('bio-count').textContent = $('acc-bio').value.length + ' / 160'; }
+  $('acc-bio').addEventListener('input', updateBioCount);
 
   // Beskär till kvadrat och krymper, så att profilbilden blir liten och skarp.
   function squareImage(file, size) {
@@ -1030,10 +1167,15 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     setMsg($('avatar-msg'), value ? 'Laddar upp…' : '');
     return api('account', { method: 'PATCH', body: { avatar: value } }).then(function (d) {
       state.user.avatar = d.avatar;
+      state.account.avatar = d.avatar;
       renderWho();
-      return api('account').then(renderAccount);
-    }).then(function () { setMsg($('avatar-msg'), value ? 'Profilbilden är sparad.' : 'Profilbilden är borttagen.', 'ok'); })
-      .catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
+      var big = avatarEl('big', (state.account.displayName || '?').charAt(0), d.avatar, false);
+      big.id = 'acc-avatar';
+      $('acc-avatar').replaceWith(big);
+      $('acc-avatar-remove').hidden = !d.avatar;
+      setMsg($('avatar-msg'), value ? 'Profilbilden är sparad.' : 'Profilbilden är borttagen.', 'ok');
+      refreshAccount();
+    }).catch(function (err) { setMsg($('avatar-msg'), err.message, 'error'); });
   }
 
   $('acc-avatar-file').addEventListener('change', function () {
@@ -1044,19 +1186,32 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
   $('acc-avatar-remove').addEventListener('click', function () { saveAvatar(null); });
 
-  $('name-form').addEventListener('submit', function (e) {
+  $('profile-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var name = $('acc-display').value.trim();
     if (name.length < 2) { setMsg($('name-msg'), 'Namnet behöver minst 2 tecken.', 'error'); return; }
-    $('name-btn').disabled = true;
-    api('account', { method: 'PATCH', body: { displayName: name } }).then(function (d) {
+    $('profile-save').disabled = true;
+    api('account', { method: 'PATCH', body: { displayName: name, bio: $('acc-bio').value } }).then(function (d) {
       state.user.label = d.displayName;
+      state.account.displayName = d.displayName;
+      state.account.bio = d.bio;
       renderWho();
-      $('acc-name').textContent = d.displayName;
       $('greeting').textContent = isAdmin() ? 'Inloggad som admin, ' + d.displayName : 'Välkommen, ' + d.displayName;
-      setMsg($('name-msg'), 'Namnet är sparat.', 'ok');
+      closeEdit();
+      toast('Profilen är sparad.');
+      refreshAccount();
     }).catch(function (err) { setMsg($('name-msg'), err.message, 'error'); })
-      .then(function () { $('name-btn').disabled = false; });
+      .then(function () { $('profile-save').disabled = false; });
+  });
+
+  $('acc-anon').addEventListener('change', function () {
+    var on = this.checked, box = this;
+    api('account', { method: 'PATCH', body: { anon: on } }).then(function (d) {
+      state.user.anon = d.anon;
+      renderWho();
+      toast(d.anon ? 'Anonymt läge är på. Dina kommentarer visas som Anonym.' : 'Anonymt läge är av.');
+      refreshAccount();
+    }).catch(function (err) { box.checked = !on; toast(err.message); });
   });
 
   $('pw-form').addEventListener('submit', function (e) {
@@ -1486,7 +1641,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     // Svarsruta
     var reply = el('form', 'reply');
     reply.noValidate = true;
-    reply.appendChild(avatarEl('', myInitial(), state.user.avatar, myInitial() === 'FP'));
+    reply.appendChild(state.user.anon ? avatarEl('anon', '?', '', false) : avatarEl('', myInitial(), state.user.avatar, myInitial() === 'FP'));
     var rmain = el('div');
     var lab = el('label', 'visually-hidden', 'Skriv en kommentar');
     lab.htmlFor = 'reply-text';
@@ -1545,13 +1700,14 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (!comments.length) { list.appendChild(el('p', 'no-comments', 'Inga kommentarer än. Bli först!')); return; }
     comments.forEach(function (c) {
       var row = el('div', 'comment');
-      var brand = c.author === 'Film Power';
-      var cUser = brand ? 'filmpower' : c.username;
-      row.appendChild(profileLink(cUser, avatarEl('', brand ? 'FP' : c.author.charAt(0), c.avatar, brand), 'Profil: ' + c.author));
+      var brand = !c.anon && c.author === 'Film Power';
+      var cUser = c.anon ? '' : brand ? 'filmpower' : c.username;
+      row.appendChild(c.anon ? avatarEl('anon', '?', '', false) : profileLink(cUser, avatarEl('', brand ? 'FP' : c.author.charAt(0), c.avatar, brand), 'Profil: ' + c.author));
       var main = el('div', 't-main');
       var head = el('div', 't-head');
       head.appendChild(profileLink(cUser, el('b', null, c.author)));
       if (c.isAdmin || c.verified) head.appendChild(verified());
+      if (c.anon && c.realAuthor) head.appendChild(el('span', 'handle', '(' + c.realAuthor + ')'));
       head.appendChild(el('span', 'handle', '· ' + timeAgo(c.createdAt)));
       if (c.canDelete) {
         var del = el('button', 'c-del', 'Ta bort');

@@ -30,6 +30,13 @@ export default handle(async (req, res) => {
     }
     const comments = raws.map((c) => {
       const acc = c.actor.startsWith('u:') ? accounts.get(c.actor.slice(2)) : null;
+      if (c.anon) {
+        return {
+          id: c.id, author: 'Anonym', anon: true, isAdmin: false, verified: false, avatar: '', username: '',
+          text: c.text, createdAt: c.createdAt, canDelete: s.role === 'admin' || c.actor === a,
+          realAuthor: s.role === 'admin' ? (acc ? acc.displayName || acc.username : c.author) : undefined,
+        };
+      }
       return {
       id: c.id, author: acc ? acc.displayName || acc.username : c.author, isAdmin: c.isAdmin, text: c.text, createdAt: c.createdAt,
       verified: Boolean(acc && acc.verified),
@@ -68,6 +75,7 @@ export default handle(async (req, res) => {
       id: crypto.randomBytes(6).toString('hex'),
       author: displayName(s),
       isAdmin: s.role === 'admin',
+      anon: Boolean(s.anon),
       actor: a,
       text,
       createdAt: Date.now(),
@@ -76,8 +84,11 @@ export default handle(async (req, res) => {
       ['HSET', 'comments:' + id, c.id, JSON.stringify(c)],
       ['HINCRBY', 'news:comments', id, 1],
     ]);
+    const shown = c.anon
+      ? { id: c.id, author: 'Anonym', anon: true, isAdmin: false, verified: false, avatar: '', username: '', realAuthor: s.role === 'admin' ? c.author : undefined }
+      : { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), avatar: s.avatar || '', username: s.user || '' };
     return send(res, 201, {
-      comment: { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), avatar: s.avatar || '', username: s.user || '', text: c.text, createdAt: c.createdAt, canDelete: true },
+      comment: { ...shown, text: c.text, createdAt: c.createdAt, canDelete: true },
       comments: count,
     });
   }

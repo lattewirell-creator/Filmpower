@@ -1,6 +1,6 @@
 import {
   handle, send, readBody, requireAppHeader, requireSession, HttpError, redis, pipeline,
-  actorId, hashPassword, checkPassword, IMAGE_RE,
+  actorId, hashPassword, checkPassword, IMAGE_RE, sessionCookie,
 } from './_lib.js';
 import crypto from 'node:crypto';
 
@@ -22,6 +22,8 @@ export default handle(async (req, res) => {
       role: s.role,
       verified: Boolean(u && u.verified),
       avatar: u ? u.avatar || '' : '',
+      bio: u ? u.bio || '' : '',
+      anon: Boolean(s.anon),
       createdAt: u ? u.createdAt : null,
       liked: Number(liked) || 0,
       saved: Number(saved) || 0,
@@ -30,9 +32,19 @@ export default handle(async (req, res) => {
 
   requireAppHeader(req);
   if (req.method !== 'PATCH') throw new HttpError(405, 'Metoden stöds inte.');
-  if (!u) throw new HttpError(400, 'Bara den som har ett eget konto kan ändra namn och lösenord.');
-
   const b = await readBody(req, 400_000);
+
+  // Anonymt läge sparas i sessionen och kan slås på eller av utan att logga ut.
+  if (b.anon !== undefined) {
+    if (!s.user && !s.code) throw new HttpError(400, 'Adminkoden kan inte vara anonym.');
+    const anon = Boolean(b.anon);
+    const payload = { role: s.role, label: s.label, anon };
+    if (s.user) payload.user = s.user;
+    if (s.code) payload.code = s.code;
+    return send(res, 200, { ok: true, anon }, { 'Set-Cookie': sessionCookie(req, payload) });
+  }
+
+  if (!u) throw new HttpError(400, 'Bara den som har ett eget konto kan ändra namn och lösenord.');
   const oldAvatar = u.avatar || '';
 
   if (b.avatar !== undefined) {
@@ -53,6 +65,10 @@ export default handle(async (req, res) => {
     u.displayName = name;
   }
 
+  if (b.bio !== undefined) {
+    u.bio = String(b.bio).replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 160);
+  }
+
   if (b.newPassword !== undefined) {
     const ok = await checkPassword(String(b.currentPassword || ''), u.salt, u.hash);
     if (!ok) throw new HttpError(400, 'Nuvarande lösenord stämmer inte.');
@@ -66,5 +82,5 @@ export default handle(async (req, res) => {
 
   await redis('HSET', 'users', s.user, JSON.stringify(u));
   if (oldAvatar && oldAvatar !== u.avatar) await redis('DEL', 'img:' + oldAvatar);
-  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '' });
+  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', bio: u.bio || '' });
 });

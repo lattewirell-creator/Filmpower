@@ -45,8 +45,9 @@ async function attempt(b, req, res) {
 
     const role = user.role === 'admin' ? 'admin' : 'member';
     const label = user.displayName || user.username;
-    return send(res, 200, { role, label, verified: Boolean(user.verified), avatar: user.avatar || '' }, {
-      'Set-Cookie': sessionCookie(req, { role, label, user: key }),
+    const anon = Boolean(b.anon);
+    return send(res, 200, { role, label, verified: Boolean(user.verified), avatar: user.avatar || '', anon }, {
+      'Set-Cookie': sessionCookie(req, { role, label, user: key, anon }),
     });
   }
 
@@ -71,8 +72,9 @@ async function attempt(b, req, res) {
     const raw = await redis('HGET', 'codes', hash);
     if (raw) {
       const info = JSON.parse(raw);
-      return send(res, 200, { role: 'member', label: info.label }, {
-        'Set-Cookie': sessionCookie(req, { role: 'member', label: info.label, code: hash }),
+      const anon = Boolean(b.anon);
+      return send(res, 200, { role: 'member', label: info.label, anon }, {
+        'Set-Cookie': sessionCookie(req, { role: 'member', label: info.label, code: hash, anon }),
       });
     }
   }

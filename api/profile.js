@@ -19,7 +19,7 @@ export default handle(async (req, res) => {
       if (u.status !== 'active') continue;
       members.push({
         name: u.displayName || u.username, username: u.username, avatar: u.avatar || '',
-        verified: Boolean(u.verified), role: u.role === 'admin' ? 'admin' : 'member', isMe: flat[i] === s.user,
+        verified: Boolean(u.verified), role: u.role === 'admin' ? 'admin' : 'member', isMe: flat[i] === s.user, bio: u.bio || '',
       });
     }
     members.sort((a, b) => (b.verified - a.verified) || a.name.localeCompare(b.name, 'sv'));
@@ -29,7 +29,7 @@ export default handle(async (req, res) => {
 
   let profile;
   if (key === 'filmpower') {
-    profile = { brand: true, name: 'Film Power', username: 'filmpower', avatar: '', verified: true, role: 'admin', createdAt: null, authorKey: '' };
+    profile = { brand: true, name: 'Film Power', username: 'filmpower', avatar: '', verified: true, role: 'admin', createdAt: null, bio: 'Film studio. Manus, inspelning och klippning. Din idé, vår film.', authorKey: '' };
   } else {
     const raw = await redis('HGET', 'users', key);
     const u = raw ? JSON.parse(raw) : null;
@@ -42,6 +42,7 @@ export default handle(async (req, res) => {
       verified: Boolean(u.verified),
       role: u.role === 'admin' ? 'admin' : 'member',
       createdAt: u.createdAt,
+      bio: u.bio || '',
       authorKey: key,
     };
   }
