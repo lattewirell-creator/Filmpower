@@ -34,6 +34,7 @@ export default handle(async (req, res) => {
       id: c.id, author: acc ? acc.displayName || acc.username : c.author, isAdmin: c.isAdmin, text: c.text, createdAt: c.createdAt,
       verified: Boolean(acc && acc.verified),
       avatar: acc ? acc.avatar || '' : '',
+      username: acc ? acc.username : '',
       canDelete: s.role === 'admin' || c.actor === a,
       };
     });
@@ -76,7 +77,7 @@ export default handle(async (req, res) => {
       ['HINCRBY', 'news:comments', id, 1],
     ]);
     return send(res, 201, {
-      comment: { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), avatar: s.avatar || '', text: c.text, createdAt: c.createdAt, canDelete: true },
+      comment: { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), avatar: s.avatar || '', username: s.user || '', text: c.text, createdAt: c.createdAt, canDelete: true },
       comments: count,
     });
   }
