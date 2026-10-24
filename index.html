@@ -111,7 +111,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .hero.hero { position: relative; }
 .hero > .wrap { position: relative; z-index: 1; }
 .hero h1 { font-family: "Syne", "Arial Black", system-ui, sans-serif; font-weight: 800; font-size: clamp(2.3rem, 7vw, 5.2rem); line-height: 1.14; letter-spacing: -.035em; max-width: 13ch; margin: 1.2rem auto 0; }
-.hero h1 em { font-style: normal; white-space: nowrap; }
+.hero h1 em { font-style: normal; white-space: nowrap; position: relative; display: inline-block; }
+/* Bilder inne i bokstäverna: varje bokstav visar en egen målad bild som glider och byts */
+.hero h1 em.photo .l { color: transparent; -webkit-background-clip: text; background-clip: text; background-size: auto 118%; background-position: 0% 50%; background-repeat: no-repeat; -webkit-text-stroke: .018em color-mix(in srgb, var(--ink) 30%, transparent);
+  animation: hop 1.9s cubic-bezier(.3,.7,.4,1) infinite, pan 7s ease-in-out infinite alternate; animation-delay: calc(var(--i) * .1s), calc(var(--i) * -.8s); }
+.hero h1 em .layer-b { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; pointer-events: none; }
+.hero h1 em .layer-b.on { opacity: 1; }
+@keyframes pan { from { background-position: 0% 40%; } to { background-position: 100% 60%; } }
 .hero h1 em .l { display: inline-block; transform-origin: 50% 100%; animation: hop 1.9s cubic-bezier(.3,.7,.4,1) infinite; animation-delay: calc(var(--i) * .1s); }
 @keyframes hop {
   0%, 46%, 100% { transform: translateY(0) scale(1, 1); }
@@ -122,7 +128,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 }
 @keyframes wave-calm { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.07em); } }
 
-@media (prefers-reduced-motion: reduce) { .hero h1 em .l { animation-name: wave-calm; animation-duration: 3.2s; } }
+@media (prefers-reduced-motion: reduce) { .hero h1 em .l, .hero h1 em.photo .l { animation: wave-calm 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * .1s); } }
 .hero h1 em { color: var(--brand); }
 .hero .lead { margin: 1.6rem auto 0; max-width: 36rem; font-size: 1.2rem; color: var(--muted); }
 .ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem; margin-top: 2.4rem; }
@@ -604,6 +610,129 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
     io.observe(screen);
   }
   window.__playReel = play;
+})();
+</script>
+<script>
+// Målade bilder inne i bokstäverna i "röra sig". Varje bokstav får en egen bild, och bilderna byts.
+(function () {
+  var em = document.querySelector('.hero h1 em');
+  if (!em || !document.createElement('canvas').getContext) return;
+  var W = 640, H = 360;
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function paint(draw) {
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var ctx = c.getContext('2d');
+    draw(ctx);
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.fillRect(0, 0, W, H);
+    return c.toDataURL('image/jpeg', 0.82);
+  }
+  function grad(ctx, stops, x0, y0, x1, y1) {
+    var g = ctx.createLinearGradient(x0, y0, x1, y1);
+    stops.forEach(function (st) { g.addColorStop(st[0], st[1]); });
+    return g;
+  }
+  function glow(ctx, x, y, r, color) {
+    var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  function ridge(ctx, base, amp, color) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(0, H);
+    for (var x = 0; x <= W; x += 20) ctx.lineTo(x, base - Math.abs(Math.sin(x / 70 + base)) * amp - rnd(0, amp * .3));
+    ctx.lineTo(W, H); ctx.fill();
+  }
+
+  var scenes = [
+    // Solnedgång över berg
+    function (ctx) {
+      ctx.fillStyle = grad(ctx, [[0, '#2b1055'], [.45, '#d1497a'], [.75, '#ff9a3c'], [1, '#ffd36e']], 0, 0, 0, H); ctx.fillRect(0, 0, W, H);
+      glow(ctx, W * .55, H * .62, 170, 'rgba(255,230,150,.9)');
+      ctx.fillStyle = '#fff1c1'; ctx.beginPath(); ctx.arc(W * .55, H * .62, 46, 0, Math.PI * 2); ctx.fill();
+      ridge(ctx, H * .72, 60, '#5b2350'); ridge(ctx, H * .84, 45, '#2d1430');
+    },
+    // Neonstad på natten
+    function (ctx) {
+      ctx.fillStyle = grad(ctx, [[0, '#0b0730'], [.7, '#3a0f5c'], [1, '#ff2e88']], 0, 0, 0, H); ctx.fillRect(0, 0, W, H);
+      for (var x = 0; x < W; x += rnd(34, 60)) {
+        var w = rnd(28, 56), h = rnd(90, 280);
+        ctx.fillStyle = '#120a26'; ctx.fillRect(x, H - h, w, h);
+        for (var wy = H - h + 10; wy < H - 8; wy += 14) for (var wx = x + 5; wx < x + w - 6; wx += 10)
+          if (Math.random() < .45) { ctx.fillStyle = ['#ffd84d', '#3df2ff', '#ff4fd8'][Math.floor(rnd(0, 3))]; ctx.fillRect(wx, wy, 5, 7); }
+      }
+      glow(ctx, W * .3, H * .3, 140, 'rgba(61,242,255,.35)'); glow(ctx, W * .75, H * .4, 160, 'rgba(255,79,216,.35)');
+    },
+    // Hav i solsken
+    function (ctx) {
+      ctx.fillStyle = grad(ctx, [[0, '#7fd3ff'], [.45, '#c9f1ff'], [.46, '#0f6fb0'], [1, '#05345a']], 0, 0, 0, H); ctx.fillRect(0, 0, W, H);
+      glow(ctx, W * .25, H * .2, 120, 'rgba(255,255,230,.9)');
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 3;
+      for (var y = H * .5; y < H; y += 16) { ctx.beginPath(); for (var x = 0; x <= W; x += 10) ctx.lineTo(x, y + Math.sin(x / 26 + y) * 4); ctx.stroke(); }
+    },
+    // Skog i dimma
+    function (ctx) {
+      ctx.fillStyle = grad(ctx, [[0, '#d9eadf'], [1, '#2e5a3a']], 0, 0, 0, H); ctx.fillRect(0, 0, W, H);
+      [['#6f9b7a', .55, 70], ['#3f6e4b', .7, 95], ['#1d3b26', .86, 130]].forEach(function (l) {
+        ctx.fillStyle = l[0];
+        for (var x = -20; x < W + 20; x += rnd(26, 48)) { var h = rnd(l[2] * .7, l[2]); ctx.beginPath(); ctx.moveTo(x, H * l[1] - h); ctx.lineTo(x - h * .35, H); ctx.lineTo(x + h * .35, H); ctx.fill(); }
+        ctx.fillStyle = 'rgba(230,240,232,.35)'; ctx.fillRect(0, H * l[1] - 10, W, 40);
+      });
+    },
+    // Norrsken
+    function (ctx) {
+      ctx.fillStyle = grad(ctx, [[0, '#020a1c'], [1, '#0b2a3d']], 0, 0, 0, H); ctx.fillRect(0, 0, W, H);
+      for (var i = 0; i < 160; i++) { ctx.fillStyle = 'rgba(255,255,255,' + rnd(.3, 1) + ')'; ctx.fillRect(rnd(0, W), rnd(0, H * .7), 1.6, 1.6); }
+      for (var k = 0; k < 3; k++) {
+        ctx.strokeStyle = ['rgba(80,255,170,.5)', 'rgba(60,220,255,.35)', 'rgba(170,110,255,.3)'][k]; ctx.lineWidth = 46 - k * 10;
+        ctx.beginPath(); for (var x = 0; x <= W; x += 12) ctx.lineTo(x, H * (.35 + k * .08) + Math.sin(x / 90 + k) * 40); ctx.stroke();
+      }
+      ridge(ctx, H * .9, 30, '#01060f');
+    },
+    // Strålkastare på inspelning
+    function (ctx) {
+      ctx.fillStyle = '#100c08'; ctx.fillRect(0, 0, W, H);
+      [[.2, '#ffcf7a'], [.55, '#fff3d6'], [.85, '#ff9f5a']].forEach(function (b) {
+        var g = ctx.createLinearGradient(W * b[0], 0, W * b[0], H);
+        g.addColorStop(0, b[1]); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.globalAlpha = .55;
+        ctx.beginPath(); ctx.moveTo(W * b[0] - 10, 0); ctx.lineTo(W * b[0] + 10, 0); ctx.lineTo(W * b[0] + 150, H); ctx.lineTo(W * b[0] - 150, H); ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+      for (var i = 0; i < 26; i++) glow(ctx, rnd(0, W), rnd(0, H), rnd(10, 34), 'rgba(255,214,150,' + rnd(.25, .6) + ')');
+    },
+    // Bokeh i stadsljus
+    function (ctx) {
+      ctx.fillStyle = grad(ctx, [[0, '#1a0f2e'], [1, '#3b1d12']], 0, 0, W, H); ctx.fillRect(0, 0, W, H);
+      for (var i = 0; i < 40; i++) glow(ctx, rnd(0, W), rnd(0, H), rnd(18, 60), ['rgba(255,170,60,.55)', 'rgba(255,90,120,.45)', 'rgba(120,200,255,.45)', 'rgba(255,240,180,.5)'][i % 4]);
+    },
+  ];
+
+  var images;
+  try { images = scenes.map(paint); } catch (e) { return; }
+
+  var layerA = Array.prototype.slice.call(em.querySelectorAll('.l'));
+  var b = document.createElement('span');
+  b.className = 'layer-b';
+  b.setAttribute('aria-hidden', 'true');
+  b.innerHTML = em.innerHTML;
+  em.appendChild(b);
+  var layerB = Array.prototype.slice.call(b.querySelectorAll('.l'));
+  em.classList.add('photo');
+
+  function apply(letters, offset) {
+    letters.forEach(function (l, i) { l.style.backgroundImage = 'url(' + images[(offset + i) % images.length] + ')'; });
+  }
+  var offset = 0;
+  apply(layerA, offset);
+
+  // Byt bilder med mjuk övertoning med jämna mellanrum.
+  setInterval(function () {
+    offset = (offset + 1) % images.length;
+    apply(layerB, offset);
+    b.classList.add('on');
+    setTimeout(function () { apply(layerA, offset); b.classList.remove('on'); }, 1000);
+  }, 3200);
 })();
 </script>
 </body>
