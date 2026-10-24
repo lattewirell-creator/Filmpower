@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Film Power är en filmstudio som skriver manus, filmar och klipper. Reklamfilm, kortfilm, musikvideo och långfilm. Manus från 100 kr.">
+<meta name="description" content="Film Power är en filmstudio som skriver manus, filmar och klipper. Reklamfilm, kortfilm, musikvideo och långfilm. Filmning från 150 kr.">
 <meta property="og:title" content="Film Power – Film studio">
 <meta property="og:description" content="Din idé. Vår film. Manus, inspelning och klippning.">
 <meta property="og:type" content="website">
@@ -129,7 +129,7 @@ section.block { padding-block: clamp(4rem, 10vw, 7rem); border-top: 1px solid va
 
 
 /* Priser */
-.prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3rem; }
+.prices { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; max-width: 36rem; }
 .prices > div { min-width: 0; }
 .prices h3 { font-size: 1.5rem; margin-bottom: .6rem; }
 .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-block: 1rem; border-bottom: 1px solid var(--line); }
@@ -279,7 +279,6 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
         <a class="btn btn-ghost" href="#priser">Se priser</a>
       </div>
       <div class="facts">
-        <span>Manus från 100 kr</span>
         <span>Filmning från 150 kr</span>
         <span>Ljud och ljus ingår</span>
       </div>
@@ -346,15 +345,9 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
       <div class="head">
         <p class="label">Priser</p>
         <h2>Raka priser, inga överraskningar</h2>
-        <p>Välj det du behöver. Vill du ha både manus och filmning lägger du bara ihop priserna.</p>
+        <p>Vi filmar med ljud och ljus. Priset beror på hur lång filmen blir.</p>
       </div>
       <div class="prices">
-        <div>
-          <h3>Manus</h3>
-          <div class="row"><div><b>Reklamfilm</b><small>Från idé till färdigt manus</small></div><span class="price">100 kr</span></div>
-          <div class="row"><div><b>Kortfilm</b><small>Story och dialog för en kortfilm</small></div><span class="price">150 kr</span></div>
-          <div class="row"><div><b>Långfilm</b><small>Manus till din drömfilm</small></div><span class="price">250–350 kr</span></div>
-        </div>
         <div>
           <h3>Filmning</h3>
           <div class="row"><div><b>Reklamfilm</b><small>Cirka 5 min, med ljud och ljus</small></div><span class="price">150 kr</span></div>
