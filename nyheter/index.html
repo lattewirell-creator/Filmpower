@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Film Power Nyheter</title>
+<script>
+  // Skicka besökare från gamla deployment- och förhandsadresser till huvudadressen.
+  (function () {
+    var h = location.hostname;
+    if (/\.vercel\.app$/.test(h) && h !== 'filmpower.vercel.app') {
+      location.replace('https://filmpower.vercel.app' + location.pathname + location.search + location.hash);
+    }
+  })();
+</script>
 <meta name="description" content="Nyheter för filmskapare från Film Power. Logga in med din kod.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#3d7a2c">
