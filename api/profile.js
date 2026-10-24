@@ -4,12 +4,28 @@ import {
 
 const MAX_LIST = 200;
 
-// Offentlig profil för en inloggad läsare: Film Power eller ett godkänt konto, med personens inlägg.
+// Profiler för inloggade: en enskild profil med inlägg, eller listan över alla medlemmar.
 export default handle(async (req, res) => {
   if (req.method !== 'GET') throw new HttpError(405, 'Använd GET.');
   const s = await requireSession(req);
   const key = usernameKey(queryParam(req, 'u'));
-  if (!key) throw new HttpError(400, 'Profil saknas.');
+
+  // Utan användarnamn: lista alla godkända medlemmar, Film Power först.
+  if (!key) {
+    const flat = await redis('HGETALL', 'users');
+    const members = [];
+    for (let i = 0; i < flat.length; i += 2) {
+      const u = JSON.parse(flat[i + 1]);
+      if (u.status !== 'active') continue;
+      members.push({
+        name: u.displayName || u.username, username: u.username, avatar: u.avatar || '',
+        verified: Boolean(u.verified), role: u.role === 'admin' ? 'admin' : 'member', isMe: flat[i] === s.user,
+      });
+    }
+    members.sort((a, b) => (b.verified - a.verified) || a.name.localeCompare(b.name, 'sv'));
+    members.unshift({ name: 'Film Power', username: 'filmpower', avatar: '', verified: true, role: 'admin', brand: true, isMe: false });
+    return send(res, 200, { members });
+  }
 
   let profile;
   if (key === 'filmpower') {
