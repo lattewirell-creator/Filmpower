@@ -17,17 +17,17 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 ## Så används appen
 
 - **Admin:** Gå till `/nyheter/`, välj **Admin** och logga in med din `ADMIN_CODE`. Under **Skriv nyhet** publicerar du nyheter. Under **Koder** skapar du en personlig kod till varje medlem. Koden visas bara en gång, så kopiera den och skicka den till personen.
-- **Medlemmar med konto:** Går till `/nyheter/`, klickar **Skapa konto** och väljer användarnamn och lösenord. Kontot väntar sedan på godkännande. Du godkänner, spärrar eller tar bort konton under fliken **Konton**. Siffran på fliken visar hur många som väntar.
+- **Medlemmar med konto:** Går till `/nyheter/`, klickar **Skapa konto** och väljer användarnamn och lösenord. Kontot är aktivt direkt och personen loggas in automatiskt. Under fliken **Konton** kan du verifiera, spärra eller ta bort konton.
 - **Bilder:** Under **Skriv nyhet** klickar du **Lägg till bild**. Bilden krymps automatiskt till max 1600 pixlar och sparas i databasen. Bara inloggade ser bilderna. Tar du bort nyheten försvinner bilden också.
 - **Flödet:** Inläggen visas som på Twitter, med gilla, kommentera, visningar, spara och dela. Klicka på ett inlägg för att öppna det och läsa kommentarerna. Flikarna **Nyheter**, **Populärt** (mest gillat) och **Sparade** finns för alla. Sortera med **Nyast först** eller **Äldst först**.
 - **Fästa inlägg:** Klicka på **⋯** på ett inlägg och välj **Fäst högst upp**, eller kryssa i rutan när du skriver. Där kan du också ta bort inlägget.
 - **Statistik:** Fliken **Statistik** visar inlägg, visningar, gillningar, kommentarer, konton och de mest lästa inläggen.
-- **Verifiering:** Under **Konton** klickar du **Verifiera** på ett godkänt konto. Personen får en grön bock och kan publicera egna inlägg under **Skriv**. Inläggen visas med personens eget namn och profilbild. Man kan ta bort sina egna inlägg. Bara admin kan fästa inlägg.
+- **Verifiering:** Under **Konton** klickar du **Verifiera** på ett konto. Personen får en grön bock och kan publicera egna inlägg under **Skriv**. Inläggen visas med personens eget namn och profilbild. Man kan ta bort sina egna inlägg. Bara admin kan fästa inlägg.
 - **Kommentarer:** Alla inloggade kan kommentera och svara på kommentarer med **Svara**.
 - **Profiler:** Fliken **Medlemmar** listar alla godkända medlemmar med sökruta. Klicka på en person, eller på någons profilbild eller namn på ett inlägg eller vid en kommentar, för att se profilen och personens inlägg. Film Power har en egen profil.
 - **Mitt konto:** Klicka på ditt namn uppe till höger. Profilen ser ut som på Twitter med banner, profilbild, bio och flikarna Inlägg, Gillade och Sparade. Under **Redigera profil** byter du profilbild, namn, bio och lösenord.
 - **Anonymt läge:** Kryssa i **Logga in anonymt** vid inloggningen, eller slå på det under Redigera profil. Kommentarerna visas då som **Anonym** utan namn och bild. Admin ser fortfarande vem som skrivit. Inlägg publiceras alltid med namn.
-- **Fler admins:** Låt personen skapa ett eget konto. Godkänn det under **Konton** och klicka **Gör till admin**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
+- **Fler admins:** Låt personen skapa ett eget konto. Klicka **Gör till admin** under **Konton**. Personen loggar sedan in under **Medlem** med sitt användarnamn och lösenord och får adminverktygen automatiskt. Klicka **Ta bort admin** för att ta tillbaka behörigheten.
 - **Medlemmar med kod:** Klickar **Logga in med kod** under **Medlem** och loggar in med koden de har fått. Både konto- och kodmedlemmar kan läsa men inte ändra något.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.
 - **Byta adminkod:** Ändra `ADMIN_CODE` i Vercel och gör en ny Redeploy. Alla som är inloggade loggas då ut.

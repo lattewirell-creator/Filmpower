@@ -545,7 +545,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     </div>
 
     <div id="panel-users" role="tabpanel" hidden>
-      <p class="muted">Nya konton behöver godkännas av dig innan de kan logga in. Spärrade konton loggas ut direkt.</p>
+      <p class="muted">Nya konton aktiveras direkt. Här kan du verifiera, göra till admin, spärra eller ta bort konton. Spärrade konton loggas ut direkt.</p>
       <div class="code-list" id="user-list" style="margin-top:1.5rem"></div>
     </div>
 
@@ -838,10 +838,13 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('register-btn').disabled = true;
     setMsg($('register-msg'), '');
     api('register', { method: 'POST', body: { username: username, password: p1 } }).then(function () {
-      $('register-form').reset();
-      setMode('user');
-      $('u-name').value = username;
-      setMsg($('user-msg'), 'Kontot är skapat. Du kan logga in när admin har godkänt det.', 'ok');
+      // Kontot är aktivt direkt, så vi loggar in på en gång.
+      return api('login', { method: 'POST', body: { username: username, password: p1 } }).then(function (user) {
+        $('register-form').reset();
+        setMode('user');
+        enterApp(user);
+        toast('Välkommen! Ditt konto är klart.');
+      });
     }).catch(function (err) { setMsg($('register-msg'), err.message, 'error'); })
       .then(function () { $('register-btn').disabled = false; });
   });
@@ -1860,7 +1863,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         var users = r[0].users || [];
         drawCards([
           [users.filter(function (u) { return u.status === 'active'; }).length, 'Aktiva konton'],
-          [users.filter(function (u) { return u.status === 'pending'; }).length, 'Väntar på godkännande'],
+          [users.filter(function (u) { return u.status === 'active' && u.verified; }).length, 'Verifierade konton'],
           [(r[1].codes || []).length, 'Aktiva koder'],
         ]);
       }).catch(function () {});

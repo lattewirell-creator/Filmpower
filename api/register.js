@@ -22,7 +22,8 @@ export default handle(async (req, res) => {
   await rateLimit('rl:register:' + clientIp(req), 5, 3600, 'För många nya konton härifrån. Försök igen om en timme.');
 
   const { salt, hash } = await hashPassword(password);
-  const user = { username: display, salt, hash, status: 'pending', createdAt: Date.now() };
+  // Nya konton aktiveras direkt, utan godkännande från admin.
+  const user = { username: display, salt, hash, status: 'active', createdAt: Date.now() };
   const created = await redis('HSETNX', 'users', key, JSON.stringify(user));
   if (!created) throw new HttpError(409, 'Användarnamnet är upptaget. Välj ett annat.');
 
