@@ -237,3 +237,40 @@ export async function requireSession(req, role) {
 export function clientIp(req) {
   return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'okänd').split(',')[0].trim();
 }
+
+// ---------- Interaktioner (gilla, spara, kommentera) ----------
+
+// Stabil identitet för den inloggade, oavsett om hen loggat in med konto, kod eller adminkod.
+export function actorId(s) {
+  if (s.user) return 'u:' + s.user;
+  if (s.code) return 'c:' + s.code.slice(0, 16);
+  return 'admin';
+}
+
+// Visningsnamn i kommentarer. Adminkoden visas som Film Power.
+export function displayName(s) {
+  return !s.user && !s.code ? 'Film Power' : s.label;
+}
+
+// Lägger till antal gillningar, kommentarer och visningar samt om den inloggade gillat/sparat.
+export async function withStats(items, s) {
+  if (!items.length) return items;
+  const ids = items.map((i) => i.id);
+  const a = actorId(s);
+  const [likes, comments, views, liked, saved] = await pipeline([
+    ['HMGET', 'news:likes', ...ids],
+    ['HMGET', 'news:comments', ...ids],
+    ['HMGET', 'news:views', ...ids],
+    ['SMEMBERS', 'liked:' + a],
+    ['SMEMBERS', 'saved:' + a],
+  ]);
+  const L = new Set(liked), S = new Set(saved);
+  return items.map((it, i) => ({
+    ...it,
+    likes: Math.max(0, Number(likes[i]) || 0),
+    comments: Math.max(0, Number(comments[i]) || 0),
+    views: Number(views[i]) || 0,
+    liked: L.has(it.id),
+    saved: S.has(it.id),
+  }));
+}

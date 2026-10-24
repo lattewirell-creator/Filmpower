@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Jost:wght@400;500&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: smal läskolumn som en tidning, adminverktyg i flikar ovanför flödet */
+/* Layout: smal kolumn som ett flöde, inlägg i Twitter-stil, adminverktyg i flikar */
 :root {
   --bg: #fafaf8;
   --ink: #141614;
@@ -102,33 +102,119 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .linklike { background: none; border: 0; padding: 0; color: var(--brand); font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .back { display: inline-block; margin-top: 2.5rem; font-size: .92rem; color: var(--muted); }
 
-/* App */
-.app-head { padding-block: 2.5rem 1.5rem; display: grid; gap: .6rem; }
-.app-head h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); letter-spacing: -.02em; }
-.tabs { display: flex; gap: .3rem; border-bottom: 1px solid var(--line); margin-bottom: 1.8rem; overflow-x: auto; }
-.tab { background: none; border: 0; padding: .75rem 1rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+/* App: flöde i Twitter-stil */
+:root { --like: #c92a5a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --like: #f0789d; } }
+:root[data-theme="dark"] { --like: #f0789d; }
+
+.app-head { padding-block: 2rem 1rem; display: grid; gap: .4rem; }
+.app-head h1 { font-size: clamp(2rem, 5vw, 2.6rem); letter-spacing: -.02em; }
+.tabs { display: flex; gap: .1rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { background: none; border: 0; padding: .8rem .7rem; font-size: .97rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; display: inline-flex; align-items: center; gap: .4rem; }
+.tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brand); font-weight: 500; }
+.tab svg { width: 1.05rem; height: 1.05rem; }
+.tab-sep { width: 1px; background: var(--line); margin: .6rem .3rem; flex: none; }
+#view-app { max-width: 47rem; }
 
-.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
-.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: .4rem .95rem; font-size: .9rem; cursor: pointer; color: var(--muted); }
+.feed-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding-bottom: .75rem; border-bottom: 1px solid var(--line); }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: .35rem .85rem; font-size: .88rem; cursor: pointer; color: var(--muted); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sort { display: inline-flex; align-items: center; gap: .5rem; font-size: .88rem; color: var(--muted); }
+.sort select { padding: .35rem .6rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: .88rem; }
 
+/* Inlägg i flödet */
 .feed { display: grid; }
-.post { padding-block: 1.8rem; border-top: 1px solid var(--line); display: grid; gap: .7rem; }
-.post:first-child { border-top: 0; padding-top: .4rem; }
-.post-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; font-size: .88rem; color: var(--muted); }
-.post-meta .label { font-size: .72rem; }
-.post h2 { font-size: clamp(1.5rem, 4vw, 2rem); letter-spacing: -.01em; }
-.post .text { display: grid; gap: .8rem; color: var(--ink); overflow-wrap: anywhere; }
-.post-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .8rem; }
-.post-foot a.more { color: var(--brand); font-weight: 500; text-decoration: none; }
-.post-foot a.more:hover { text-decoration: underline; }
+.tweet { padding: .9rem .75rem; margin-inline: -.75rem; border-bottom: 1px solid var(--line); cursor: pointer; transition: background-color .15s ease; }
+.tweet:hover { background: color-mix(in srgb, var(--soft) 60%, transparent); }
+.pinned-row { display: flex; align-items: center; gap: .45rem; font-size: .82rem; font-weight: 500; color: var(--muted); padding-left: 2.2rem; margin-bottom: .3rem; }
+.pinned-row svg { width: .95rem; height: .95rem; }
+.t-grid { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); gap: .8rem; }
+.avatar { width: 2.75rem; height: 2.75rem; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-family: var(--display); font-weight: 700; font-size: 1.05rem; letter-spacing: -.04em; flex: none; }
+.avatar.user { background: var(--soft); color: var(--ink); font-family: var(--body); font-weight: 500; letter-spacing: 0; text-transform: uppercase; }
+.t-main { min-width: 0; }
+.t-head { display: flex; align-items: center; gap: .3rem; font-size: .95rem; line-height: 1.3; min-width: 0; }
+.t-head b { font-weight: 600; white-space: nowrap; }
+.t-head .handle { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.verified { width: 1.1rem; height: 1.1rem; flex: none; }
+.verified circle { fill: var(--brand); }
+.verified path { stroke: var(--on-brand); }
+.t-cat { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); font-weight: 500; margin-top: .15rem; }
+.t-title { font-family: var(--display); font-size: 1.35rem; line-height: 1.2; margin: .2rem 0 .25rem; font-weight: 500; }
+.t-title a { text-decoration: none; }
+.t-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.t-text { white-space: pre-line; overflow-wrap: anywhere; }
+.t-more { color: var(--brand); font-weight: 500; }
+.t-link { display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem; font-size: .9rem; color: var(--brand); text-decoration: none; font-weight: 500; }
+.t-link:hover { text-decoration: underline; }
+.t-img { display: block; margin-top: .75rem; width: 100%; max-width: 100%; height: auto; max-height: 34rem; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); }
+.t-actions { display: flex; justify-content: space-between; max-width: 28rem; margin: .5rem 0 0 -.5rem; }
+.act { display: inline-flex; align-items: center; gap: .35rem; background: none; border: 0; color: var(--muted); padding: .4rem .5rem; border-radius: 999px; cursor: pointer; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.act svg { width: 1.15rem; height: 1.15rem; flex: none; }
+.act:hover { color: var(--brand); background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.act.like:hover, .act.like.on { color: var(--like); }
+.act.like:hover { background: color-mix(in srgb, var(--like) 12%, transparent); }
+.act.on svg { fill: currentColor; }
+.act.save.on { color: var(--brand); }
+.act.static { cursor: default; }
+.act.static:hover { color: var(--muted); background: none; }
+
+/* Adminmeny (⋯) */
+.menu-wrap { position: relative; margin-left: auto; flex: none; }
+.icon-btn { width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 0; background: none; display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+.icon-btn:hover { background: var(--soft); color: var(--ink); }
+.icon-btn svg { width: 1.2rem; height: 1.2rem; }
+.menu { position: absolute; right: 0; top: 2.3rem; z-index: 20; min-width: 13rem; padding: .3rem; display: grid; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, .16); }
+.menu button { display: flex; align-items: center; gap: .6rem; text-align: left; padding: .65rem .8rem; border: 0; background: none; border-radius: 8px; cursor: pointer; font-size: .95rem; }
+.menu button:hover { background: var(--soft); }
+.menu button svg { width: 1.05rem; height: 1.05rem; }
+.menu .danger { color: var(--danger); }
+
+/* Inläggsvy */
+.detail-head { display: flex; align-items: center; gap: 1rem; padding-block: 1rem .5rem; }
+.detail-head h2 { font-family: var(--body); font-size: 1.25rem; font-weight: 600; }
+.detail-head .icon-btn { color: var(--ink); }
+.d-author { display: flex; align-items: center; gap: .75rem; padding-top: .5rem; }
+.d-author .who-txt { display: grid; line-height: 1.25; min-width: 0; }
+.d-author .who-txt span.row { display: flex; align-items: center; gap: .3rem; }
+.d-author .handle { color: var(--muted); font-size: .92rem; }
+.d-title { font-family: var(--display); font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1.15; margin-top: 1rem; font-weight: 500; text-wrap: balance; }
+.d-text { font-size: 1.1rem; white-space: pre-line; overflow-wrap: anywhere; margin-top: .8rem; }
+.d-img { display: block; margin-top: 1rem; width: 100%; max-width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--line); background: var(--soft); }
+.d-meta { color: var(--muted); padding-block: 1rem; border-bottom: 1px solid var(--line); font-size: .95rem; margin-top: .6rem; }
+.d-meta b { color: var(--ink); font-weight: 600; }
+.d-actions { display: flex; justify-content: space-around; padding-block: .35rem; border-bottom: 1px solid var(--line); }
+.reply { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); gap: .8rem; padding-block: 1rem; border-bottom: 1px solid var(--line); }
+.reply textarea { width: 100%; border: 0; background: transparent; font-size: 1.1rem; line-height: 1.5; resize: none; min-height: 2.6rem; padding: .45rem 0; }
+.reply textarea:focus { outline: none; }
+.reply:focus-within { border-bottom-color: var(--brand); }
+.reply-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; margin-top: .4rem; }
+.reply-row small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.comment { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); gap: .8rem; padding-block: 1rem; border-bottom: 1px solid var(--line); }
+.comment .t-head { flex-wrap: wrap; }
+.comment p { white-space: pre-line; overflow-wrap: anywhere; margin-top: .15rem; }
+.c-del { background: none; border: 0; padding: 0; margin-left: auto; color: var(--muted); font-size: .82rem; cursor: pointer; }
+.c-del:hover { color: var(--danger); text-decoration: underline; }
+.no-comments { padding-block: 2rem; text-align: center; color: var(--muted); }
 
 .empty { padding: 3rem 0; text-align: center; color: var(--muted); display: grid; gap: .8rem; justify-items: center; }
 .empty h3 { color: var(--ink); font-size: 1.5rem; }
 
+/* Statistik */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .9rem; }
+.stat { padding: 1.1rem 1.2rem; border: 1px solid var(--line); border-radius: 14px; display: grid; gap: .15rem; }
+.stat b { font-family: var(--display); font-size: 2.1rem; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: .9rem; }
+.top-list { margin-top: 2rem; display: grid; }
+.top-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding-block: .8rem; border-top: 1px solid var(--line); text-decoration: none; }
+.top-row:hover b { text-decoration: underline; }
+.top-row b { font-weight: 500; overflow-wrap: anywhere; }
+.top-row small { color: var(--muted); font-size: .85rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
 /* Formulär */
-.form { display: grid; gap: 1.1rem; }
+.form { display: grid; gap: 1.1rem; padding-top: .5rem; }
 .field { display: grid; gap: .35rem; }
 .field label { font-size: .9rem; font-weight: 500; }
 .field .help { font-size: .85rem; color: var(--muted); }
@@ -138,17 +224,6 @@ textarea.input { resize: vertical; min-height: 11rem; line-height: 1.6; }
 .row2 > * { min-width: 0; }
 @media (max-width: 560px) { .row2 { grid-template-columns: 1fr; } }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
-
-/* Koder */
-.new-code { margin-top: 1.5rem; padding: 1.5rem; border-radius: 14px; background: var(--soft); display: grid; gap: .8rem; text-align: center; }
-.new-code .code { font-family: var(--mono); font-size: clamp(1.5rem, 6vw, 2.1rem); letter-spacing: .1em; user-select: all; }
-.code-list { margin-top: 2.2rem; display: grid; }
-.code-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: .9rem; border-top: 1px solid var(--line); }
-.code-row > div { min-width: 0; }
-.code-row b { font-weight: 500; display: block; overflow-wrap: anywhere; }
-.code-row small { color: var(--muted); font-family: var(--mono); font-size: .8rem; }
-.code-row .confirm { display: flex; gap: .5rem; align-items: center; font-size: .9rem; }
-
 .field-label { font-size: .9rem; font-weight: 500; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .img-pick { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
@@ -156,15 +231,27 @@ textarea.input { resize: vertical; min-height: 11rem; line-height: 1.6; }
 .img-pick:focus-within label { outline: 2px solid var(--brand); outline-offset: 3px; }
 .img-preview { display: grid; gap: .7rem; justify-items: start; }
 .img-preview img { max-width: 100%; max-height: 22rem; border-radius: 10px; border: 1px solid var(--line); }
-.post-img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 10px; background: var(--soft); margin-bottom: .4rem; }
+
+/* Konton och koder */
+.new-code { margin-top: 1.5rem; padding: 1.5rem; border-radius: 14px; background: var(--soft); display: grid; gap: .8rem; text-align: center; }
+.new-code .code { font-family: var(--mono); font-size: clamp(1.5rem, 6vw, 2.1rem); letter-spacing: .1em; user-select: all; }
+.code-list { margin-top: 2.2rem; display: grid; }
+.code-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: .9rem; border-top: 1px solid var(--line); }
+.code-row > div { min-width: 0; }
+.code-row b { font-weight: 500; display: block; overflow-wrap: anywhere; }
+.code-row small { color: var(--muted); font-family: var(--mono); font-size: .8rem; }
+.confirm { display: inline-flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-size: .9rem; }
 .row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 .status { display: inline-block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; padding: .15rem .55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: .5rem; font-family: var(--body); font-weight: 500; }
 .status.pending { border-color: var(--brand); color: var(--brand); }
 .status.blocked { border-color: var(--danger); color: var(--danger); }
-.count { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 .35rem; margin-left: .35rem; border-radius: 999px; background: var(--brand); color: var(--on-brand); font-size: .75rem; font-weight: 500; }
+.count { display: inline-grid; place-items: center; min-width: 1.3rem; height: 1.3rem; padding: 0 .35rem; border-radius: 999px; background: var(--brand); color: var(--on-brand); font-size: .72rem; font-weight: 500; }
+
 .notice { padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); font-size: .95rem; margin-bottom: 1.5rem; }
 .loading { padding-block: 6rem; text-align: center; color: var(--muted); }
+.toast { position: fixed; left: 50%; bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: var(--ink); color: var(--bg); padding: .7rem 1.2rem; border-radius: 999px; font-size: .95rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); max-width: calc(100% - 32px); }
 footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .tweet { transition: none; } }
 </style>
 </head>
 <body>
@@ -236,23 +323,52 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   <!-- Appen -->
   <section class="wrap" id="view-app" hidden>
-    <div class="app-head">
+    <div class="app-head" id="app-head">
       <p class="label" id="greeting"></p>
-      <h1>Senaste nytt</h1>
+      <h1 id="view-title">Nyheter</h1>
     </div>
 
-    <div class="notice" id="db-notice" hidden>Databasen är inte kopplad än. Du kan logga in som admin, men nyheter och koder sparas först när Upstash Redis är kopplat i Vercel.</div>
+    <div class="notice" id="db-notice" hidden>Databasen är inte kopplad än. Nyheter, konton och kommentarer sparas först när Upstash Redis är kopplat i Vercel.</div>
 
-    <div class="tabs" role="tablist" id="admin-tabs" hidden>
-      <button class="tab" role="tab" aria-selected="true" aria-controls="panel-feed" id="tab-feed" data-panel="panel-feed">Nyheter</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="panel-write" id="tab-write" data-panel="panel-write">Skriv nyhet</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="panel-users" id="tab-users" data-panel="panel-users">Konton<span class="count" id="pending-count" hidden></span></button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="panel-codes" id="tab-codes" data-panel="panel-codes">Koder</button>
+    <div class="tabs" role="tablist" id="tabs" aria-label="Vyer">
+      <button class="tab" role="tab" id="tab-all" data-panel="panel-feed" data-view="all" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Nyheter</button>
+      <button class="tab" role="tab" id="tab-popular" data-panel="panel-feed" data-view="popular" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9 11 10.5 11C10.5 7 12 2 12 2z"/></svg>Populärt</button>
+      <button class="tab" role="tab" id="tab-saved" data-panel="panel-feed" data-view="saved" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Sparade</button>
+      <span class="tab-sep" data-admin hidden></span>
+      <button class="tab" role="tab" id="tab-write" data-panel="panel-write" data-admin hidden aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Skriv</button>
+      <button class="tab" role="tab" id="tab-users" data-panel="panel-users" data-admin hidden aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Konton<span class="count" id="pending-count" hidden></span></button>
+      <button class="tab" role="tab" id="tab-codes" data-panel="panel-codes" data-admin hidden aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.6 7.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>Koder</button>
+      <button class="tab" role="tab" id="tab-stats" data-panel="panel-stats" data-admin hidden aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Statistik</button>
     </div>
 
     <div id="panel-feed" role="tabpanel">
-      <div class="chips" id="chips" aria-label="Filtrera på kategori"></div>
+      <div class="feed-tools">
+        <div class="chips" id="chips" aria-label="Filtrera på kategori"></div>
+        <label class="sort" id="sort-wrap">Visa
+          <select id="sort">
+            <option value="new">Nyast först</option>
+            <option value="old">Äldst först</option>
+          </select>
+        </label>
+      </div>
       <div class="feed" id="feed"></div>
+    </div>
+
+    <div id="panel-post" hidden>
+      <div class="detail-head">
+        <button class="icon-btn" type="button" id="back-btn" aria-label="Tillbaka">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <h2>Inlägg</h2>
+      </div>
+      <div id="post-detail"></div>
     </div>
 
     <div id="panel-write" role="tabpanel" hidden>
@@ -288,6 +404,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           <textarea class="input" id="p-body" maxlength="5000" required></textarea>
           <span class="help">Tom rad mellan stycken.</span>
         </div>
+        <label class="sort"><input type="checkbox" id="p-pin"> Fäst inlägget högst upp</label>
         <div class="form-actions">
           <button class="btn btn-primary" type="submit" id="post-btn">Publicera</button>
           <p class="msg" id="post-msg" role="status" aria-live="polite"></p>
@@ -320,16 +437,62 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       </div>
       <div class="code-list" id="code-list"></div>
     </div>
+
+    <div id="panel-stats" role="tabpanel" hidden>
+      <div class="stats" id="stats"></div>
+      <div class="top-list" id="top-list"></div>
+    </div>
   </section>
 </main>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <footer>© 2026 Film Power · <a href="/">filmpower</a></footer>
 
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var state = { user: null, categories: [], items: [], filter: 'Alla', dbReady: false };
+  var state = {
+    user: null, categories: [], items: [], dbReady: false,
+    filter: 'Alla', sort: 'new', view: 'all', panel: 'panel-feed',
+    image: '', current: null, fromFeed: false,
+  };
 
+  // ---------- Ikoner ----------
+  var ICON = {
+    comment: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 20.5l1.6-4.6A8.4 8.4 0 1 1 21 11.5z"/>',
+    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+    views: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
+    save: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+    share: '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
+    pin: '<path d="M12 17v5M9 3h6l-1 7 4 3v2H6v-2l4-3z"/>',
+    more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  };
+  function icon(name, extra) {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24');
+    s.setAttribute('fill', name === 'more' ? 'currentColor' : 'none');
+    s.setAttribute('stroke', name === 'more' ? 'none' : 'currentColor');
+    s.setAttribute('stroke-width', '2');
+    s.setAttribute('stroke-linecap', 'round');
+    s.setAttribute('stroke-linejoin', 'round');
+    s.setAttribute('aria-hidden', 'true');
+    if (extra) s.setAttribute('class', extra);
+    s.innerHTML = ICON[name];
+    return s;
+  }
+  function verified() {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24');
+    s.setAttribute('class', 'verified');
+    s.setAttribute('aria-label', 'Verifierad');
+    s.setAttribute('role', 'img');
+    s.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+    return s;
+  }
+
+  // ---------- Hjälpfunktioner ----------
   function api(path, opts) {
     opts = opts || {};
     var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: { 'x-fp': '1' } };
@@ -345,18 +508,50 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   function show(view) {
     ['view-loading', 'view-login', 'view-app'].forEach(function (v) { $(v).hidden = v !== view; });
   }
-
-  function setMsg(el, text, kind) { el.textContent = text || ''; el.className = 'msg' + (kind ? ' ' + kind : ''); }
-
-  function fmtDate(ts) {
-    return new Date(ts).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
-  }
-
+  function setMsg(node, text, kind) { node.textContent = text || ''; node.className = 'msg' + (kind ? ' ' + kind : ''); }
   function el(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
     if (text != null) n.textContent = text;
     return n;
+  }
+  function isAdmin() { return state.user && state.user.role === 'admin'; }
+
+  function fmtDate(ts) {
+    return new Date(ts).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function timeAgo(ts) {
+    var s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return 'nu';
+    if (s < 3600) return Math.floor(s / 60) + ' min';
+    if (s < 86400) return Math.floor(s / 3600) + ' tim';
+    if (s < 7 * 86400) return Math.floor(s / 86400) + ' d';
+    var d = new Date(ts), now = new Date();
+    return d.toLocaleDateString('sv-SE', d.getFullYear() === now.getFullYear() ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  var compact = new Intl.NumberFormat('sv-SE', { notation: 'compact', maximumFractionDigits: 1 });
+  function num(n) { return n ? compact.format(n) : ''; }
+
+  var toastTimer;
+  function toast(text) {
+    var t = $('toast');
+    t.textContent = text;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+
+  function norm(item) {
+    item.likes = item.likes || 0; item.comments = item.comments || 0; item.views = item.views || 0;
+    item.liked = !!item.liked; item.saved = !!item.saved; item.pinned = !!item.pinned;
+    return item;
+  }
+  function findItem(id) { for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i]; return null; }
+  function authorName(item) { return 'Film Power'; }
+  function myInitial() {
+    var u = state.user;
+    if (!u || u.label === 'Admin') return 'FP';
+    return u.label.charAt(0);
   }
 
   // ---------- Start ----------
@@ -367,26 +562,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       if (d.user) enterApp(d.user); else show('view-login');
     }).catch(function () {
       show('view-login');
-      setMsg($('login-msg'), 'Ingen kontakt med servern just nu.', 'error');
+      setMsg($('user-msg'), 'Ingen kontakt med servern just nu.', 'error');
     });
   }
 
   // ---------- Inloggning ----------
-  $('login-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var code = $('code').value.trim();
-    if (!code) { setMsg($('login-msg'), 'Skriv in din kod.', 'error'); return; }
-    $('login-btn').disabled = true;
-    setMsg($('login-msg'), '');
-    api('login', { method: 'POST', body: { code: code } }).then(function (user) {
-      $('code').value = '';
-      enterApp(user);
-    }).catch(function (err) {
-      setMsg($('login-msg'), err.message, 'error');
-    }).then(function () { $('login-btn').disabled = false; });
-  });
-
-  // Växla mellan användarnamn, nytt konto och kod
   function setMode(mode) {
     $('mode-member').setAttribute('aria-pressed', String(mode !== 'admin'));
     $('mode-admin').setAttribute('aria-pressed', String(mode === 'admin'));
@@ -402,30 +582,35 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   $('show-code').addEventListener('click', function () { setMode('code'); $('code').focus(); });
   $('code-back').addEventListener('click', function () { setMode('user'); $('u-name').focus(); });
 
+  function loginWith(form, btn, msg, body, after) {
+    btn.disabled = true;
+    setMsg(msg, '');
+    api('login', { method: 'POST', body: body }).then(function (user) {
+      after();
+      enterApp(user);
+    }).catch(function (err) { setMsg(msg, err.message, 'error'); })
+      .then(function () { btn.disabled = false; });
+  }
+
+  $('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = $('code').value.trim();
+    if (!code) { setMsg($('login-msg'), 'Skriv in din kod.', 'error'); return; }
+    loginWith(this, $('login-btn'), $('login-msg'), { code: code }, function () { $('code').value = ''; });
+  });
+
   $('admin-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var code = $('admin-code').value.trim();
     if (!code) { setMsg($('admin-msg'), 'Skriv in adminkoden.', 'error'); return; }
-    $('admin-btn').disabled = true;
-    setMsg($('admin-msg'), '');
-    api('login', { method: 'POST', body: { code: code, as: 'admin' } }).then(function (user) {
-      $('admin-code').value = '';
-      enterApp(user);
-    }).catch(function (err) { setMsg($('admin-msg'), err.message, 'error'); })
-      .then(function () { $('admin-btn').disabled = false; });
+    loginWith(this, $('admin-btn'), $('admin-msg'), { code: code, as: 'admin' }, function () { $('admin-code').value = ''; });
   });
 
   $('user-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var username = $('u-name').value.trim(), password = $('u-pass').value;
     if (!username || !password) { setMsg($('user-msg'), 'Fyll i användarnamn och lösenord.', 'error'); return; }
-    $('user-btn').disabled = true;
-    setMsg($('user-msg'), '');
-    api('login', { method: 'POST', body: { username: username, password: password } }).then(function (user) {
-      $('u-pass').value = '';
-      enterApp(user);
-    }).catch(function (err) { setMsg($('user-msg'), err.message, 'error'); })
-      .then(function () { $('user-btn').disabled = false; });
+    loginWith(this, $('user-btn'), $('user-msg'), { username: username, password: password }, function () { $('u-pass').value = ''; });
   });
 
   $('register-form').addEventListener('submit', function (e) {
@@ -447,18 +632,17 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   $('logout-btn').addEventListener('click', function () {
     api('logout', { method: 'POST' }).catch(function () {}).then(function () {
-      state.user = null; state.items = [];
+      state.user = null; state.items = []; state.current = null;
       $('who').hidden = true;
-      $('feed').replaceChildren();
-      $('code-list').replaceChildren();
-      $('user-list').replaceChildren();
+      ['feed', 'post-detail', 'code-list', 'user-list', 'stats', 'top-list'].forEach(function (id) { $(id).replaceChildren(); });
       $('pending-count').hidden = true;
-      setMode('user');
       $('new-code').hidden = true;
       $('new-code-value').textContent = '';
       $('post-form').reset();
       clearImage();
       setMsg($('post-msg'), ''); setMsg($('code-msg'), '');
+      if (location.hash) history.replaceState(null, '', location.pathname);
+      setMode('user');
       show('view-login');
       $('u-name').focus();
     });
@@ -466,7 +650,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function enterApp(user) {
     state.user = user;
-    var admin = user.role === 'admin';
+    var admin = isAdmin();
     $('who').hidden = false;
     $('who-name').textContent = user.label;
     $('who-badge').textContent = admin ? 'Admin' : 'Medlem';
@@ -474,36 +658,62 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('greeting').textContent = admin
       ? (user.label === 'Admin' ? 'Inloggad som admin' : 'Inloggad som admin, ' + user.label)
       : 'Välkommen, ' + user.label;
-    $('admin-tabs').hidden = !admin;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = !admin; });
     $('db-notice').hidden = state.dbReady;
     fillCategorySelect();
-    selectTab('panel-feed');
     show('view-app');
-    loadNews();
+    selectTab('tab-all');
+    loadNews().then(route);
     if (admin && state.dbReady) loadUsers();
   }
 
-  // ---------- Flikar (admin) ----------
+  // ---------- Flikar ----------
+  var TITLES = { all: 'Nyheter', popular: 'Populärt', saved: 'Sparade', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik' };
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
-  tabs.forEach(function (t) { t.addEventListener('click', function () { selectTab(t.dataset.panel); }); });
-  function selectTab(panel) {
-    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.panel === panel)); });
-    ['panel-feed', 'panel-write', 'panel-users', 'panel-codes'].forEach(function (p) { $(p).hidden = p !== panel; });
-    if (panel === 'panel-codes') loadCodes();
-    if (panel === 'panel-users') loadUsers();
-    if (panel === 'panel-feed') renderFeed();
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      if (location.hash) history.pushState(null, '', location.pathname);
+      selectTab(t.id);
+    });
+  });
+
+  function selectTab(tabId) {
+    var tab = $(tabId);
+    state.panel = tab.dataset.panel;
+    if (tab.dataset.view) state.view = tab.dataset.view;
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.id === tabId)); });
+    ['panel-feed', 'panel-post', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = p !== state.panel; });
+    $('tabs').hidden = false;
+    $('app-head').hidden = false;
+    $('view-title').textContent = TITLES[tab.dataset.view || state.panel];
+    if (state.panel === 'panel-feed') { $('sort-wrap').hidden = state.view === 'popular'; renderChips(); renderFeed(); }
+    if (state.panel === 'panel-codes') loadCodes();
+    if (state.panel === 'panel-users') loadUsers();
+    if (state.panel === 'panel-stats') loadStats();
   }
 
   // ---------- Nyheter ----------
   function loadNews() {
     $('feed').replaceChildren(el('p', 'muted', 'Hämtar nyheter…'));
-    if (!state.dbReady) { state.items = []; renderChips(); renderFeed(); return; }
-    api('news').then(function (d) {
-      state.items = d.items || [];
+    if (!state.dbReady) { state.items = []; renderChips(); renderFeed(); return Promise.resolve(); }
+    return api('news').then(function (d) {
+      state.items = (d.items || []).map(norm);
       renderChips(); renderFeed();
     }).catch(function (err) {
       if (err.status === 401) { show('view-login'); $('who').hidden = true; return; }
       $('feed').replaceChildren(el('p', 'msg error', err.message));
+    });
+  }
+
+  function viewItems() {
+    var list = state.items.filter(function (i) { return state.filter === 'Alla' || i.category === state.filter; });
+    if (state.view === 'saved') list = list.filter(function (i) { return i.saved; });
+    var dir = state.sort === 'old' ? 1 : -1;
+    return list.slice().sort(function (a, b) {
+      if (state.view === 'popular') return (b.likes - a.likes) || (b.comments - a.comments) || (b.views - a.views) || (b.createdAt - a.createdAt);
+      if (state.view === 'all' && a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      if (state.view === 'all' && a.pinned && b.pinned) return (b.pinnedAt || 0) - (a.pinnedAt || 0);
+      return dir * (a.createdAt - b.createdAt);
     });
   }
 
@@ -514,7 +724,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (used.indexOf(state.filter) < 0) state.filter = 'Alla';
     var box = $('chips');
     box.replaceChildren();
-    box.hidden = state.items.length === 0;
+    if (used.length < 2) return;
     used.forEach(function (c) {
       var b = el('button', 'chip', c);
       b.type = 'button';
@@ -524,103 +734,435 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     });
   }
 
+  $('sort').addEventListener('change', function () { state.sort = this.value; renderFeed(); });
+
   function renderFeed() {
     var feed = $('feed');
     feed.replaceChildren();
-    var items = state.items.filter(function (i) { return state.filter === 'Alla' || i.category === state.filter; });
+    var items = viewItems();
     if (!items.length) {
       var empty = el('div', 'empty');
-      empty.appendChild(el('h3', null, 'Inga nyheter än'));
-      var admin = state.user && state.user.role === 'admin';
-      empty.appendChild(el('p', null, admin ? 'Skriv den första nyheten under fliken Skriv nyhet.' : 'Titta in snart. Nya artiklar publiceras löpande.'));
-      if (admin) {
-        var go = el('button', 'btn btn-primary btn-small', 'Skriv nyhet');
-        go.type = 'button';
-        go.addEventListener('click', function () { selectTab('panel-write'); $('p-title').focus(); });
-        empty.appendChild(go);
+      if (state.view === 'saved') {
+        empty.appendChild(el('h3', null, 'Inga sparade inlägg'));
+        empty.appendChild(el('p', null, 'Tryck på bokmärket under ett inlägg så hamnar det här.'));
+      } else {
+        empty.appendChild(el('h3', null, 'Inga nyheter än'));
+        empty.appendChild(el('p', null, isAdmin() ? 'Skriv den första nyheten under fliken Skriv.' : 'Titta in snart. Nya inlägg publiceras löpande.'));
+        if (isAdmin()) {
+          var go = el('button', 'btn btn-primary btn-small', 'Skriv nyhet');
+          go.type = 'button';
+          go.addEventListener('click', function () { selectTab('tab-write'); $('p-title').focus(); });
+          empty.appendChild(go);
+        }
       }
       feed.appendChild(empty);
       return;
     }
-    items.forEach(function (item) { feed.appendChild(renderPost(item)); });
+    items.forEach(function (item) { feed.appendChild(renderTweet(item)); });
   }
 
-  function renderPost(item) {
-    var art = el('article', 'post');
+  function authorHead(item, withTime) {
+    var head = el('div', 't-head');
+    head.appendChild(el('b', null, authorName(item)));
+    head.appendChild(verified());
+    head.appendChild(el('span', 'handle', '@filmpower' + (withTime ? ' · ' + timeAgo(item.createdAt) : '')));
+    return head;
+  }
+
+  function renderTweet(item) {
+    var art = el('article', 'tweet');
+    art.dataset.id = item.id;
+    if (item.pinned && state.view === 'all') {
+      var pr = el('div', 'pinned-row');
+      pr.appendChild(icon('pin'));
+      pr.appendChild(document.createTextNode('Fäst inlägg'));
+      art.appendChild(pr);
+    }
+    var grid = el('div', 't-grid');
+    grid.appendChild(el('div', 'avatar', 'FP'));
+    var main = el('div', 't-main');
+    var head = authorHead(item, true);
+    if (isAdmin()) head.appendChild(adminMenu(item));
+    main.appendChild(head);
+    main.appendChild(el('div', 't-cat', item.category));
+
+    var h = el('h2', 't-title');
+    var a = el('a', null, item.title);
+    a.href = '#inlagg-' + item.id;
+    h.appendChild(a);
+    main.appendChild(h);
+
+    var body = item.body;
+    var text = el('p', 't-text');
+    if (body.length > 280) {
+      text.textContent = body.slice(0, 260).replace(/\s+\S*$/, '') + '… ';
+      text.appendChild(el('span', 't-more', 'Visa mer'));
+    } else text.textContent = body;
+    main.appendChild(text);
+
+    if (item.link) main.appendChild(linkChip(item.link));
     if (item.image) {
-      var im = el('img', 'post-img');
+      var im = el('img', 't-img');
       im.src = '/api/image?id=' + encodeURIComponent(item.image);
       im.alt = '';
       im.loading = 'lazy';
       im.decoding = 'async';
-      art.appendChild(im);
+      main.appendChild(im);
     }
-    var meta = el('div', 'post-meta');
-    meta.appendChild(el('span', 'label', item.category));
-    meta.appendChild(el('time', null, fmtDate(item.createdAt)));
-    art.appendChild(meta);
-    art.appendChild(el('h2', null, item.title));
-    var text = el('div', 'text');
-    item.body.split(/\n{2,}/).forEach(function (para) {
-      var p = el('p');
-      para.split('\n').forEach(function (line, i) {
-        if (i) p.appendChild(document.createElement('br'));
-        p.appendChild(document.createTextNode(line));
-      });
-      text.appendChild(p);
-    });
-    art.appendChild(text);
+    main.appendChild(actionBar(item, false));
+    grid.appendChild(main);
+    art.appendChild(grid);
 
-    var foot = el('div', 'post-foot');
-    if (item.link) {
-      var a = el('a', 'more', 'Läs mer →');
-      a.href = item.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      foot.appendChild(a);
-    } else foot.appendChild(el('span'));
-    if (state.user && state.user.role === 'admin') foot.appendChild(confirmButton('Ta bort', 'Ta bort nyheten?', function () {
-      return api('news?id=' + encodeURIComponent(item.id), { method: 'DELETE' }).then(function () {
-        state.items = state.items.filter(function (i) { return i.id !== item.id; });
-        renderChips(); renderFeed();
-      });
-    }));
-    art.appendChild(foot);
+    art.addEventListener('click', function (e) {
+      if (e.target.closest('button, a, .menu')) return;
+      if (window.getSelection && String(window.getSelection())) return;
+      location.hash = 'inlagg-' + item.id;
+    });
     return art;
   }
 
-  // Tvåstegsknapp i stället för confirm()-dialog.
-  function confirmButton(label, question, action) {
-    var wrap = el('span', 'confirm');
-    function idle() {
-      wrap.replaceChildren();
-      var b = el('button', 'btn btn-danger btn-small', label);
-      b.type = 'button';
-      b.addEventListener('click', ask);
-      wrap.appendChild(b);
+  function linkChip(href) {
+    var a = el('a', 't-link');
+    a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.appendChild(icon('link'));
+    var host = href;
+    try { host = new URL(href).hostname.replace(/^www\./, ''); } catch (err) {}
+    a.appendChild(document.createTextNode(host));
+    return a;
+  }
+
+  // Raden med kommentera, gilla, visningar, spara och dela.
+  function actionBar(item, big) {
+    var bar = el('div', big ? 'd-actions' : 't-actions');
+
+    var c = actBtn('comment', 'Kommentera', num(item.comments));
+    c.addEventListener('click', function () {
+      if (big) { $('reply-text').focus(); return; }
+      location.hash = 'inlagg-' + item.id;
+      setTimeout(function () { var r = $('reply-text'); if (r) r.focus(); }, 300);
+    });
+    bar.appendChild(c);
+
+    var l = actBtn('heart', item.liked ? 'Ta bort gilla' : 'Gilla', num(item.likes), 'like' + (item.liked ? ' on' : ''));
+    l.setAttribute('aria-pressed', String(item.liked));
+    l.addEventListener('click', function () { toggleLike(item); });
+    bar.appendChild(l);
+
+    var v = actBtn('views', 'Visningar', num(item.views), 'static');
+    v.disabled = true;
+    bar.appendChild(v);
+
+    var s = actBtn('save', item.saved ? 'Ta bort från sparade' : 'Spara', '', 'save' + (item.saved ? ' on' : ''));
+    s.setAttribute('aria-pressed', String(item.saved));
+    s.addEventListener('click', function () { toggleSave(item); });
+    bar.appendChild(s);
+
+    var sh = actBtn('share', 'Dela', '');
+    sh.addEventListener('click', function () { share(item); });
+    bar.appendChild(sh);
+    return bar;
+  }
+
+  function actBtn(name, label, count, cls) {
+    var b = el('button', 'act' + (cls ? ' ' + cls : ''));
+    b.type = 'button';
+    b.setAttribute('aria-label', label + (count ? ' (' + count + ')' : ''));
+    b.title = label;
+    b.appendChild(icon(name));
+    if (count) b.appendChild(el('span', null, count));
+    return b;
+  }
+
+  function refreshItem(item) {
+    var old = document.querySelector('.tweet[data-id="' + item.id + '"]');
+    if (old) old.replaceWith(renderTweet(item));
+    if (state.current && state.current.id === item.id) renderDetailActions(item);
+  }
+
+  function toggleLike(item) {
+    var on = !item.liked;
+    item.liked = on; item.likes = Math.max(0, item.likes + (on ? 1 : -1));
+    refreshItem(item);
+    api('post?id=' + encodeURIComponent(item.id) + '&action=' + (on ? 'like' : 'unlike'), { method: 'POST' })
+      .then(function (d) { item.liked = d.liked; item.likes = d.likes; refreshItem(item); })
+      .catch(function (err) { item.liked = !on; item.likes = Math.max(0, item.likes + (on ? -1 : 1)); refreshItem(item); toast(err.message); });
+  }
+
+  function toggleSave(item) {
+    var on = !item.saved;
+    item.saved = on;
+    refreshItem(item);
+    if (state.view === 'saved' && state.panel === 'panel-feed') renderFeed();
+    api('post?id=' + encodeURIComponent(item.id) + '&action=' + (on ? 'save' : 'unsave'), { method: 'POST' })
+      .then(function () { toast(on ? 'Sparat. Du hittar det under Sparade.' : 'Borttaget från sparade.'); })
+      .catch(function (err) { item.saved = !on; refreshItem(item); toast(err.message); });
+  }
+
+  function share(item) {
+    var url = location.origin + '/nyheter/#inlagg-' + item.id;
+    if (navigator.share) {
+      navigator.share({ title: item.title, url: url }).catch(function () {});
+      return;
     }
-    function ask() {
-      wrap.replaceChildren();
-      wrap.appendChild(el('span', 'muted', question));
-      var yes = el('button', 'btn btn-danger btn-small', 'Ja');
-      var no = el('button', 'btn btn-ghost btn-small', 'Avbryt');
-      yes.type = no.type = 'button';
-      yes.addEventListener('click', function () {
-        yes.disabled = true;
-        action().catch(function (err) { wrap.replaceChildren(el('span', 'msg error', err.message)); setTimeout(idle, 2500); });
+    try {
+      navigator.clipboard.writeText(url).then(function () { toast('Länken är kopierad.'); }, function () { toast(url); });
+    } catch (err) { toast(url); }
+  }
+
+  // ---------- Adminmeny (⋯) ----------
+  var openMenu = null;
+  function closeMenu() { if (openMenu) { openMenu.remove(); openMenu = null; } }
+  document.addEventListener('click', function (e) { if (openMenu && !e.target.closest('.menu-wrap')) closeMenu(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+
+  function adminMenu(item) {
+    var wrap = el('div', 'menu-wrap');
+    var btn = el('button', 'icon-btn');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Fler val');
+    btn.setAttribute('aria-haspopup', 'menu');
+    btn.appendChild(icon('more'));
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasOpen = openMenu && openMenu.parentNode === wrap;
+      closeMenu();
+      if (wasOpen) return;
+      var m = el('div', 'menu');
+      m.setAttribute('role', 'menu');
+      var pin = el('button');
+      pin.type = 'button';
+      pin.setAttribute('role', 'menuitem');
+      pin.appendChild(icon('pin'));
+      pin.appendChild(document.createTextNode(item.pinned ? 'Lossa från toppen' : 'Fäst högst upp'));
+      pin.addEventListener('click', function () { closeMenu(); setPinned(item, !item.pinned); });
+      var del = el('button', 'danger');
+      del.type = 'button';
+      del.setAttribute('role', 'menuitem');
+      del.appendChild(icon('trash'));
+      del.appendChild(document.createTextNode('Ta bort inlägget'));
+      del.addEventListener('click', function () {
+        if (del.dataset.armed) { closeMenu(); deletePost(item); return; }
+        del.dataset.armed = '1';
+        del.lastChild.textContent = 'Klicka igen för att ta bort';
       });
-      no.addEventListener('click', idle);
-      wrap.appendChild(yes); wrap.appendChild(no);
-    }
-    idle();
+      m.appendChild(pin); m.appendChild(del);
+      wrap.appendChild(m);
+      openMenu = m;
+      pin.focus();
+    });
+    wrap.appendChild(btn);
     return wrap;
   }
 
+  function setPinned(item, pinned) {
+    api('news?id=' + encodeURIComponent(item.id), { method: 'PATCH', body: { pinned: pinned } }).then(function (d) {
+      item.pinned = d.item.pinned; item.pinnedAt = d.item.pinnedAt;
+      if (state.panel === 'panel-feed') renderFeed();
+      if (state.current && state.current.id === item.id) renderDetail(item, state.currentComments);
+      toast(pinned ? 'Inlägget är fäst högst upp.' : 'Inlägget är inte längre fäst.');
+    }).catch(function (err) { toast(err.message); });
+  }
+
+  function deletePost(item) {
+    api('news?id=' + encodeURIComponent(item.id), { method: 'DELETE' }).then(function () {
+      state.items = state.items.filter(function (i) { return i.id !== item.id; });
+      toast('Inlägget är borttaget.');
+      if (state.current && state.current.id === item.id) { goBack(); return; }
+      renderChips(); renderFeed();
+    }).catch(function (err) { toast(err.message); });
+  }
+
+  // ---------- Inläggsvy ----------
+  function route() {
+    var m = /^#inlagg-([a-f0-9]+)$/.exec(location.hash);
+    if (!state.user) return;
+    if (m) openPost(m[1]);
+    else if (state.panel === 'panel-post') selectTab('tab-' + state.view);
+  }
+  window.addEventListener('hashchange', function () {
+    state.fromFeed = state.panel !== 'panel-post';
+    route();
+  });
+
+  function goBack() {
+    if (state.fromFeed) history.back();
+    else { history.pushState(null, '', location.pathname); selectTab('tab-' + state.view); }
+  }
+  $('back-btn').addEventListener('click', goBack);
+
+  function openPost(id) {
+    closeMenu();
+    ['panel-feed', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats'].forEach(function (p) { $(p).hidden = true; });
+    $('panel-post').hidden = false;
+    $('tabs').hidden = true;
+    $('app-head').hidden = true;
+    state.panel = 'panel-post';
+    window.scrollTo(0, 0);
+    var cached = findItem(id);
+    if (cached) renderDetail(cached, null);
+    else $('post-detail').replaceChildren(el('p', 'muted', 'Hämtar inlägget…'));
+    api('post?id=' + encodeURIComponent(id)).then(function (d) {
+      var item = norm(d.item);
+      var existing = findItem(id);
+      if (existing) { Object.assign(existing, item); item = existing; } else state.items.push(item);
+      renderDetail(item, d.comments || []);
+    }).catch(function (err) {
+      var box = el('div', 'empty');
+      box.appendChild(el('h3', null, 'Inlägget går inte att visa'));
+      box.appendChild(el('p', null, err.message));
+      $('post-detail').replaceChildren(box);
+    });
+  }
+
+  function renderDetail(item, comments) {
+    state.current = item;
+    state.currentComments = comments;
+    var box = $('post-detail');
+    box.replaceChildren();
+
+    var author = el('div', 'd-author');
+    author.appendChild(el('div', 'avatar', 'FP'));
+    var who = el('div', 'who-txt');
+    var row = el('span', 'row');
+    row.appendChild(el('b', null, authorName(item)));
+    row.appendChild(verified());
+    who.appendChild(row);
+    who.appendChild(el('span', 'handle', '@filmpower' + (item.author && item.author !== 'Admin' ? ' · skrivet av ' + item.author : '')));
+    author.appendChild(who);
+    if (isAdmin()) author.appendChild(adminMenu(item));
+    box.appendChild(author);
+
+    if (item.pinned) {
+      var pr = el('div', 'pinned-row');
+      pr.style.paddingLeft = '0';
+      pr.style.marginTop = '.9rem';
+      pr.appendChild(icon('pin'));
+      pr.appendChild(document.createTextNode('Fäst inlägg'));
+      box.appendChild(pr);
+    }
+    var cat = el('div', 't-cat', item.category);
+    cat.style.marginTop = '1rem';
+    box.appendChild(cat);
+    box.appendChild(el('h1', 'd-title', item.title));
+    box.appendChild(el('p', 'd-text', item.body));
+    if (item.link) box.appendChild(linkChip(item.link));
+    if (item.image) {
+      var im = el('img', 'd-img');
+      im.src = '/api/image?id=' + encodeURIComponent(item.image);
+      im.alt = '';
+      box.appendChild(im);
+    }
+
+    var d = new Date(item.createdAt);
+    var meta = el('div', 'd-meta');
+    meta.appendChild(document.createTextNode(
+      d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) + ' · ' +
+      d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · '));
+    meta.appendChild(el('b', null, (item.views || 0).toLocaleString('sv-SE')));
+    meta.appendChild(document.createTextNode(item.views === 1 ? ' visning' : ' visningar'));
+    box.appendChild(meta);
+
+    var actions = el('div');
+    actions.id = 'detail-actions';
+    actions.appendChild(actionBar(item, true));
+    box.appendChild(actions);
+
+    // Svarsruta
+    var reply = el('form', 'reply');
+    reply.noValidate = true;
+    reply.appendChild(el('div', 'avatar' + (myInitial() === 'FP' ? '' : ' user'), myInitial()));
+    var rmain = el('div');
+    var lab = el('label', 'visually-hidden', 'Skriv en kommentar');
+    lab.htmlFor = 'reply-text';
+    var ta = el('textarea');
+    ta.id = 'reply-text';
+    ta.maxLength = 1000;
+    ta.rows = 1;
+    ta.placeholder = 'Skriv en kommentar';
+    var rrow = el('div', 'reply-row');
+    var counter = el('small', null, '');
+    var send = el('button', 'btn btn-primary btn-small', 'Svara');
+    send.type = 'submit';
+    send.disabled = true;
+    ta.addEventListener('input', function () {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+      var n = ta.value.trim().length;
+      send.disabled = n === 0;
+      counter.textContent = ta.value.length > 800 ? ta.value.length + ' / 1000' : '';
+    });
+    rrow.appendChild(counter); rrow.appendChild(send);
+    rmain.appendChild(lab); rmain.appendChild(ta); rmain.appendChild(rrow);
+    reply.appendChild(rmain);
+    reply.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = ta.value.trim();
+      if (!text) return;
+      send.disabled = true;
+      api('post?id=' + encodeURIComponent(item.id) + '&action=comment', { method: 'POST', body: { text: text } }).then(function (r) {
+        ta.value = ''; ta.style.height = 'auto'; counter.textContent = '';
+        item.comments = r.comments;
+        (state.currentComments = state.currentComments || []).unshift(r.comment);
+        renderComments(item);
+        renderDetailActions(item);
+      }).catch(function (err) { toast(err.message); send.disabled = false; });
+    });
+    box.appendChild(reply);
+
+    var list = el('div');
+    list.id = 'comment-list';
+    box.appendChild(list);
+    if (comments) renderComments(item);
+    else list.appendChild(el('p', 'no-comments', 'Hämtar kommentarer…'));
+  }
+
+  function renderDetailActions(item) {
+    var a = $('detail-actions');
+    if (a) a.replaceChildren(actionBar(item, true));
+  }
+
+  function renderComments(item) {
+    var list = $('comment-list');
+    if (!list) return;
+    list.replaceChildren();
+    var comments = state.currentComments || [];
+    if (!comments.length) { list.appendChild(el('p', 'no-comments', 'Inga kommentarer än. Bli först!')); return; }
+    comments.forEach(function (c) {
+      var row = el('div', 'comment');
+      row.appendChild(el('div', 'avatar' + (c.isAdmin && c.author === 'Film Power' ? '' : ' user'), c.author === 'Film Power' ? 'FP' : c.author.charAt(0)));
+      var main = el('div', 't-main');
+      var head = el('div', 't-head');
+      head.appendChild(el('b', null, c.author));
+      if (c.isAdmin) head.appendChild(verified());
+      head.appendChild(el('span', 'handle', '· ' + timeAgo(c.createdAt)));
+      if (c.canDelete) {
+        var del = el('button', 'c-del', 'Ta bort');
+        del.type = 'button';
+        del.addEventListener('click', function () {
+          if (!del.dataset.armed) { del.dataset.armed = '1'; del.textContent = 'Säker?'; return; }
+          api('post?id=' + encodeURIComponent(item.id) + '&comment=' + encodeURIComponent(c.id), { method: 'DELETE' }).then(function (r) {
+            state.currentComments = state.currentComments.filter(function (x) { return x.id !== c.id; });
+            item.comments = r.comments;
+            renderComments(item);
+            renderDetailActions(item);
+          }).catch(function (err) { toast(err.message); });
+        });
+        head.appendChild(del);
+      }
+      main.appendChild(head);
+      main.appendChild(el('p', null, c.text));
+      row.appendChild(main);
+      list.appendChild(row);
+    });
+  }
+
+  // ---------- Skriv nyhet ----------
   function fillCategorySelect() {
     var sel = $('p-cat');
     sel.replaceChildren();
     state.categories.forEach(function (c) { var o = el('option', null, c); o.value = c; sel.appendChild(o); });
   }
 
-  // ---------- Bild till nyhet ----------
   var MAX_IMAGE_CHARS = 880000;
 
   // Krymper bilden i webbläsaren så att uppladdningen blir liten och snabb.
@@ -685,21 +1227,94 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   $('post-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var body = { title: $('p-title').value, category: $('p-cat').value, link: $('p-link').value, body: $('p-body').value, image: state.image || '' };
+    var pin = $('p-pin').checked;
     if (!body.title.trim() || !body.body.trim()) { setMsg($('post-msg'), 'Fyll i rubrik och text.', 'error'); return; }
     $('post-btn').disabled = true;
     $('post-btn').textContent = 'Publicerar…';
     api('news', { method: 'POST', body: body }).then(function (d) {
-      state.items.unshift(d.item);
+      var item = norm(d.item);
+      state.items.unshift(item);
       $('post-form').reset();
       clearImage();
-      setMsg($('post-msg'), 'Publicerad.', 'ok');
-      setTimeout(function () { setMsg($('post-msg'), ''); }, 3000);
+      setMsg($('post-msg'), '');
       state.filter = 'Alla';
-      renderChips();
-      selectTab('panel-feed');
+      selectTab('tab-all');
+      toast('Inlägget är publicerat.');
+      if (pin) setPinned(item, true);
     }).catch(function (err) { setMsg($('post-msg'), err.message, 'error'); })
       .then(function () { $('post-btn').disabled = false; $('post-btn').textContent = 'Publicera'; });
   });
+
+  // ---------- Statistik ----------
+  function loadStats() {
+    var items = state.items;
+    var sum = function (k) { return items.reduce(function (s, i) { return s + (i[k] || 0); }, 0); };
+    var cards = [
+      [items.length, 'Inlägg'],
+      [sum('views'), 'Visningar'],
+      [sum('likes'), 'Gillningar'],
+      [sum('comments'), 'Kommentarer'],
+    ];
+    function drawCards(extra) {
+      var box = $('stats');
+      box.replaceChildren();
+      cards.concat(extra || []).forEach(function (c) {
+        var s = el('div', 'stat');
+        s.appendChild(el('b', null, Number(c[0]).toLocaleString('sv-SE')));
+        s.appendChild(el('span', null, c[1]));
+        box.appendChild(s);
+      });
+    }
+    drawCards();
+    if (state.dbReady) {
+      Promise.all([api('users'), api('codes')]).then(function (r) {
+        var users = r[0].users || [];
+        drawCards([
+          [users.filter(function (u) { return u.status === 'active'; }).length, 'Aktiva konton'],
+          [users.filter(function (u) { return u.status === 'pending'; }).length, 'Väntar på godkännande'],
+          [(r[1].codes || []).length, 'Aktiva koder'],
+        ]);
+      }).catch(function () {});
+    }
+    var top = $('top-list');
+    top.replaceChildren();
+    if (!items.length) return;
+    top.appendChild(el('p', 'label', 'Mest lästa inlägg'));
+    items.slice().sort(function (a, b) { return b.views - a.views || b.likes - a.likes; }).slice(0, 5).forEach(function (i) {
+      var a = el('a', 'top-row');
+      a.href = '#inlagg-' + i.id;
+      a.appendChild(el('b', null, i.title));
+      a.appendChild(el('small', null, i.views.toLocaleString('sv-SE') + ' visningar · ' + i.likes + ' gillningar · ' + i.comments + ' kommentarer'));
+      top.appendChild(a);
+    });
+  }
+
+  // ---------- Bekräftelseknapp ----------
+  function confirmButton(label, question, action) {
+    var wrap = el('span', 'confirm');
+    function idle() {
+      wrap.replaceChildren();
+      var b = el('button', 'btn btn-danger btn-small', label);
+      b.type = 'button';
+      b.addEventListener('click', ask);
+      wrap.appendChild(b);
+    }
+    function ask() {
+      wrap.replaceChildren();
+      wrap.appendChild(el('span', 'muted', question));
+      var yes = el('button', 'btn btn-danger btn-small', 'Ja');
+      var no = el('button', 'btn btn-ghost btn-small', 'Avbryt');
+      yes.type = no.type = 'button';
+      yes.addEventListener('click', function () {
+        yes.disabled = true;
+        action().catch(function (err) { wrap.replaceChildren(el('span', 'msg error', err.message)); setTimeout(idle, 2500); });
+      });
+      no.addEventListener('click', idle);
+      wrap.appendChild(yes); wrap.appendChild(no);
+    }
+    idle();
+    return wrap;
+  }
 
   // ---------- Konton ----------
   var STATUS_TEXT = { pending: 'Väntar', active: 'Aktiv', blocked: 'Spärrad' };

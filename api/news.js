@@ -1,10 +1,10 @@
 import crypto from 'node:crypto';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
-  HttpError, redis, pipeline, CATEGORIES,
+  HttpError, redis, pipeline, CATEGORIES, withStats,
 } from './_lib.js';
 
-const MAX_LIST = 100;
+const MAX_LIST = 200;
 // Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
 const MAX_IMAGE_CHARS = 900_000;
 const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
@@ -15,12 +15,12 @@ function clean(s, max) {
 
 export default handle(async (req, res) => {
   if (req.method === 'GET') {
-    await requireSession(req);
+    const s = await requireSession(req);
     const ids = await redis('ZREVRANGE', 'news:idx', 0, MAX_LIST - 1);
     if (!ids.length) return send(res, 200, { items: [] });
     const raws = await redis('HMGET', 'news', ...ids);
     const items = raws.filter(Boolean).map((r) => JSON.parse(r));
-    return send(res, 200, { items });
+    return send(res, 200, { items: await withStats(items, s) });
   }
 
   requireAppHeader(req);
@@ -66,11 +66,25 @@ export default handle(async (req, res) => {
     return send(res, 201, { item });
   }
 
+  // Fäst eller lossa ett inlägg. Fästa inlägg visas överst.
+  if (req.method === 'PATCH') {
+    const id = queryParam(req, 'id');
+    const raw = id && (await redis('HGET', 'news', id));
+    if (!raw) throw new HttpError(404, 'Nyheten finns inte.');
+    const { pinned } = await readBody(req);
+    const item = { ...JSON.parse(raw), pinned: Boolean(pinned), pinnedAt: pinned ? Date.now() : 0 };
+    await redis('HSET', 'news', id, JSON.stringify(item));
+    return send(res, 200, { item });
+  }
+
   if (req.method === 'DELETE') {
     const id = queryParam(req, 'id');
     if (!id) throw new HttpError(400, 'Id saknas.');
     const raw = await redis('HGET', 'news', id);
-    const cmds = [['HDEL', 'news', id], ['ZREM', 'news:idx', id]];
+    const cmds = [
+      ['HDEL', 'news', id], ['ZREM', 'news:idx', id], ['DEL', 'comments:' + id],
+      ['HDEL', 'news:likes', id], ['HDEL', 'news:comments', id], ['HDEL', 'news:views', id],
+    ];
     if (raw) {
       const { image } = JSON.parse(raw);
       if (image) cmds.push(['DEL', 'img:' + image]);
