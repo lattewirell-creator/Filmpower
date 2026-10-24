@@ -1,0 +1,15 @@
+name: Kolla sajten
+# Visar vilken version av appen som ligger ute på filmpower.vercel.app just nu.
+on:
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s -D headers.txt -o app.html "https://filmpower.vercel.app/nyheter/?t=$(date +%s)"
+          echo "--- svarshuvuden"; grep -iE "^(HTTP|age|cache-control|x-vercel-cache|last-modified|etag)" headers.txt
+          echo "--- version i appen"
+          for m in CLAP_STRIPES SEAL_PATH p-runby compose-fab tab-following; do printf "%s: " $m; grep -c "$m" app.html || true; done
+          echo "--- utan cache-buster"; curl -s -D h2.txt -o app2.html https://filmpower.vercel.app/nyheter/; grep -iE "^(age|x-vercel-cache|cache-control)" h2.txt; printf "CLAP_STRIPES: "; grep -c CLAP_STRIPES app2.html || true
+          echo "--- api"; curl -s https://filmpower.vercel.app/api/me; echo
