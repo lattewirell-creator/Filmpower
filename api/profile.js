@@ -1,8 +1,22 @@
 import {
-  handle, send, queryParam, readerSession, requireSession, requireAppHeader, actorId, pipeline, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo,
+  handle, send, readBody, queryParam, readerSession, requireSession, requireAppHeader, actorId, pipeline, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo,
 } from './_lib.js';
 
 const MAX_LIST = 200;
+// "Drivs av" på företagskonton. Film Power har det här som standard tills admin ändrar det.
+const DEFAULT_RUN_BY = { filmpower: ['lattewirell', 'melvin'] };
+
+async function runByOf(key) {
+  const raw = await redis('HGET', 'runby', key);
+  const names = raw ? JSON.parse(raw) : DEFAULT_RUN_BY[key] || [];
+  if (!names.length) return [];
+  const rows = await redis('HMGET', 'users', ...names);
+  return names.map((n, i) => {
+    const u = rows[i] ? JSON.parse(rows[i]) : null;
+    if (!u || u.status !== 'active') return { username: n, name: '@' + n, avatar: '', verified: false, exists: false };
+    return { username: u.username, name: u.displayName || u.username, avatar: u.avatar || '', verified: Boolean(u.verified), exists: true };
+  });
+}
 
 // Profiler: en enskild profil med inlägg, listan över alla medlemmar, och att följa konton.
 // Följa sparas i två mängder: following:<den som följer> och followers:<kontot som följs>.
@@ -13,6 +27,17 @@ export default handle(async (req, res) => {
     requireAppHeader(req);
     const s = await requireSession(req);
     const action = queryParam(req, 'action');
+
+    // Admin ändrar vilka som driver ett konto. Tom lista tar bort raden.
+    if (action === 'runby') {
+      if (s.role !== 'admin') throw new HttpError(403, 'Bara admin kan ändra det här.');
+      if (!key) throw new HttpError(400, 'Vilket konto gäller det?');
+      const b = await readBody(req);
+      const names = [...new Set((Array.isArray(b.runBy) ? b.runBy : []).map((n) => usernameKey(String(n).replace(/^@/, ''))).filter((n) => /^[a-z0-9_.-]{3,20}$/.test(n)))].slice(0, 10);
+      await redis('HSET', 'runby', key, JSON.stringify(names));
+      return send(res, 200, { runBy: await runByOf(key) });
+    }
+
     if (action !== 'follow' && action !== 'unfollow') throw new HttpError(400, 'Okänd åtgärd.');
     if (!key) throw new HttpError(400, 'Vem vill du följa?');
     if (key === s.user || (key === 'filmpower' && !s.user && !s.code)) throw new HttpError(400, 'Du kan inte följa dig själv.');
@@ -109,7 +134,7 @@ export default handle(async (req, res) => {
 
   const { authorKey, ...pub } = profile;
   send(res, 200, {
-    profile: { ...pub, isMe: Boolean(authorKey && authorKey === s.user), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing) },
+    profile: { ...pub, runBy: await runByOf(orgKey), isMe: Boolean(authorKey && authorKey === s.user), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing) },
     items,
     affiliates,
   });

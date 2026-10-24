@@ -247,6 +247,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .fab svg { width: 1.3rem; height: 1.3rem; }
 #view-app[hidden] ~ .fab { display: none; }
 .compose-body { padding-top: 1.1rem; }
+.p-runby { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .45rem; margin-top: .75rem; font-size: .95rem; }
+.runby-who { display: inline-flex; align-items: center; gap: .35rem; }
+.runby-who a { color: inherit; text-decoration: none; }
+.runby-who .name-link { font-weight: 600; }
+.runby-who .name-link:hover { text-decoration: underline; }
+.runby-who .avatar.mini { width: 1.5rem; height: 1.5rem; font-size: .7rem; }
+.runby-edit { font-size: .88rem; margin-left: .3rem; }
 .follow-btn { min-width: 6.2rem; }
 .follow-btn.on:hover { border-color: var(--danger); color: var(--danger); }
 .reply-guest { display: flex; align-items: center; justify-content: space-between; gap: .6rem 1rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid var(--line); }
@@ -1229,6 +1236,38 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     else if (p.role === 'admin') meta.appendChild(el('span', 'status pending', 'Admin'));
     if (anonMe) meta.appendChild(el('span', 'status anon-chip', 'Anonymt läge på'));
     if (meta.childNodes.length) box.appendChild(meta);
+
+    // Drivs av: personerna bakom ett företagskonto. Admin kan ändra listan här.
+    var runBy = p.runBy || [];
+    if (runBy.length || (isAdmin() && (p.brand || (opts.affiliates && opts.affiliates.length)))) {
+      var rb = el('div', 'p-runby');
+      rb.appendChild(el('span', 'muted', runBy.length ? 'Drivs av' : 'Ingen är angiven som ansvarig.'));
+      runBy.forEach(function (r, i) {
+        var who = el('span', 'runby-who');
+        if (r.exists) {
+          who.appendChild(profileLink(r.username, avatarEl('mini', r.name.charAt(0), r.avatar, false), 'Profil: ' + r.name));
+          who.appendChild(profileLink(r.username, el('b', null, r.name)));
+          if (r.verified) who.appendChild(verified());
+        } else who.appendChild(el('b', null, r.name));
+        rb.appendChild(who);
+        if (i < runBy.length - 2) rb.appendChild(document.createTextNode(','));
+        else if (i === runBy.length - 2) rb.appendChild(el('span', 'muted', 'och'));
+      });
+      if (isAdmin()) {
+        var ch = el('button', 'linklike runby-edit', runBy.length ? 'Ändra' : 'Lägg till');
+        ch.type = 'button';
+        ch.addEventListener('click', function () {
+          var now = runBy.map(function (r) { return '@' + r.username; }).join(', ');
+          var v = window.prompt('Vilka driver ' + p.name + '? Skriv användarnamn, åtskilda med komma.', now);
+          if (v === null) return;
+          api('profile?u=' + encodeURIComponent(p.username.toLowerCase()) + '&action=runby', { method: 'POST', body: { runBy: v.split(/[\s,]+/).filter(Boolean) } })
+            .then(function (d) { p.runBy = d.runBy; profileView(box, p, items, opts); })
+            .catch(function (err) { toast(err.message); });
+        });
+        rb.appendChild(ch);
+      }
+      box.appendChild(rb);
+    }
 
     var sum = function (k) { return items.reduce(function (t, i) { return t + (i[k] || 0); }, 0); };
     var stats = el('div', 'p-stats');
