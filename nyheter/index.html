@@ -242,9 +242,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .toggle, .toggle::before { transition: none; } }
 .mention { color: var(--brand); font-weight: 500; text-decoration: none; }
 .mention:hover { text-decoration: underline; text-underline-offset: 2px; }
-.aff { display: inline-grid; place-items: center; flex: none; width: 1.05rem; height: 1.05rem; border-radius: 3px; background: var(--ink); color: var(--bg); font: 700 .5rem/1 var(--display); letter-spacing: -.04em; text-decoration: none; }
+.aff { display: inline-grid; place-items: center; flex: none; width: 1.15rem; height: 1.15rem; border-radius: 4px; box-shadow: 0 0 0 1.5px var(--bg), 0 0 0 2.5px var(--line); background: var(--ink); color: var(--bg); font: 700 .5rem/1 var(--display); letter-spacing: -.04em; text-decoration: none; }
 .aff:hover { opacity: .8; }
-.p-name .aff { width: 1.3rem; height: 1.3rem; font-size: .62rem; }
+.aff:not(.brand) { background: var(--soft); color: var(--ink); font-family: var(--body); font-size: .55rem; overflow: hidden; border: 1px solid var(--line); }
+.aff img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aff-select { padding: .4rem .6rem; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-size: .85rem; max-width: 15rem; }
+.p-name .aff { width: 1.45rem; height: 1.45rem; font-size: .66rem; border-radius: 5px; }
 .p-aff { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; color: var(--muted); font-size: .93rem; }
 .member .m-bio { color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cover.has-img { background-size: cover; background-position: center; }
@@ -780,12 +783,15 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return frag;
   }
 
-  // Litet FP-märke för konton som är anslutna till Film Power, som affiliates på Twitter.
-  function affBadge() {
-    var a = el('a', 'aff', 'FP');
-    a.href = '#profil-filmpower';
-    a.title = 'Ansluten till Film Power';
-    a.setAttribute('aria-label', 'Ansluten till Film Power');
+  // Affiliate-märke som på Twitter: kontots profilbild bredvid namnet, länkad till kontots profil.
+  function affBadge(org) {
+    var a = el('a', 'aff' + (org.brand ? ' brand' : ''));
+    a.href = '#profil-' + org.username.toLowerCase();
+    a.title = 'Affiliate till ' + org.name;
+    a.setAttribute('aria-label', 'Affiliate till ' + org.name);
+    if (org.brand) a.textContent = 'FP';
+    else if (org.avatar) { var im = el('img'); im.src = '/api/image?id=' + encodeURIComponent(org.avatar); im.alt = ''; a.appendChild(im); }
+    else a.textContent = org.name.charAt(0);
     return a;
   }
 
@@ -1003,19 +1009,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var nm = el('div', 'p-name');
     nm.appendChild(el('span', null, p.name));
     if (p.verified) nm.appendChild(verified());
-    if (p.affiliate) nm.appendChild(affBadge());
+    if (p.affiliate) nm.appendChild(affBadge(p.affiliate));
     box.appendChild(nm);
     box.appendChild(el('div', 'p-handle', p.handle || '@' + p.username));
     if (p.bio) { var bio = el('p', 'p-bio'); bio.appendChild(linkify(p.bio)); box.appendChild(bio); }
-    if (p.affiliate) {
-      var af = el('div', 'p-aff');
-      af.appendChild(affBadge());
-      af.appendChild(document.createTextNode('Ansluten till '));
-      var fl = el('a', 'mention', '@filmpower');
-      fl.href = '#profil-filmpower';
-      af.appendChild(fl);
-      box.appendChild(af);
-    }
+
 
     var meta = el('div', 'p-meta');
     if (p.createdAt) {
@@ -1041,7 +1039,6 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     var tabsDef = [['posts', 'Inlägg']];
     if (opts.me) tabsDef.push(['liked', 'Gillade'], ['saved', 'Sparade']);
-    if (opts.affiliates) tabsDef.push(['affiliates', 'Anslutna']);
     var tabBar = el('div', 'p-tabs');
     tabBar.setAttribute('role', 'tablist');
     var list = el('div', 'p-list');
@@ -1051,8 +1048,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       if (key === 'affiliates') {
         if (!opts.affiliates.length) {
           var none = el('div', 'empty');
-          none.appendChild(el('h3', null, 'Inga anslutna konton än'));
-          none.appendChild(el('p', null, 'Admin kan ansluta konton till Film Power under fliken Konton.'));
+          none.appendChild(el('h3', null, 'Inga affiliates än'));
+          none.appendChild(el('p', null, 'Admin lägger till affiliates under fliken Konton.'));
           list.appendChild(none);
         } else opts.affiliates.forEach(function (m) { list.appendChild(memberRow(m)); });
         return;
@@ -1111,7 +1108,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var nm = el('div', 'm-name');
     nm.appendChild(el('span', null, m.name));
     if (m.verified) nm.appendChild(verified());
-    nm.appendChild(affBadge());
+    if (m.affiliate) nm.appendChild(affBadge(m.affiliate));
     txt.appendChild(nm);
     txt.appendChild(el('span', 'handle', '@' + m.username));
     if (m.bio) txt.appendChild(el('span', 'm-bio', m.bio));
@@ -1156,7 +1153,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var nm = el('div', 'm-name');
       nm.appendChild(el('span', null, m.name));
       if (m.verified) nm.appendChild(verified());
-      if (m.affiliate) nm.appendChild(affBadge());
+      if (m.affiliate) nm.appendChild(affBadge(m.affiliate));
       txt.appendChild(nm);
       txt.appendChild(el('span', 'handle', '@' + m.username));
       a.appendChild(txt);
@@ -1186,7 +1183,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         return loadProfile(acc.username.toLowerCase()).then(function (d) {
           $('acc-title').textContent = d.profile.name;
           $('acc-count').textContent = countText(d.items.length);
-          profileView(box, d.profile, d.items, { me: true, edit: true });
+          profileView(box, d.profile, d.items, { me: true, edit: true, affiliates: d.affiliates });
         });
       }
       if (acc.kind === 'admin') {
@@ -1490,7 +1487,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var head = el('div', 't-head');
     head.appendChild(profileLink(pa.username, el('b', null, pa.name)));
     if (pa.verified) head.appendChild(verified());
-    if (pa.affiliate) head.appendChild(affBadge());
+    if (pa.affiliate) head.appendChild(affBadge(pa.affiliate));
     var handle = [pa.handle, withTime ? timeAgo(item.createdAt) : ''].filter(Boolean).join(' · ');
     head.appendChild(el('span', 'handle', handle));
     return head;
@@ -1759,7 +1756,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var row = el('span', 'row');
     row.appendChild(profileLink(pa.username, el('b', null, pa.name)));
     if (pa.verified) row.appendChild(verified());
-    if (pa.affiliate) row.appendChild(affBadge());
+    if (pa.affiliate) row.appendChild(affBadge(pa.affiliate));
     who.appendChild(row);
     if (pa.handle) who.appendChild(el('span', 'handle', pa.handle));
     author.appendChild(who);
@@ -1872,7 +1869,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var head = el('div', 't-head');
       head.appendChild(profileLink(cUser, el('b', null, c.author)));
       if (c.isAdmin || c.verified) head.appendChild(verified());
-      if (c.affiliate) head.appendChild(affBadge());
+      if (c.affiliate) head.appendChild(affBadge(c.affiliate));
       if (c.anon && c.realAuthor) head.appendChild(el('span', 'handle', '(' + c.realAuthor + ')'));
       head.appendChild(el('span', 'handle', '· ' + timeAgo(c.createdAt)));
       if (c.canDelete) {
@@ -2115,7 +2112,10 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       meta.appendChild(el('span', 'status ' + u.status, STATUS_TEXT[u.status] || u.status));
       if (u.role === 'admin') meta.appendChild(el('span', 'status pending', 'Admin'));
       if (u.verified) meta.appendChild(el('span', 'status verified-chip', 'Verifierad'));
-      if (u.affiliate) meta.appendChild(el('span', 'status pending', 'Ansluten'));
+      if (u.affiliateOf) {
+        var orgUser = u.affiliateOf === 'filmpower' ? null : users.filter(function (x) { return x.id === u.affiliateOf; })[0];
+        meta.appendChild(el('span', 'status pending', 'Affiliate: ' + (u.affiliateOf === 'filmpower' ? 'Film Power' : orgUser ? (orgUser.displayName || orgUser.username) : '@' + u.affiliateOf)));
+      }
       meta.appendChild(document.createTextNode('Skapat ' + fmtDate(u.createdAt)));
       info.appendChild(meta);
       row.appendChild(info);
@@ -2130,9 +2130,21 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         actions.appendChild(smallButton(u.verified ? 'Ta bort verifiering' : 'Verifiera', 'btn-ghost', function () {
           return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { verified: !u.verified } }).then(loadUsers);
         }));
-        actions.appendChild(smallButton(u.affiliate ? 'Ta bort anslutning' : 'Anslut till Film Power', 'btn-ghost', function () {
-          return api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { affiliate: !u.affiliate } }).then(loadUsers);
-        }));
+        var sel = el('select', 'aff-select');
+        sel.setAttribute('aria-label', 'Affiliate till');
+        var none = el('option', null, 'Ingen affiliate');
+        none.value = '';
+        sel.appendChild(none);
+        [['filmpower', 'Affiliate till Film Power']].concat(users.filter(function (x) { return x.status === 'active' && x.id !== u.id; }).map(function (x) {
+          return [x.id, 'Affiliate till ' + (x.displayName || x.username)];
+        })).forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); });
+        sel.value = u.affiliateOf || '';
+        sel.addEventListener('change', function () {
+          sel.disabled = true;
+          api('users?id=' + encodeURIComponent(u.id), { method: 'PATCH', body: { affiliateOf: sel.value } }).then(loadUsers)
+            .catch(function (err) { sel.disabled = false; toast(err.message); });
+        });
+        actions.appendChild(sel);
         actions.appendChild(smallButton('Spärra', 'btn-danger', function () { return setStatus(u.id, 'blocked'); }));
       }
       if (u.status === 'blocked') actions.appendChild(smallButton('Aktivera', 'btn-ghost', function () { return setStatus(u.id, 'active'); }));

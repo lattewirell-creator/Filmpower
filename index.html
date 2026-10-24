@@ -116,8 +116,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .hero h1 em.photo .l { color: transparent; -webkit-background-clip: text; background-clip: text; background-size: auto 118%; background-position: 0% 50%; background-repeat: no-repeat; -webkit-text-stroke: .018em color-mix(in srgb, var(--ink) 30%, transparent);
   animation: hop 1.9s cubic-bezier(.3,.7,.4,1) infinite, pan 7s ease-in-out infinite alternate; animation-delay: calc(var(--i) * .1s), calc(var(--i) * -.8s); }
 .hero h1 em .l { padding: .14em 0 .26em; margin: -.14em 0 -.26em; text-align: center; }
-.hero h1 em .layer-b { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; pointer-events: none; }
-.hero h1 em .layer-b.on { opacity: 1; }
+/* Bokstäverna byts en i taget i en mjuk våg, med lätt oskärpa som när kameran ställer om skärpan */
+.hero h1 em .layer-b { position: absolute; inset: 0; pointer-events: none; }
+.hero h1 em.photo .l { transition: opacity 1s cubic-bezier(.45,0,.2,1), filter 1s cubic-bezier(.45,0,.2,1); transition-delay: calc(var(--i) * 110ms); }
+.hero h1 em .layer-b .l { opacity: 0; filter: blur(.09em); }
+.hero h1 em.swap > .l { opacity: 0; filter: blur(.09em); }
+.hero h1 em.swap .layer-b .l { opacity: 1; filter: blur(0); }
+.hero h1 em.instant .l { transition: none !important; }
 @keyframes pan { from { background-position: 0% 40%; } to { background-position: 100% 60%; } }
 .hero h1 em .l { display: inline-block; transform-origin: 50% 100%; animation: hop 1.9s cubic-bezier(.3,.7,.4,1) infinite; animation-delay: calc(var(--i) * .1s); }
 @keyframes hop {
@@ -752,13 +757,21 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
     layerA.forEach(function (l, i) { l.style.fontFamily = saved[i][0]; l.style.fontStyle = saved[i][1]; l.style.fontWeight = saved[i][2]; l.style.fontSize = saved[i][3]; });
   });
 
-  // Byt bilder med mjuk övertoning med jämna mellanrum.
+  // Byt bilder och typsnitt i en mjuk våg från vänster till höger.
+  var SWAP_MS = 1000 + layerA.length * 110 + 150;
   setInterval(function () {
     offset = (offset + 1) % images.length;
     apply(layerB, offset);
-    b.classList.add('on');
-    setTimeout(function () { apply(layerA, offset); b.classList.remove('on'); }, 1000);
-  }, 3200);
+    em.classList.add('swap');
+    setTimeout(function () {
+      // Lägg det nya utseendet på det undre lagret och återställ utan att något syns hoppa.
+      em.classList.add('instant');
+      apply(layerA, offset);
+      em.classList.remove('swap');
+      void em.offsetWidth;
+      em.classList.remove('instant');
+    }, SWAP_MS);
+  }, 4400);
 })();
 </script>
 </body>

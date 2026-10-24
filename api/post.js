@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession, HttpError,
-  redis, pipeline, rateLimit, actorId, displayName, withStats, withAuthors,
+  redis, pipeline, rateLimit, actorId, displayName, withStats, withAuthors, affKey, orgInfo,
 } from './_lib.js';
 
 const MAX_COMMENT = 1000;
@@ -28,6 +28,7 @@ export default handle(async (req, res) => {
       const rows = await redis('HMGET', 'users', ...userKeys);
       rows.forEach((u, i) => { if (u) accounts.set(userKeys[i], JSON.parse(u)); });
     }
+    const orgs = await orgInfo([...accounts.values()].map(affKey));
     const comments = raws.map((c) => {
       const acc = c.actor.startsWith('u:') ? accounts.get(c.actor.slice(2)) : null;
       if (c.anon) {
@@ -40,7 +41,7 @@ export default handle(async (req, res) => {
       return {
       id: c.id, author: acc ? acc.displayName || acc.username : c.author, isAdmin: c.isAdmin, text: c.text, createdAt: c.createdAt,
       verified: Boolean(acc && acc.verified),
-      affiliate: Boolean(acc && acc.affiliate),
+      affiliate: (acc && orgs.get(affKey(acc))) || null,
       avatar: acc ? acc.avatar || '' : '',
       username: acc ? acc.username : '',
       canDelete: s.role === 'admin' || c.actor === a,
@@ -85,9 +86,10 @@ export default handle(async (req, res) => {
       ['HSET', 'comments:' + id, c.id, JSON.stringify(c)],
       ['HINCRBY', 'news:comments', id, 1],
     ]);
+    const myOrg = s.affiliateOf ? (await orgInfo([s.affiliateOf])).get(s.affiliateOf) || null : null;
     const shown = c.anon
       ? { id: c.id, author: 'Anonym', anon: true, isAdmin: false, verified: false, avatar: '', username: '', realAuthor: s.role === 'admin' ? c.author : undefined }
-      : { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), affiliate: Boolean(s.affiliate), avatar: s.avatar || '', username: s.user || '' };
+      : { id: c.id, author: c.author, isAdmin: c.isAdmin, verified: Boolean(s.verified), affiliate: myOrg, avatar: s.avatar || '', username: s.user || '' };
     return send(res, 201, {
       comment: { ...shown, text: c.text, createdAt: c.createdAt, canDelete: true },
       comments: count,

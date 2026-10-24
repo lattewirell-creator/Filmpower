@@ -191,7 +191,7 @@ export async function getSession(req) {
     if (!raw) return null;
     const u = JSON.parse(raw);
     if (u.status !== 'active') return null;
-    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified), avatar: u.avatar || '', affiliate: Boolean(u.affiliate) };
+    return { ...s, role: u.role === 'admin' ? 'admin' : 'member', label: u.displayName || u.username, verified: Boolean(u.verified), avatar: u.avatar || '', affiliateOf: affKey(u) };
   }
   if (s.role === 'member') {
     // Spärrade koder loggas ut direkt.
@@ -283,6 +283,7 @@ export async function withAuthors(items, s) {
     const rows = await redis('HMGET', 'users', ...keys);
     rows.forEach((r, i) => { if (r) accounts.set(keys[i], JSON.parse(r)); });
   }
+  const orgs = await orgInfo([...accounts.values()].map(affKey));
   return items.map((it) => {
     const out = { ...it, mine: Boolean(s.user && it.authorKey === s.user) };
     if (!it.authorKey) return out;
@@ -291,9 +292,31 @@ export async function withAuthors(items, s) {
     out.authorUsername = u ? u.username : '';
     out.authorAvatar = u ? u.avatar || '' : '';
     out.authorVerified = Boolean(u && u.verified);
-    out.authorAffiliate = Boolean(u && u.affiliate);
+    out.authorAffiliate = (u && orgs.get(affKey(u))) || null;
     return out;
   });
 }
 
 export const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+
+// Vilket konto någon är ansluten till ('' = inget). Äldre konton med affiliate: true räknas som Film Power.
+export function affKey(u) {
+  return u ? u.affiliateOf || (u.affiliate ? 'filmpower' : '') : '';
+}
+
+// Namn och profilbild för de konton som andra är anslutna till.
+export async function orgInfo(keys) {
+  const map = new Map();
+  const want = [...new Set(keys.filter(Boolean))];
+  if (want.includes('filmpower')) map.set('filmpower', { username: 'filmpower', name: 'Film Power', avatar: '', brand: true });
+  const users = want.filter((k) => k !== 'filmpower');
+  if (users.length) {
+    const rows = await redis('HMGET', 'users', ...users);
+    rows.forEach((r, i) => {
+      if (!r) return;
+      const u = JSON.parse(r);
+      if (u.status === 'active') map.set(users[i], { username: u.username, name: u.displayName || u.username, avatar: u.avatar || '', brand: false });
+    });
+  }
+  return map;
+}
