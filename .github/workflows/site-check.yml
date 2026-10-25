@@ -17,7 +17,7 @@ jobs:
           echo "--- sidskriptet finns:"; grep -c "__fpPage" app.html || true
           echo "--- priser i vanliga hemsidan"; curl -s "https://filmpower.vercel.app/index.html?original=$(date +%s)" | grep -o 'class="price">[^<]*' || true
           echo "--- priser i AI-versionen"; curl -s -D h3.txt "https://filmpower.vercel.app/api/me?page=home&t=$(date +%s)" -o ov.html; head -1 h3.txt; grep -o 'class="price">[^<]*' ov.html || true; grep -c "__fpPage" ov.html || true
-          echo "--- felsökning (väntar på ny deploy)"; for i in $(seq 1 24); do curl -s "https://filmpower.vercel.app/api/me?page=home&debug=1&t=$i" | grep -q '"override"' && break; sleep 10; done; for p in home nyheter; do curl -s "https://filmpower.vercel.app/api/me?page=$p&debug=1&t=$(date +%s)"; echo; done
+          echo "--- felsökning (väntar på ny deploy)"; for i in $(seq 1 24); do [ "$(curl -s -o /dev/null -w '%{http_code}' "https://filmpower.vercel.app/api/me?page=home&t=$i")" = 200 ] && break; sleep 10; done; echo "efter $i försök"; curl -s "https://filmpower.vercel.app/api/me?page=home&t=x$(date +%s)" | grep -o 'class="price">[^<]*' || true; for p in home nyheter; do curl -s "https://filmpower.vercel.app/api/me?page=$p&debug=1&t=$(date +%s)"; echo; done
       - name: Vercels status för de senaste commitarna
         env:
           GH_TOKEN: ${{ github.token }}
