@@ -35,13 +35,16 @@ export async function fetchStatic(base, name) {
   const r = await fetch(base + '/' + PAGES[name] + '?original=' + Date.now(), { signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new Error('Kunde inte hämta ' + PAGES[name] + ' (' + r.status + ').');
   const html = await r.text();
+  // Bara den riktiga sidan räknas. En inloggningssida eller felsida (t.ex. på en skyddad förhandsadress) får aldrig bli fingeravtrycket.
+  if (!html.includes('__fpPage') || !/<\/html>\s*$/i.test(html)) throw new Error('Fick inte den riktiga sidan från ' + base + '.');
   return { html, hash: hash(html) };
 }
 
 // Fingeravtrycket av den vanliga sidan, sparat per deploy så att det bara räknas ut en gång.
-async function staticHash(req, name) {
-  const key = 'page:static:' + (process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || 'lokal') + ':' + name;
-  const cached = await redis('GET', key);
+const deployKey = (name) => (process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || 'lokal') + ':' + name;
+async function staticHash(req, name, fresh) {
+  const key = 'page:static:' + deployKey(name);
+  const cached = fresh ? null : await redis('GET', key);
   if (cached) return cached;
   const { hash: h } = await staticPage(req, name);
   await redis('SET', key, h, 'EX', 86400);
@@ -57,7 +60,12 @@ export async function getOverride(name) {
 export async function activeOverride(req, name) {
   const o = await getOverride(name);
   if (!o) return null;
-  return o.baseHash === (await staticHash(req, name)) ? o : null;
+  if (o.baseHash === (await staticHash(req, name))) return o;
+  // Stämmer det inte, räkna om fingeravtrycket (högst en gång i minuten), ifall det sparade var fel.
+  if (await redis('SET', 'page:recheck:' + deployKey(name), '1', 'NX', 'EX', 60)) {
+    if (o.baseHash === (await staticHash(req, name, true))) return o;
+  }
+  return null;
 }
 
 export async function setOverride(name, value) {
