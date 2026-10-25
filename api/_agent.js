@@ -155,7 +155,7 @@ const TOOLS = [
   { name: 'list_files', description: 'Lista sajtens filer som går att ändra, med storlek.', parameters: { type: 'object', properties: {}, additionalProperties: false } },
   { name: 'outline', description: 'Översikt över en sida: sektioner, rubriker, id:n, stil- och skriptblock med radnummer. Börja här för att hitta rätt ställe snabbt.', parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'], additionalProperties: false } },
   { name: 'search', description: 'Sök efter text i en fil. Ger matchande rader med radnummer. Använd för att hitta rätt ställe innan du läser eller ändrar.', parameters: { type: 'object', properties: { path: { type: 'string' }, query: { type: 'string', description: 'Text att leta efter (skiftlägesokänsligt).' } }, required: ['path', 'query'], additionalProperties: false } },
-  { name: 'read_file', description: 'Läs rader ur en fil (högst 200 rader åt gången), med radnummer.', parameters: { type: 'object', properties: { path: { type: 'string' }, start_line: { type: 'integer' }, end_line: { type: 'integer' } }, required: ['path'], additionalProperties: false } },
+  { name: 'read_file', description: 'Läs rader ur en fil (högst 120 rader åt gången, 80 om du inte anger slutrad), med radnummer. Läs bara det du behöver.', parameters: { type: 'object', properties: { path: { type: 'string' }, start_line: { type: 'integer' }, end_line: { type: 'integer' } }, required: ['path'], additionalProperties: false } },
   { name: 'edit_file', description: 'Ersätt text i en fil. old_text måste finnas exakt en gång, tecken för tecken, inklusive indrag. Läs alltid stället först. Gör små, precisa ändringar.', parameters: { type: 'object', properties: { path: { type: 'string' }, old_text: { type: 'string' }, new_text: { type: 'string' } }, required: ['path', 'old_text', 'new_text'], additionalProperties: false } },
   { name: 'create_file', description: 'Skapa en ny fil, t.ex. en ny sida som om/index.html. Ny HTML-sida ska vara komplett.', parameters: { type: 'object', properties: { path: { type: 'string' }, content: { type: 'string' } }, required: ['path', 'content'], additionalProperties: false } },
   { name: 'find_image', description: 'Sök fria bilder (Creative Commons) att använda på sajten. Skriv sökord, gärna på engelska. Ger adresser, fotograf och licens.', parameters: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'], additionalProperties: false } },
@@ -245,7 +245,7 @@ async function fileContent(sess, path) {
 
 function numbered(text, from, to) {
   const lines = text.split('\n');
-  const a = Math.max(1, from || 1), b = Math.min(lines.length, to || a + 199, a + 199);
+  const a = Math.max(1, from || 1), b = Math.min(lines.length, to || a + 79, a + 119);
   return lines.slice(a - 1, b).map((l, i) => `${a + i}: ${l.length > 400 ? l.slice(0, 400) + ' …' : l}`).join('\n') + (b < lines.length ? `\n(filen har ${lines.length} rader)` : '');
 }
 
@@ -366,14 +366,25 @@ async function runTool(sess, name, args) {
 // ---------- AI-anrop (Groq, OpenAI-kompatibelt) ----------
 
 // Äldre verktygsresultat förkortas så att samtalet inte växer över AI:ns gränser.
-function compact(messages) {
-  let kept = 0;
+// Groqs gratisnivå tillåter bara runt 8 000 tokens per anrop och minut, så samtalet hålls litet.
+// hard: krymper allt utom det allra senaste, när Groq ändå säger att anropet är för stort.
+function compact(messages, hard) {
+  let tools = 0, calls = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
-    if (m.role !== 'tool') continue;
-    if (++kept > 4 && m.content.length > 300) m.content = m.content.slice(0, 200) + '\n[förkortat, läs igen om det behövs]';
+    if (m.role === 'tool' && ++tools > (hard ? 1 : 2) && m.content.length > 300) m.content = m.content.slice(0, 160) + '\n[förkortat, läs igen om det behövs]';
+    if (m.role === 'tool' && hard && tools === 1 && m.content.length > 2500) m.content = m.content.slice(0, 2500) + '\n[förkortat]';
+    // Gamla verktygsanrop kan bära hela nya sektioner (new_text, content). De behövs inte längre.
+    if (m.role === 'assistant' && m.tool_calls && ++calls > 1) {
+      m.tool_calls.forEach((c) => { if (c.function.arguments.length > 400) c.function.arguments = JSON.stringify({ forkortat: true }); });
+      if (m.content && m.content.length > 400) m.content = m.content.slice(0, 300) + ' …';
+    }
   }
 }
+
+// Grov uppskattning av antal tokens (HTML och svenska blir ungefär 3 tecken per token).
+const SYS_TOKENS = 3800;
+const estimate = (messages) => SYS_TOKENS + Math.ceil(JSON.stringify(messages).length / 3);
 
 const DB_NOTE = `
 
@@ -393,37 +404,56 @@ function retrySeconds(r, data) {
 
 async function callModel(sess) {
   const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : MODELS;
-  const cool = (sess.cool ||= {});
+  const cool = (sess.cool ||= {}), tpm = (sess.tpm ||= {});
   const errors = [];
-  let wait = Infinity;
+  let wait = Infinity, tooBig = 0;
+  const est = estimate(sess.messages);
   for (const model of models) {
     if (cool[model] > Date.now()) { wait = Math.min(wait, (cool[model] - Date.now()) / 1000); continue; }
-    const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
-      method: 'POST',
-      headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        max_tokens: 4096,
-        ...(model.includes('gpt-oss') ? { reasoning_effort: model.includes('120b') ? 'medium' : 'low' } : {}),
-        tools: TOOLS.map((t) => ({ type: 'function', function: t })),
-        tool_choice: 'auto',
-        messages: [{ role: 'system', content: SYSTEM + (sess.mode === 'db' ? DB_NOTE : '') }, ...sess.messages],
-      }),
-      signal: AbortSignal.timeout(35000),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (r.ok && data.choices && data.choices[0]) return data.choices[0].message;
-    if (r.status === 429 || r.status === 413) {
-      const sec = r.status === 413 ? 600 : retrySeconds(r, data);
-      cool[model] = Date.now() + sec * 1000;
-      wait = Math.min(wait, sec);
-      continue;
+    // Två försök per modell: blir det första för stort lär vi oss modellens gräns och krymper svaret.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const room = tpm[model] ? tpm[model] - est - 200 : 4096;
+      if (room < 900) { tooBig++; break; }
+      const maxTokens = Math.min(4096, room);
+      const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
+        method: 'POST',
+        headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          max_tokens: maxTokens,
+          ...(model.includes('gpt-oss') ? { reasoning_effort: model.includes('120b') && maxTokens >= 3000 ? 'medium' : 'low' } : {}),
+          tools: TOOLS.map((t) => ({ type: 'function', function: t })),
+          tool_choice: 'auto',
+          messages: [{ role: 'system', content: SYSTEM + (sess.mode === 'db' ? DB_NOTE : '') }, ...sess.messages],
+        }),
+        signal: AbortSignal.timeout(35000),
+      });
+      const data = await r.json().catch(() => ({}));
+      const msg = (data.error && data.error.message) || '';
+      if (r.ok && data.choices && data.choices[0]) return data.choices[0].message;
+      // För stort anrop för modellens gräns per minut: "Limit 8000, Requested 9876".
+      if (r.status === 413 || (r.status === 429 && /Requested \d+/.test(msg) && /Limit (\d+)/.test(msg) && Number(/Requested (\d+)/.exec(msg)[1]) > Number(/Limit (\d+)/.exec(msg)[1]))) {
+        const lim = /Limit (\d+)/.exec(msg);
+        if (lim && !tpm[model]) { tpm[model] = Number(lim[1]); continue; }
+        tooBig++;
+        break;
+      }
+      if (r.status === 429) {
+        const sec = retrySeconds(r, data);
+        cool[model] = Date.now() + sec * 1000;
+        wait = Math.min(wait, sec);
+        break;
+      }
+      // Modellen skrev ett trasigt verktygsanrop. Be den försöka igen.
+      if (r.status === 400 && /tool_use_failed|failed to call a function|tool call validation/i.test(JSON.stringify(data))) return { content: '', tool_calls: [], broken: true };
+      errors.push(model + ': ' + r.status + ' ' + msg.slice(0, 160));
+      break;
     }
-    errors.push(model + ': ' + r.status + ' ' + ((data.error && data.error.message) || ''));
   }
   if (wait < Infinity) { const e = new Error('Groq har för många anrop just nu.'); e.retry = Math.ceil(wait); throw e; }
-  throw new Error(errors.join(' | '));
+  if (tooBig) { const e = new Error('Anropet blev för stort för Groqs gräns.'); e.tooBig = true; throw e; }
+  throw new Error(errors.join(' | ') || 'Ingen AI-modell svarade.');
 }
 
 // Kör AI:n i steg tills den är klar eller tiden för det här anropet tar slut.
@@ -434,8 +464,16 @@ async function work(sess) {
     sess.steps++;
     compact(sess.messages);
     let msg;
-    try { msg = await callModel(sess); sess.waits = 0; } catch (err) {
-      if (!err.retry) throw err;
+    try { msg = await callModel(sess); sess.waits = 0; sess.shrunk = false; } catch (err) {
+      if (err.tooBig && !sess.shrunk) { sess.shrunk = true; sess.steps--; compact(sess.messages, true); continue; }
+      if (!err.retry) {
+        // Visa felet i panelen i stället för ett allmänt serverfel, och behåll det som hunnit göras.
+        sess.done = true;
+        sess.summary = err.tooBig
+          ? 'Uppgiften blev för stor för Groqs gratisnivå på en gång. Dela upp den i mindre steg, t.ex. en sektion i taget, så går det.'
+          : 'AI-tjänsten svarade med ett fel: ' + err.message.slice(0, 300) + '. Försök igen om en stund.';
+        break;
+      }
       sess.steps--;
       sess.waits = (sess.waits || 0) + 1;
       // Kvoten är slut för en längre stund: säg det i stället för att vänta i det oändliga.
@@ -449,6 +487,12 @@ async function work(sess) {
       const ms = (err.retry + 1) * 1000;
       if (Date.now() + ms > until - 2000) return;
       await new Promise((ok) => setTimeout(ok, ms));
+      continue;
+    }
+    if (msg.broken) {
+      sess.broken = (sess.broken || 0) + 1;
+      if (sess.broken > 3) { sess.done = true; sess.summary = 'AI:n fick inte till sina verktygsanrop. Försök igen, gärna med en kortare och tydligare beskrivning.'; break; }
+      sess.messages.push({ role: 'user', content: 'Ditt förra verktygsanrop var felformaterat. Försök igen med ett giltigt anrop (giltig JSON i argumenten).' });
       continue;
     }
     const calls = msg.tool_calls || [];
@@ -477,7 +521,7 @@ async function work(sess) {
       let out;
       try { out = await runTool(sess, name, args); } catch (err) { out = 'FEL: ' + err.message; }
       sess.events.push({ t: name, text: describe(name, args, out) });
-      sess.messages.push({ role: 'tool', tool_call_id: c.id, content: String(out).slice(0, 12000) });
+      sess.messages.push({ role: 'tool', tool_call_id: c.id, content: String(out).length > 7000 ? String(out).slice(0, 7000) + '\n[resten utelämnad, läs en mindre del]' : String(out) });
     }
   }
 }
@@ -492,7 +536,7 @@ function describe(name, a, out) {
     case 'list_files': return 'Tittar på sajtens filer' + fail;
     case 'outline': return `Får en överblick över ${a.path}` + fail;
     case 'search': return `Söker efter "${String(a.query).slice(0, 40)}" i ${a.path}` + fail;
-    case 'read_file': return `Läser ${a.path}${a.start_line ? ` rad ${a.start_line}–${a.end_line || a.start_line + 199}` : ''}` + fail;
+    case 'read_file': return `Läser ${a.path}${a.start_line ? ` rad ${a.start_line}–${a.end_line || a.start_line + 79}` : ''}` + fail;
     case 'edit_file': return `Ändrar ${a.path}` + fail + (/VARNING/.test(out) ? ' (hittade ett fel, rättar)' : '');
     case 'create_file': return `Skapar ${a.path}` + fail;
     case 'list_posts': return 'Tittar på blogginläggen' + fail;
