@@ -41,6 +41,27 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 - **Spärra en kod:** Klicka på **Spärra** vid koden under **Koder**. Personen loggas ut direkt.
 - **Byta adminkod:** Ändra `ADMIN_CODE` i Vercel och gör en ny Redeploy. Alla som är inloggade loggas då ut.
 
+## Bygg med AI (för admin)
+
+När du är inloggad som admin finns knappen **Bygg med AI** nere till vänster på både hemsidan och bloggen. Beskriv vad du vill ändra eller bygga, till exempel "Lägg till en sektion med kundomdömen under priserna" eller "Gör en knapp för att dela inlägg på Instagram". AI:n letar upp rätt ställe i koden, gör ändringarna och kan också skriva, ta bort och fästa blogginlägg.
+
+- **Inget går ut förrän du trycker Publicera.** Du ser vilka filer som ändrats och kan öppna **Förhandsgranska** för att se sidan i en ny flik först. Vill du justera något skriver du det innan du publicerar.
+- **Kontroll innan publicering:** trasig JavaScript, trasig serverkod eller en sida som tömts stoppas automatiskt.
+- **Ångra:** den senaste AI-ändringen kan ångras med ett klick i panelen. Hela historiken finns också på GitHub.
+- **Låsta filer:** inloggning, sessioner och AI-panelen själv (api/_lib.js, api/_agent.js, api/users.js, api/login.js, api/logout.js, api/me.js, vendor/, vercel.json och package.json). Då kan en ändring aldrig låsa ute dig eller stoppa Ångra.
+- Varje publicering blir en deploy på Vercel. Samla gärna flera ändringar i samma uppdrag.
+
+**Engångsinställning: en GitHub-nyckel**
+
+1. På github.com: klicka på din profilbild, sedan **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens** och **Generate new token**.
+2. Namn: `filmpower-ai`. Välj hur länge den ska gälla, t.ex. ett år.
+3. Under **Repository access**: välj **Only select repositories** och sedan **Filmpower**.
+4. Under **Permissions**, **Repository permissions**: sätt **Contents** till **Read and write**.
+5. Klicka **Generate token** och kopiera nyckeln (den visas bara en gång).
+6. I Vercel: **Settings**, **Environment Variables**, lägg till `GITHUB_TOKEN` med nyckeln som värde. Gör sedan en **Redeploy**.
+
+AI:n använder samma `GROQ_API_KEY` som nyhetsboten.
+
 ## Filmguiden på startsidan
 
 Knappen **Fråga Filmguiden** nere till höger på startsidan öppnar en AI-chatt som föreslår filmset (kamera, ljud, ljus, stativ) inom besökarens budget och ger råd för olika projekt, från YouTube-videor till större filmer. Den använder samma AI-nyckel som nyhetsboten (`GROQ_API_KEY` eller `ANTHROPIC_API_KEY`) och tillåter högst 40 frågor i timmen per besökare.

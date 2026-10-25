@@ -1,11 +1,15 @@
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession, HttpError, redis, affKey, usernameKey,
 } from './_lib.js';
+import { agentHandler } from './_agent.js';
 
 const ORDER = { pending: 0, active: 1, blocked: 2 };
 
 export default handle(async (req, res) => {
-  await requireSession(req, 'admin');
+  const s = await requireSession(req, 'admin');
+
+  // Admin-AI:n som ändrar hemsidan och bloggen (se _agent.js).
+  if (queryParam(req, 'agent')) return agentHandler(req, res, s);
 
   if (req.method === 'GET') {
     const flat = await redis('HGETALL', 'users');
