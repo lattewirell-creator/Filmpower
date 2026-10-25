@@ -297,6 +297,24 @@ async function refreshImages() {
   return fixed;
 }
 
+// Tar bort botens inlägg som skrevs med den gamla metoden (engelska eller ej kontrollerade mot källan).
+// Länkarna släpps, så att boten kan skriva samma nyheter rätt nästa gång.
+async function purgeOld() {
+  const ids = await redis('ZREVRANGE', 'news:idx', 0, 999);
+  if (!ids.length) return { removed: 0 };
+  const raws = await redis('HMGET', 'news', ...ids);
+  const old = raws.filter(Boolean).map((r) => JSON.parse(r)).filter((i) => i.bot && (i.v || 0) < 3);
+  const cmds = [];
+  for (const o of old) {
+    cmds.push(['HDEL', 'news', o.id], ['ZREM', 'news:idx', o.id], ['DEL', 'comments:' + o.id],
+      ['HDEL', 'news:likes', o.id], ['HDEL', 'news:comments', o.id], ['HDEL', 'news:views', o.id]);
+    if (o.image) cmds.push(['DEL', 'img:' + o.image]);
+    if (o.link) cmds.push(['HDEL', 'bot:seen', crypto.createHash('sha1').update(o.link).digest('hex').slice(0, 16)]);
+  }
+  if (cmds.length) await pipeline(cmds);
+  return { removed: old.length };
+}
+
 function clean(s, max) {
   return String(s).replace(/\s*—\s*/g, ', ').trim().slice(0, max);
 }
@@ -549,6 +567,7 @@ export default handle(async (req, res) => {
     requireAppHeader(req);
     const s = await getSession(req);
     if (!s || s.role !== 'admin') throw new HttpError(403, 'Bara admin kan köra nyhetsboten.');
+    if (url.searchParams.get('action') === 'purge') return send(res, 200, await purgeOld());
     return send(res, 200, await run());
   }
 
