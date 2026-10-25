@@ -223,8 +223,16 @@
         pub.disabled = drop.disabled = true; pub.textContent = 'Publicerar…';
         call('publish', { sessionId: sessionId }).then(function (r) {
           c.remove();
-          add('aai-bot', 'Publicerat! ' + (!r.files ? 'Blogginläggen är uppdaterade.' : r.instant ? 'Ladda om sidan om några sekunder så syns ändringen.' : 'Sajten uppdateras om ungefär en minut, ladda sedan om sidan.') + ' Ångrar du dig kan du ångra ändringen härifrån.');
+          add('aai-bot', 'Publicerat! ' + (!r.files ? 'Blogginläggen är uppdaterade.' : r.instant ? '' : 'Sajten uppdateras om ungefär en minut, ladda sedan om sidan.') + ' Ångrar du dig kan du ångra ändringen härifrån.');
           if (r.files) undoCard({ request: lastRequest });
+          // Sidan laddas om av sig själv när ändringen hunnit ut (servern mellanlagrar i 10 sekunder).
+          if (r.files && r.instant) {
+            var left = 12, note = add('aai-step', '');
+            var tick = setInterval(function () {
+              note.textContent = 'Laddar om sidan om ' + left + ' sekunder så att du ser ändringen…';
+              if (left-- <= 0) { clearInterval(tick); location.reload(); }
+            }, 1000);
+          }
           sessionId = ''; try { sessionStorage.removeItem('fp_ai_session'); } catch (e) {}
         }).catch(function (err) { pub.disabled = drop.disabled = false; pub.textContent = 'Publicera'; add('aai-err', err.message); });
       });

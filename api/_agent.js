@@ -178,7 +178,7 @@ Så arbetar du:
 3. Nytt innehåll ska se ut som resten av sidan: återanvänd befintliga klasser, CSS-variablerna (--brand, --ink, --bg, --line, --muted osv.) och samma typsnitt. Hårdkoda inte färger. Det ska fungera i mörkt läge och på mobil (lägg till @media vid behov).
 4. Får du en VARNING efter en ändring, rätta den direkt innan du går vidare.
 5. All text på sajten skrivs på naturlig, säljande svenska som en människa skulle skriva. Använd aldrig tankstreck (—).
-6. Gör hela uppgiften. Ber admin om flera saker, gör alla. Hittar du på priser, namn eller fakta som inte står på sidan, säg det i sammanfattningen.
+6. Gör hela uppgiften. Ber admin om flera saker, gör alla. Står samma sak på flera ställen (t.ex. ett pris i priskortet, i heron "Filmning från ..." och i meta description), sök efter alla och ändra alla. Beskriv aldrig en ändring du inte gjort, gör den med edit_file. Hittar du på priser, namn eller fakta som inte står på sidan, säg det i sammanfattningen.
 7. Är uppdraget oklart eller riskabelt (t.ex. ta bort hela sektioner), fråga först med finish.
 8. Avsluta alltid med finish och en kort sammanfattning på svenska: vad du ändrade och var på sidan det syns. Inga radnummer eller filnamn i onödan, admin är inte utvecklare.
 
@@ -395,7 +395,12 @@ async function work(sess) {
     const calls = msg.tool_calls || [];
     sess.messages.push({ role: 'assistant', content: msg.content || '', ...(calls.length ? { tool_calls: calls } : {}) });
     if (!calls.length) {
-      // Svar utan verktyg räknas som avslut.
+      // Vissa modeller svarar med text i stället för att använda verktygen. Har inget ändrats, påminn en gång.
+      if (!sess.nudged && !Object.keys(sess.edits).length && !sess.actions.length) {
+        sess.nudged = true;
+        sess.messages.push({ role: 'user', content: 'Du har inte ändrat något än. Bad jag om en ändring, gör den nu med verktygen (outline, search, edit_file) och avsluta med finish. Var det bara en fråga, svara med finish.' });
+        continue;
+      }
       sess.done = true;
       sess.summary = (msg.content || '').trim() || 'Klart.';
       break;
@@ -601,7 +606,7 @@ export async function agentHandler(req, res, s) {
     let sess = await loadSession(b.sessionId);
     if (!sess || sess.published) sess = { id: crypto.randomBytes(9).toString('hex'), mode: mode(), origin: origin(req), request: text, messages: [], edits: {}, base: {}, actions: [], events: [], steps: 0, done: false, summary: '' };
     sess.messages.push({ role: 'user', content: text });
-    sess.done = false; sess.steps = Math.min(sess.steps, MAX_STEPS - 20);
+    sess.done = false; sess.nudged = false; sess.steps = Math.min(sess.steps, MAX_STEPS - 20);
     const from = sess.events.length;
     await work(sess);
     await saveSession(sess);
