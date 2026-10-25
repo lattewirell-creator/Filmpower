@@ -77,6 +77,7 @@
       '.aai-form button:disabled{opacity:.45;cursor:default}',
       '.aai-dots{display:inline-flex;gap:.25rem}.aai-dots i{width:.4rem;height:.4rem;border-radius:50%;background:var(--muted,#5d625b);animation:aaib 1.2s infinite}',
       '.aai-dots i:nth-child(2){animation-delay:.15s}.aai-dots i:nth-child(3){animation-delay:.3s}@keyframes aaib{0%,80%,100%{opacity:.25}40%{opacity:1}}',
+      '.aai-tips{display:flex;flex-wrap:wrap;gap:.4rem}.aai-tip{font-size:.82rem;padding:.4rem .75rem}',
       '.aai-lock{margin:auto;display:grid;gap:.7rem;justify-items:center;text-align:center;max-width:16rem}',
       '.aai-lock input{width:9rem;text-align:center;letter-spacing:.5em;font:600 1.4rem/1 var(--body,system-ui,sans-serif);padding:.6rem .4rem .6rem .9rem;border:1px solid var(--line,#e4e6e1);border-radius:12px;background:var(--bg,#fff);color:inherit}',
       '.aai-lock p{margin:0;color:var(--muted,#5d625b);font-size:.88rem}.aai-lock .bad{color:#c0392b}',
@@ -148,9 +149,16 @@
     }
     function fail(err) { if (err.needCode) lock(err.message); else add('aai-err', err.message); }
     function greet(s) {
-      add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
+      add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen, eller fråga mig vad som helst. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
+      var tips = el('div', 'aai-tips');
+      ['Gör priskorten snyggare', 'Lägg till kundomdömen under priserna', 'Skriv ett blogginlägg om ljussättning', 'Vad kan jag förbättra på hemsidan?'].forEach(function (t) {
+        var c = el('button', 'aai-btn aai-tip', t); c.type = 'button';
+        c.addEventListener('click', function () { if (busy) return; tips.remove(); ta.value = t; form.requestSubmit(); });
+        tips.appendChild(c);
+      });
       if (!s.ready) add('aai-err', 'GROQ_API_KEY saknas på Vercel, så jag kan inte arbeta än.');
       else if (s.mode === 'db') add('aai-step', 'Jag kan ändra hemsidan och bloggen (text, design och funktioner i sidorna) och blogginläggen. Ändringar syns direkt efter Publicera. Serverkod kräver en GitHub-nyckel.');
+      if (s.ready) log.appendChild(tips);
       if (s.last) undoCard(s.last);
     }
     function open() {

@@ -139,6 +139,11 @@ export function validate(path, before, after) {
     });
     const open = (after.match(/<script\b/gi) || []).length, close = (after.match(/<\/script>/gi) || []).length;
     if (open !== close) problems.push('antalet <script> och </script> stämmer inte');
+    [...after.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].forEach((m, i) => {
+      const css = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
+      const o = (css.match(/{/g) || []).length, c = (css.match(/}/g) || []).length;
+      if (o !== c) problems.push(`CSS i stilblock ${i + 1} har ${o} { men ${c} }`);
+    });
   }
   return problems;
 }
@@ -147,6 +152,7 @@ export function validate(path, before, after) {
 
 const TOOLS = [
   { name: 'list_files', description: 'Lista sajtens filer som går att ändra, med storlek.', parameters: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'outline', description: 'Översikt över en sida: sektioner, rubriker, id:n, stil- och skriptblock med radnummer. Börja här för att hitta rätt ställe snabbt.', parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'], additionalProperties: false } },
   { name: 'search', description: 'Sök efter text i en fil. Ger matchande rader med radnummer. Använd för att hitta rätt ställe innan du läser eller ändrar.', parameters: { type: 'object', properties: { path: { type: 'string' }, query: { type: 'string', description: 'Text att leta efter (skiftlägesokänsligt).' } }, required: ['path', 'query'], additionalProperties: false } },
   { name: 'read_file', description: 'Läs rader ur en fil (högst 200 rader åt gången), med radnummer.', parameters: { type: 'object', properties: { path: { type: 'string' }, start_line: { type: 'integer' }, end_line: { type: 'integer' } }, required: ['path'], additionalProperties: false } },
   { name: 'edit_file', description: 'Ersätt text i en fil. old_text måste finnas exakt en gång, tecken för tecken, inklusive indrag. Läs alltid stället först. Gör små, precisa ändringar.', parameters: { type: 'object', properties: { path: { type: 'string' }, old_text: { type: 'string' }, new_text: { type: 'string' } }, required: ['path', 'old_text', 'new_text'], additionalProperties: false } },
@@ -158,7 +164,7 @@ const TOOLS = [
   { name: 'finish', description: 'Avsluta när uppgiften är klar, eller om du behöver fråga admin något. Skriv en kort sammanfattning på svenska av vad du ändrat (eller din fråga).', parameters: { type: 'object', properties: { summary: { type: 'string' } }, required: ['summary'], additionalProperties: false } },
 ];
 
-const SYSTEM = `Du är Film Powers webbassistent. Admin ber dig ändra hemsidan eller bloggen, och du gör det själv med verktygen, som en erfaren webbutvecklare.
+const SYSTEM = `Du är Film Powers webbassistent, en erfaren webbutvecklare och designer. Admin ber dig ändra eller bygga saker på hemsidan och bloggen, och du gör det själv med verktygen. Du kan också prata, svara på frågor och ge råd om sajten, design, film, marknadsföring eller annat. Då svarar du direkt med finish utan att ändra något.
 
 Sajten:
 - index.html är hemsidan (filmstudion Film Power: sidomeny, hero "Vi får bilder att röra sig.", 3D-animation, Så funkar det, Priser, Kontakt med formulär). Allt (HTML, CSS och JavaScript) ligger i samma fil.
@@ -167,12 +173,14 @@ Sajten:
 - Färger och typsnitt finns som CSS-variabler i :root (t.ex. --brand, --ink, --bg). Sidorna har ljust och mörkt läge och ska fungera på mobil.
 
 Så arbetar du:
-1. Sök fram och läs det du ska ändra innan du ändrar. Gissa aldrig hur koden ser ut.
-2. Gör små, precisa ändringar med edit_file. Skriv inte om hela filer. Behåll allt som inte ska ändras.
-3. Kontrollera att JavaScript och HTML fortfarande är hela efter ändringen (stängda taggar, klamrar, citattecken).
-4. All text på sajten skrivs på naturlig svenska. Använd aldrig tankstreck (—).
-5. Är uppdraget oklart eller riskabelt (t.ex. ta bort hela sektioner), avsluta med finish och fråga först.
-6. Avsluta alltid med finish och en kort, konkret sammanfattning av vad du ändrat.
+1. Börja med outline för sidan du ska ändra, sök sedan fram och läs exakt det stället. Gissa aldrig hur koden ser ut.
+2. Gör små, precisa ändringar med edit_file. Skriv inte om hela filer. Behåll allt som inte ska ändras. Kopiera old_text ordagrant från det du läst, utan radnummer.
+3. Nytt innehåll ska se ut som resten av sidan: återanvänd befintliga klasser, CSS-variablerna (--brand, --ink, --bg, --line, --muted osv.) och samma typsnitt. Hårdkoda inte färger. Det ska fungera i mörkt läge och på mobil (lägg till @media vid behov).
+4. Får du en VARNING efter en ändring, rätta den direkt innan du går vidare.
+5. All text på sajten skrivs på naturlig, säljande svenska som en människa skulle skriva. Använd aldrig tankstreck (—).
+6. Gör hela uppgiften. Ber admin om flera saker, gör alla. Hittar du på priser, namn eller fakta som inte står på sidan, säg det i sammanfattningen.
+7. Är uppdraget oklart eller riskabelt (t.ex. ta bort hela sektioner), fråga först med finish.
+8. Avsluta alltid med finish och en kort sammanfattning på svenska: vad du ändrade och var på sidan det syns. Inga radnummer eller filnamn i onödan, admin är inte utvecklare.
 
 Nya funktioner:
 - Du kan bygga nya funktioner, som du och admin tidigare gjort: följ-knappar, videoinlägg, nya flikar, nya sidor.
@@ -229,6 +237,13 @@ async function runTool(sess, name, args) {
       const t = await gh(`/repos/${REPO}/git/trees/${BRANCH}?recursive=1`);
       return t.tree.filter((x) => x.type === 'blob' && !/^(node_modules|\.github|scripts|vendor)\//.test(x.path)).map((x) => `${x.path} (${Math.round((x.size || 0) / 1024)} kB)${PROTECTED.test(x.path) ? ' [låst, kan läsas]' : EDITABLE_EXT.test(x.path) ? '' : ' [kan inte ändras]'}`).join('\n');
     }
+    case 'outline': {
+      const path = sess.mode === 'db' ? dbPath(args.path) : readablePath(args.path);
+      const lines = (await fileContent(sess, path)).split('\n'), out = [];
+      const re = /<(section|header|footer|nav|main|aside|dialog|form|h[1-3]|style|script)\b|<\/(style|script)>|\sid="[^"]+"|^\s*:root\b|@media/i;
+      lines.forEach((l, i) => { if (out.length < 160 && re.test(l)) out.push(`${i + 1}: ${l.trim().replace(/\s+/g, ' ').slice(0, 140)}`); });
+      return out.join('\n') + `\n(filen har ${lines.length} rader)`;
+    }
     case 'search': {
       const path = sess.mode === 'db' ? dbPath(args.path) : readablePath(args.path), q = String(args.query || '').toLowerCase();
       if (!q) throw new Error('Tom sökning.');
@@ -245,10 +260,16 @@ async function runTool(sess, name, args) {
       const path = sess.mode === 'db' ? dbPath(args.path) : checkPath(args.path);
       const text = await fileContent(sess, path), old = String(args.old_text ?? '');
       if (!old) throw new Error('old_text är tom.');
-      const count = text.split(old).length - 1;
-      if (count === 0) throw new Error('old_text hittades inte. Läs stället igen och kopiera texten exakt.');
+      let count = text.split(old).length - 1, next;
+      if (count === 0) {
+        // AI:n får ofta indrag eller radbrytningar lite fel. Stämmer texten bortsett från blanksteg, och bara på ett ställe, används den.
+        const loose = new RegExp(old.trim().split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'g');
+        const hits = old.trim() ? text.match(loose) || [] : [];
+        if (hits.length === 1) { count = 1; next = text.replace(loose, () => String(args.new_text ?? '')); }
+        else if (hits.length > 1) count = hits.length;
+      } else if (count === 1) next = text.replace(old, () => String(args.new_text ?? ''));
+      if (count === 0) throw new Error('old_text hittades inte. Sök eller läs stället igen och kopiera texten exakt.');
       if (count > 1) throw new Error(`old_text finns ${count} gånger. Ta med mer omgivande text så att den blir unik.`);
-      const next = text.replace(old, () => String(args.new_text ?? ''));
       sess.edits[path] = next;
       const problems = validate(path, sess.base[path] && sess.base[path].content, next);
       return 'Ändrat.' + (problems.length ? ' VARNING, rätta detta: ' + problems.join('; ') : '');
@@ -325,7 +346,7 @@ async function callModel(sess) {
         model,
         temperature: 0.2,
         max_tokens: 4096,
-        ...(model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
+        ...(model.includes('gpt-oss') ? { reasoning_effort: model.includes('120b') ? 'medium' : 'low' } : {}),
         tools: TOOLS.map((t) => ({ type: 'function', function: t })),
         tool_choice: 'auto',
         messages: [{ role: 'system', content: SYSTEM + (sess.mode === 'db' ? DB_NOTE : '') }, ...sess.messages],
@@ -397,10 +418,14 @@ async function work(sess) {
   }
 }
 
+const nice = (path) => ({ 'index.html': 'hemsidan', 'nyheter/index.html': 'bloggen' })[path] || path;
+
 function describe(name, a, out) {
   const fail = /^FEL:/.test(out) ? ' (misslyckades)' : '';
+  a = { ...a, path: nice(a.path) };
   switch (name) {
     case 'list_files': return 'Tittar på sajtens filer' + fail;
+    case 'outline': return `Får en överblick över ${a.path}` + fail;
     case 'search': return `Söker efter "${String(a.query).slice(0, 40)}" i ${a.path}` + fail;
     case 'read_file': return `Läser ${a.path}${a.start_line ? ` rad ${a.start_line}–${a.end_line || a.start_line + 199}` : ''}` + fail;
     case 'edit_file': return `Ändrar ${a.path}` + fail + (/VARNING/.test(out) ? ' (hittade ett fel, rättar)' : '');
