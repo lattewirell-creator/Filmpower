@@ -300,29 +300,49 @@ const DB_NOTE = `
 
 VIKTIGT, gäller nu: Sajten körs utan GitHub-nyckel. Du kan bara ändra index.html och nyheter/index.html (HTML, CSS och JavaScript i dem) samt blogginläggen. Serverkod, nya filer och nya sidor går inte. Behövs ny serverlogik, säg det i finish och föreslå att admin lägger in en GitHub-nyckel. Ta aldrig bort det första <script>-blocket i <head> (det visar AI-versionen av sidan).`;
 
-async function callModel(messages, dbMode) {
-  const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
+// Groqs gratisnivå har en gräns per minut och per dag för varje modell. Når en modell gränsen
+// provas nästa (de har egna gränser) och modellen vilar tills Groq säger att den får användas igen.
+const MODELS = ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'meta-llama/llama-4-scout-17b-16e-instruct', 'openai/gpt-oss-20b'];
+
+function retrySeconds(r, data) {
+  const h = Number(r.headers.get('retry-after'));
+  if (h > 0) return h;
+  const m = /try again in (?:(\d+)h)?(?:(\d+)m)?(?:([\d.]+)s)?/i.exec((data.error && data.error.message) || '');
+  return m ? (Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0)) || 20 : 20;
+}
+
+async function callModel(sess) {
+  const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : MODELS;
+  const cool = (sess.cool ||= {});
   const errors = [];
+  let wait = Infinity;
   for (const model of models) {
+    if (cool[model] > Date.now()) { wait = Math.min(wait, (cool[model] - Date.now()) / 1000); continue; }
     const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
       method: 'POST',
       headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({
         model,
         temperature: 0.2,
-        max_tokens: 8000,
-        ...(model.includes('gpt-oss') ? { reasoning_effort: 'medium' } : {}),
+        max_tokens: 4096,
+        ...(model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {}),
         tools: TOOLS.map((t) => ({ type: 'function', function: t })),
         tool_choice: 'auto',
-        messages: [{ role: 'system', content: SYSTEM + (dbMode ? DB_NOTE : '') }, ...messages],
+        messages: [{ role: 'system', content: SYSTEM + (sess.mode === 'db' ? DB_NOTE : '') }, ...sess.messages],
       }),
       signal: AbortSignal.timeout(35000),
     });
     const data = await r.json().catch(() => ({}));
-    if (r.status === 429) { const e = new Error('Groq har för många anrop just nu.'); e.retry = true; throw e; }
     if (r.ok && data.choices && data.choices[0]) return data.choices[0].message;
+    if (r.status === 429 || r.status === 413) {
+      const sec = r.status === 413 ? 600 : retrySeconds(r, data);
+      cool[model] = Date.now() + sec * 1000;
+      wait = Math.min(wait, sec);
+      continue;
+    }
     errors.push(model + ': ' + r.status + ' ' + ((data.error && data.error.message) || ''));
   }
+  if (wait < Infinity) { const e = new Error('Groq har för många anrop just nu.'); e.retry = Math.ceil(wait); throw e; }
   throw new Error(errors.join(' | '));
 }
 
@@ -334,9 +354,22 @@ async function work(sess) {
     sess.steps++;
     compact(sess.messages);
     let msg;
-    try { msg = await callModel(sess.messages, sess.mode === 'db'); } catch (err) {
-      if (err.retry) { sess.events.push({ t: 'wait', text: 'Väntar en stund på AI:n…' }); return; }
-      throw err;
+    try { msg = await callModel(sess); sess.waits = 0; } catch (err) {
+      if (!err.retry) throw err;
+      sess.steps--;
+      sess.waits = (sess.waits || 0) + 1;
+      // Kvoten är slut för en längre stund: säg det i stället för att vänta i det oändliga.
+      if (err.retry > 120 || sess.waits > 6) {
+        const min = Math.max(1, Math.ceil(err.retry / 60));
+        sess.done = true;
+        sess.summary = `Groqs gratiskvot är slut för stunden. Försök igen om ungefär ${min > 90 ? Math.ceil(min / 60) + ' timmar' : min === 1 ? 'en minut' : min + ' minuter'}, skriv då "fortsätt" så jobbar jag vidare där jag var.`;
+        break;
+      }
+      if (sess.waits === 1) sess.events.push({ t: 'wait', text: 'Groq säger åt mig att vänta en stund, jag fortsätter strax av mig själv…' });
+      const ms = (err.retry + 1) * 1000;
+      if (Date.now() + ms > until - 2000) return;
+      await new Promise((ok) => setTimeout(ok, ms));
+      continue;
     }
     const calls = msg.tool_calls || [];
     sess.messages.push({ role: 'assistant', content: msg.content || '', ...(calls.length ? { tool_calls: calls } : {}) });
