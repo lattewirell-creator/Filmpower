@@ -85,6 +85,16 @@ async function serveCustom(res, name) {
 export async function servePage(req, res, name) {
   if (isCustom(name)) return serveCustom(res, name);
   if (!PAGES[name]) { res.statusCode = 404; return res.end(); }
+  // Felsökning: visar bara om en AI-version finns och om den gäller, aldrig innehållet.
+  if (/[?&]debug=1/.test(req.url)) {
+    const o = await getOverride(name);
+    let st = null, live = null, err = '';
+    try { st = await staticHash(req, name); live = (await staticPage(req, name)).hash; } catch (e) { err = e.message; }
+    const last = await redis('GET', 'ai:last');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ override: o ? { at: new Date(o.at).toISOString(), baseHash: o.baseHash, request: String(o.request || '').slice(0, 80), size: o.html.length } : null, staticHashCached: st, staticHashNow: live, host: origin(req), commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7), last: last ? JSON.parse(last).at && { at: new Date(JSON.parse(last).at).toISOString(), pages: JSON.parse(last).pages } : null, err, hist: Boolean(await redis('GET', 'page:hist:' + name)) }));
+  }
   let o = null;
   try { o = await activeOverride(req, name); } catch (err) { console.error('AI-sida:', err); }
   // Webbläsaren frågar alltid på nytt. Vercels server får mellanlagra i 10 sekunder, så att det går snabbt för besökare.

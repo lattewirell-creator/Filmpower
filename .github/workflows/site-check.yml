@@ -17,6 +17,7 @@ jobs:
           echo "--- sidskriptet finns:"; grep -c "__fpPage" app.html || true
           echo "--- priser i vanliga hemsidan"; curl -s "https://filmpower.vercel.app/index.html?original=$(date +%s)" | grep -o 'class="price">[^<]*' || true
           echo "--- priser i AI-versionen"; curl -s -D h3.txt "https://filmpower.vercel.app/api/me?page=home&t=$(date +%s)" -o ov.html; head -1 h3.txt; grep -o 'class="price">[^<]*' ov.html || true; grep -c "__fpPage" ov.html || true
+          echo "--- felsökning"; for p in home nyheter; do curl -s "https://filmpower.vercel.app/api/me?page=$p&debug=1&t=$(date +%s)"; echo; done
       - name: Vercels status för de senaste commitarna
         env:
           GH_TOKEN: ${{ github.token }}
