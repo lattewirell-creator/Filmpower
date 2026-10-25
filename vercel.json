@@ -13,5 +13,11 @@
       "maxDuration": 60
     }
   },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude).github' ':(exclude)scripts' ':(exclude)README.md'"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude).github' ':(exclude)scripts' ':(exclude)README.md'",
+  "rewrites": [
+    {
+      "source": "/sida/:slug",
+      "destination": "/api/me?sida=:slug"
+    }
+  ]
 }

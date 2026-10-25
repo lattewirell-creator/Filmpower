@@ -8,6 +8,16 @@ import { redis } from './_lib.js';
 export const PAGES = { home: 'index.html', nyheter: 'nyheter/index.html' };
 export const PAGE_BY_PATH = { 'index.html': 'home', 'nyheter/index.html': 'nyheter' };
 
+// Egna sidor som AI:n skapar. De ligger bara i databasen och visas på /sida/namn
+// (vercel.json skickar dit /api/me?sida=namn). Filnamnet för AI:n är sidor/namn.html.
+export const SLUG = /^[a-z0-9][a-z0-9-]{0,39}$/;
+export function nameOfPath(path) {
+  if (PAGE_BY_PATH[path]) return PAGE_BY_PATH[path];
+  const m = /^sidor\/([a-z0-9-]+)\.html$/.exec(path);
+  return m && SLUG.test(m[1]) ? 'sida:' + m[1] : null;
+}
+export const isCustom = (name) => String(name).startsWith('sida:');
+
 export function origin(req) {
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'filmpower.vercel.app';
   const proto = req.headers['x-forwarded-proto'] || (/^(localhost|127\.0\.0\.1)/.test(host) ? 'http' : 'https');
@@ -55,10 +65,25 @@ export async function setOverride(name, value) {
   await redis('SET', 'page:hist:' + name, prev || 'null', 'EX', 30 * 86400);
   if (value) await redis('SET', 'page:override:' + name, JSON.stringify(value));
   else await redis('DEL', 'page:override:' + name);
+  if (isCustom(name)) await redis(value ? 'SADD' : 'SREM', 'pages:custom', name.slice(5));
+}
+
+const NOT_FOUND = '<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sidan finns inte</title></head><body style="font-family:system-ui;display:grid;place-items:center;min-height:90vh;text-align:center"><div><h1>Sidan finns inte</h1><p><a href="/">Till Film Power</a></p></div></body></html>';
+
+async function serveCustom(res, name) {
+  const o = SLUG.test(name.slice(5)) ? await getOverride(name) : null;
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Vercel-CDN-Cache-Control', 'max-age=10');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.statusCode = o ? 200 : 404;
+  // AI-panelen finns på egna sidor också, så att admin kan fortsätta bygga där.
+  const html = o ? o.html.replace(/<\/body>(?![\s\S]*<\/body>)/i, '<script src="/vendor/admin-ai.js" defer></script></body>') : NOT_FOUND;
+  res.end(html);
 }
 
 // Används av /api/me?page=namn. Svarar 204 (ingen AI-version) eller sidans HTML.
 export async function servePage(req, res, name) {
+  if (isCustom(name)) return serveCustom(res, name);
   if (!PAGES[name]) { res.statusCode = 404; return res.end(); }
   let o = null;
   try { o = await activeOverride(req, name); } catch (err) { console.error('AI-sida:', err); }

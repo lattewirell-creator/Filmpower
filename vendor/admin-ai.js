@@ -74,6 +74,8 @@
       '.aai-form{display:flex;align-items:flex-end;gap:.5rem;padding:.7rem;border-top:1px solid var(--line,#e4e6e1)}',
       '.aai-form textarea{flex:1;resize:none;max-height:8rem;border:1px solid var(--line,#e4e6e1);border-radius:14px;padding:.6rem .8rem;background:var(--bg,#fff);color:inherit;font:400 .95rem/1.4 var(--body,system-ui,sans-serif)}',
       '.aai-form button{width:2.6rem;height:2.6rem;flex:none;border:0;border-radius:50%;background:var(--brand,#3d7a2c);color:var(--on-brand,#fff);cursor:pointer;font-size:1.1rem}',
+      '.aai-form .aai-att{background:none;color:var(--muted,#5d625b);border:1px solid var(--line,#e4e6e1)}.aai-form .aai-att svg{width:1.15rem;height:1.15rem;vertical-align:middle}',
+      '.aai-thumb{align-self:flex-end;max-width:60%;max-height:9rem;border-radius:12px;object-fit:cover}',
       '.aai-form button:disabled{opacity:.45;cursor:default}',
       '.aai-dots{display:inline-flex;gap:.25rem}.aai-dots i{width:.4rem;height:.4rem;border-radius:50%;background:var(--muted,#5d625b);animation:aaib 1.2s infinite}',
       '.aai-dots i:nth-child(2){animation-delay:.15s}.aai-dots i:nth-child(3){animation-delay:.3s}@keyframes aaib{0%,80%,100%{opacity:.25}40%{opacity:1}}',
@@ -111,16 +113,46 @@
     box.setAttribute('aria-label', 'Bygg med AI');
     box.innerHTML = '<div class="aai-head"><span class="mk">' + ICON + '</span><div><b>Bygg med AI</b><small>Ändra hemsidan och bloggen. Inget går ut förrän du publicerar.</small></div><button class="aai-x" type="button" aria-label="Stäng">×</button></div>' +
       '<div class="aai-log" aria-live="polite"></div>' +
-      '<form class="aai-form"><textarea rows="2" maxlength="2000" placeholder="T.ex. Lägg till en sektion med kundomdömen under priserna"></textarea><button type="submit" aria-label="Skicka">↑</button></form>';
+      '<form class="aai-form"><button type="button" class="aai-att" aria-label="Ladda upp en bild" title="Ladda upp en bild"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button><input type="file" accept="image/*" hidden><textarea rows="2" maxlength="2000" placeholder="T.ex. Gör en ny sida om oss med bilder"></textarea><button type="submit" aria-label="Skicka">↑</button></form>';
     document.body.appendChild(box);
     made.push(box);
 
-    var log = box.querySelector('.aai-log'), form = box.querySelector('form'), ta = form.querySelector('textarea'), sendBtn = form.querySelector('button');
+    var log = box.querySelector('.aai-log'), form = box.querySelector('form'), ta = form.querySelector('textarea'), sendBtn = form.querySelector('button[type=submit]');
+    var attBtn = form.querySelector('.aai-att'), fileIn = form.querySelector('input[type=file]');
     var sessionId = '', busy = false, from = 0, statusLoaded = false;
     try { sessionId = sessionStorage.getItem('fp_ai_session') || ''; } catch (e) {}
 
     function add(cls, text) { var d = el('div', cls, text); log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
-    function setBusy(b) { busy = b; sendBtn.disabled = b; ta.disabled = b; }
+    function setBusy(b) { busy = b; sendBtn.disabled = b; ta.disabled = b; attBtn.disabled = b; }
+
+    // Egen bild: förminskas i webbläsaren, sparas hos sajten och adressen läggs i meddelandet till AI:n.
+    function shrink(file) {
+      return new Promise(function (ok, fail) {
+        var img = new Image(), url = URL.createObjectURL(file);
+        img.onload = function () {
+          var k = Math.min(1, 1800 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          ok(file.type === 'image/png' && file.size < 1500000 ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.86));
+        };
+        img.onerror = function () { fail(new Error('Bilden gick inte att läsa.')); };
+        img.src = url;
+      });
+    }
+    attBtn.addEventListener('click', function () { if (!busy) fileIn.click(); });
+    fileIn.addEventListener('change', function () {
+      var f = fileIn.files[0]; fileIn.value = '';
+      if (!f) return;
+      setBusy(true);
+      var wait = add('aai-step', 'Laddar upp bilden…');
+      shrink(f).then(function (data) { return call('upload', { data: data }); }).then(function (r) {
+        var t = el('img', 'aai-thumb'); t.src = r.url; t.alt = ''; log.appendChild(t);
+        ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : 'Använd den här bilden: ') + '[bild: ' + r.url + ']';
+        wait.textContent = 'Bilden är uppladdad. Skriv var den ska in och skicka.';
+      }).catch(function (err) { wait.remove(); fail(err); })
+        .then(function () { setBusy(false); ta.focus(); });
+    });
 
     // Kodlåset: visas tills rätt kod är skriven. Servern kollar koden vid varje anrop.
     function lock(msg) {
@@ -151,13 +183,13 @@
     function greet(s) {
       add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen, eller fråga mig vad som helst. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
       var tips = el('div', 'aai-tips');
-      ['Gör priskorten snyggare', 'Lägg till kundomdömen under priserna', 'Skriv ett blogginlägg om ljussättning', 'Vad kan jag förbättra på hemsidan?'].forEach(function (t) {
+      ['Gör en ny sida om oss med bilder', 'Lägg till kundomdömen under priserna', 'Byt bilden högst upp mot en filmkamera', 'Skriv ett blogginlägg om ljussättning', 'Vilka konton väntar på godkännande?', 'Vad kan jag förbättra på hemsidan?'].forEach(function (t) {
         var c = el('button', 'aai-btn aai-tip', t); c.type = 'button';
         c.addEventListener('click', function () { if (busy) return; tips.remove(); ta.value = t; form.requestSubmit(); });
         tips.appendChild(c);
       });
       if (!s.ready) add('aai-err', 'GROQ_API_KEY saknas på Vercel, så jag kan inte arbeta än.');
-      else if (s.mode === 'db') add('aai-step', 'Jag kan ändra hemsidan och bloggen (text, design och funktioner i sidorna) och blogginläggen. Ändringar syns direkt efter Publicera. Serverkod kräver en GitHub-nyckel.');
+      else add('aai-step', 'Jag kan ändra allt på hemsidan och bloggen, bygga nya sidor, hitta och lägga in bilder (eller använda dina, tryck på bildknappen), läsa andra webbsidor, skriva blogginlägg och sköta konton. Ändringar syns direkt efter Publicera.');
       if (s.ready) log.appendChild(tips);
       if (s.last) undoCard(s.last);
     }
@@ -223,10 +255,11 @@
         pub.disabled = drop.disabled = true; pub.textContent = 'Publicerar…';
         call('publish', { sessionId: sessionId }).then(function (r) {
           c.remove();
-          add('aai-bot', 'Publicerat! ' + (!r.files ? 'Blogginläggen är uppdaterade.' : r.instant ? '' : 'Sajten uppdateras om ungefär en minut, ladda sedan om sidan.') + ' Ångrar du dig kan du ångra ändringen härifrån.');
+          add('aai-bot', 'Publicerat! ' + (!r.files ? 'Klart.' : r.instant ? '' : 'Sajten uppdateras om ungefär en minut, ladda sedan om sidan.') + ' Ångrar du dig kan du ångra ändringen härifrån.');
+          (r.pages || []).forEach(function (u) { var a = el('a', 'aai-btn', 'Öppna ' + u); a.href = u; a.target = '_blank'; a.rel = 'noopener'; log.appendChild(a); });
           if (r.files) undoCard({ request: lastRequest });
           // Sidan laddas om av sig själv när ändringen hunnit ut (servern mellanlagrar i 10 sekunder).
-          if (r.files && r.instant) {
+          if (r.files > (r.pages || []).length && r.instant) {
             var left = 12, note = add('aai-step', '');
             var tick = setInterval(function () {
               note.textContent = 'Laddar om sidan om ' + left + ' sekunder så att du ser ändringen…';
