@@ -115,7 +115,8 @@
       statusLoaded = true;
       call('status').then(function (s) {
         add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
-        if (!s.ready) add('aai-err', !s.github ? 'GITHUB_TOKEN saknas på Vercel, så jag kan inte ändra sajten än. Instruktionen finns i README under "Bygg med AI".' : 'GROQ_API_KEY saknas på Vercel.');
+        if (!s.ready) add('aai-err', 'GROQ_API_KEY saknas på Vercel, så jag kan inte arbeta än.');
+        else if (s.mode === 'db') add('aai-step', 'Jag kan ändra hemsidan och bloggen (text, design och funktioner i sidorna) och blogginläggen. Ändringar syns direkt efter Publicera. Serverkod kräver en GitHub-nyckel.');
         if (s.last) undoCard(s.last);
       }).catch(function (err) { add('aai-err', err.message); });
     }
@@ -131,7 +132,7 @@
       b.addEventListener('click', function () {
         if (!window.confirm('Ångra den senaste AI-ändringen? Sajten går tillbaka till hur den var innan.')) return;
         b.disabled = true;
-        call('undo', {}).then(function () { c.remove(); add('aai-bot', 'Ändringen är ångrad. Sajten uppdateras om ungefär en minut.'); })
+        call('undo', {}).then(function (r) { c.remove(); add('aai-bot', 'Ändringen är ångrad. ' + (r.instant ? 'Ladda om sidan om några sekunder.' : 'Sajten uppdateras om ungefär en minut.')); })
           .catch(function (err) { b.disabled = false; add('aai-err', err.message); });
       });
       row.appendChild(b); c.appendChild(row); log.appendChild(c);
@@ -160,7 +161,7 @@
           call('preview', { sessionId: sessionId, path: x.path }).then(function (r) {
             if (!w) { add('aai-err', 'Webbläsaren stoppade fliken. Tillåt popup-fönster för sajten.'); return; }
             var base = '/' + x.path.replace(/[^/]*$/, '');
-            var html = r.html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '"><script>window.__fpPreview=1;</' + 'script>');
+            var html = r.html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '"><script>window.__fpPreview=1;window.__fpPage=1;</' + 'script>');
             html = html.replace(/<body([^>]*)>/i, '<body$1><div style="position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#141614;color:#f4f1e8;font:500 13px system-ui;padding:6px 12px;text-align:center">Förhandsvisning, inte publicerad än</div>');
             w.document.open(); w.document.write(html); w.document.close();
           }).catch(function (err) { if (w) w.close(); add('aai-err', err.message); });
@@ -172,7 +173,7 @@
         pub.disabled = drop.disabled = true; pub.textContent = 'Publicerar…';
         call('publish', { sessionId: sessionId }).then(function (r) {
           c.remove();
-          add('aai-bot', 'Publicerat! ' + (r.files ? 'Sajten uppdateras om ungefär en minut, ladda sedan om sidan.' : 'Blogginläggen är uppdaterade.') + ' Ångrar du dig kan du ångra ändringen härifrån.');
+          add('aai-bot', 'Publicerat! ' + (!r.files ? 'Blogginläggen är uppdaterade.' : r.instant ? 'Ladda om sidan om några sekunder så syns ändringen.' : 'Sajten uppdateras om ungefär en minut, ladda sedan om sidan.') + ' Ångrar du dig kan du ångra ändringen härifrån.');
           if (r.files) undoCard({ request: lastRequest });
           sessionId = ''; try { sessionStorage.removeItem('fp_ai_session'); } catch (e) {}
         }).catch(function (err) { pub.disabled = drop.disabled = false; pub.textContent = 'Publicera'; add('aai-err', err.message); });

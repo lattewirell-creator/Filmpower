@@ -12,6 +12,11 @@ import os from 'node:os';
 import nodePath from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { send, readBody, queryParam, requireAppHeader, HttpError, redis, pipeline, CATEGORIES } from './_lib.js';
+import { PAGE_BY_PATH, origin, fetchStatic, getOverride, setOverride } from './_pages.js';
+
+// Två lägen: med GITHUB_TOKEN sparas ändringarna i repot (allt kan ändras, även serverkod, och Vercel deployar).
+// Utan den sparas AI-versioner av hemsidan och bloggen i databasen och visas direkt (se _pages.js).
+function mode() { return process.env.GITHUB_TOKEN ? 'github' : 'db'; }
 
 const REPO = process.env.GITHUB_REPO || 'lattewirell-creator/Filmpower';
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
@@ -22,7 +27,7 @@ const STEP_BUDGET_MS = 42_000;
 // ---------- Vilka filer AI:n får röra ----------
 
 // Låsta: inloggning och sessioner, AI-panelen, inställningar och tredjepartskod.
-const PROTECTED = /^(api\/(_agent|_lib|users|login|logout|me)\.js$|\.github\/|scripts\/|vendor\/|node_modules\/|package(-lock)?\.json$|vercel\.json$|\.gitignore$)/;
+const PROTECTED = /^(api\/(_agent|_lib|_pages|users|login|logout|me)\.js$|\.github\/|scripts\/|vendor\/|node_modules\/|package(-lock)?\.json$|vercel\.json$|\.gitignore$)/;
 const EDITABLE_EXT = /\.(html|css|svg|txt|md|js)$/i;
 
 function checkPath(path, creating) {
@@ -40,6 +45,12 @@ function checkPath(path, creating) {
 function readablePath(path) {
   const p = String(path || '').replace(/^\/+/, '');
   if (!p || p.includes('..') || /^(node_modules|vendor)\//.test(p) || /\.env/.test(p)) throw new Error('Den filen går inte att läsa.');
+  return p;
+}
+
+function dbPath(path) {
+  const p = String(path || '').replace(/^\/+/, '');
+  if (!PAGE_BY_PATH[p]) throw new Error('I det här läget kan bara index.html och nyheter/index.html ändras. Serverkod kräver en GitHub-nyckel.');
   return p;
 }
 
@@ -186,6 +197,17 @@ async function saveSession(sess) {
 // Aktuellt innehåll i en fil: AI:ns ändrade version, annars originalet från GitHub.
 async function fileContent(sess, path) {
   if (sess.edits[path] !== undefined) return sess.edits[path];
+  if (sess.mode === 'db') {
+    const name = PAGE_BY_PATH[path];
+    if (!name) throw new Error('I det här läget kan bara index.html (hemsidan) och nyheter/index.html (bloggen) läsas och ändras.');
+    if (!(path in sess.base)) {
+      // Utgå från AI-versionen om den gäller, annars från den vanliga sidan.
+      const st = await fetchStatic(sess.origin, name), o = await getOverride(name);
+      const live = o && o.baseHash === st.hash;
+      sess.base[path] = { content: live ? o.html : st.html, staticHash: st.hash, overrideAt: live ? o.at : 0 };
+    }
+    return sess.base[path].content;
+  }
   if (!(path in sess.base)) {
     const f = await ghFile(path);
     sess.base[path] = f ? { content: f.content, sha: f.sha } : null;
@@ -203,11 +225,12 @@ function numbered(text, from, to) {
 async function runTool(sess, name, args) {
   switch (name) {
     case 'list_files': {
+      if (sess.mode === 'db') return 'index.html (hemsidan)\nnyheter/index.html (bloggen)\nI det här läget kan bara de två sidorna ändras. Serverkod kräver en GitHub-nyckel.';
       const t = await gh(`/repos/${REPO}/git/trees/${BRANCH}?recursive=1`);
       return t.tree.filter((x) => x.type === 'blob' && !/^(node_modules|\.github|scripts|vendor)\//.test(x.path)).map((x) => `${x.path} (${Math.round((x.size || 0) / 1024)} kB)${PROTECTED.test(x.path) ? ' [låst, kan läsas]' : EDITABLE_EXT.test(x.path) ? '' : ' [kan inte ändras]'}`).join('\n');
     }
     case 'search': {
-      const path = readablePath(args.path), q = String(args.query || '').toLowerCase();
+      const path = sess.mode === 'db' ? dbPath(args.path) : readablePath(args.path), q = String(args.query || '').toLowerCase();
       if (!q) throw new Error('Tom sökning.');
       const lines = (await fileContent(sess, path)).split('\n');
       const hits = [];
@@ -215,11 +238,11 @@ async function runTool(sess, name, args) {
       return hits.length ? hits.join('\n') : 'Ingen träff.';
     }
     case 'read_file': {
-      const path = readablePath(args.path);
+      const path = sess.mode === 'db' ? dbPath(args.path) : readablePath(args.path);
       return numbered(await fileContent(sess, path), args.start_line, args.end_line);
     }
     case 'edit_file': {
-      const path = checkPath(args.path);
+      const path = sess.mode === 'db' ? dbPath(args.path) : checkPath(args.path);
       const text = await fileContent(sess, path), old = String(args.old_text ?? '');
       if (!old) throw new Error('old_text är tom.');
       const count = text.split(old).length - 1;
@@ -231,6 +254,7 @@ async function runTool(sess, name, args) {
       return 'Ändrat.' + (problems.length ? ' VARNING, rätta detta: ' + problems.join('; ') : '');
     }
     case 'create_file': {
+      if (sess.mode === 'db') throw new Error('Nya filer går inte i det här läget. Lägg det nya i index.html eller nyheter/index.html.');
       const path = checkPath(args.path, true);
       if (!(path in sess.base)) { const f = await ghFile(path); sess.base[path] = f ? { content: f.content, sha: f.sha } : null; }
       if (sess.base[path]) throw new Error(`${path} finns redan. Använd edit_file.`);
@@ -272,7 +296,11 @@ function compact(messages) {
   }
 }
 
-async function callModel(messages) {
+const DB_NOTE = `
+
+VIKTIGT, gäller nu: Sajten körs utan GitHub-nyckel. Du kan bara ändra index.html och nyheter/index.html (HTML, CSS och JavaScript i dem) samt blogginläggen. Serverkod, nya filer och nya sidor går inte. Behövs ny serverlogik, säg det i finish och föreslå att admin lägger in en GitHub-nyckel. Ta aldrig bort det första <script>-blocket i <head> (det visar AI-versionen av sidan).`;
+
+async function callModel(messages, dbMode) {
   const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
   const errors = [];
   for (const model of models) {
@@ -286,7 +314,7 @@ async function callModel(messages) {
         ...(model.includes('gpt-oss') ? { reasoning_effort: 'medium' } : {}),
         tools: TOOLS.map((t) => ({ type: 'function', function: t })),
         tool_choice: 'auto',
-        messages: [{ role: 'system', content: SYSTEM }, ...messages],
+        messages: [{ role: 'system', content: SYSTEM + (dbMode ? DB_NOTE : '') }, ...messages],
       }),
       signal: AbortSignal.timeout(35000),
     });
@@ -306,7 +334,7 @@ async function work(sess) {
     sess.steps++;
     compact(sess.messages);
     let msg;
-    try { msg = await callModel(sess.messages); } catch (err) {
+    try { msg = await callModel(sess.messages, sess.mode === 'db'); } catch (err) {
       if (err.retry) { sess.events.push({ t: 'wait', text: 'Väntar en stund på AI:n…' }); return; }
       throw err;
     }
@@ -396,7 +424,28 @@ async function applyActions(actions, s) {
   }
 }
 
+async function publishDb(sess, s) {
+  const files = Object.keys(sess.edits).map((path) => ({ path, name: PAGE_BY_PATH[path], content: sess.edits[path] }));
+  const problems = [];
+  for (const f of files) {
+    validate(f.path, sess.base[f.path].content, f.content).forEach((p) => problems.push(`${f.path}: ${p}`));
+    if (!/__fpPage/.test(f.content)) problems.push(`${f.path}: skriptet som visar AI-versionen har tagits bort`);
+    const st = await fetchStatic(sess.origin, f.name), o = await getOverride(f.name);
+    const liveAt = o && o.baseHash === st.hash ? o.at : 0;
+    if (st.hash !== sess.base[f.path].staticHash || liveAt !== sess.base[f.path].overrideAt) problems.push(`${f.path} har ändrats sedan AI:n läste den. Be AI:n göra om ändringen.`);
+  }
+  if (problems.length) throw new HttpError(409, 'Ändringen publicerades inte, eftersom kontrollen hittade fel: ' + problems.join(' · '));
+  const at = Date.now();
+  for (const f of files) await setOverride(f.name, { html: f.content, baseHash: sess.base[f.path].staticHash, at, request: sess.request });
+  if (files.length) await redis('SET', 'ai:last', JSON.stringify({ mode: 'db', at, request: sess.request, pages: files.map((f) => f.name) }), 'EX', 30 * 86400);
+  await applyActions(sess.actions, s);
+  sess.published = true;
+  await saveSession(sess);
+  return { files: files.length, actions: sess.actions.length, instant: true };
+}
+
 async function publish(sess, s) {
+  if (sess.mode === 'db') return publishDb(sess, s);
   const files = Object.keys(sess.edits).map((path) => ({ path, content: sess.edits[path] }));
   const problems = [];
   for (const f of files) {
@@ -427,6 +476,19 @@ async function undo() {
   const raw = await redis('GET', 'ai:last');
   if (!raw) throw new HttpError(404, 'Det finns ingen AI-ändring att ångra.');
   const last = JSON.parse(raw);
+  if (last.mode === 'db') {
+    for (const name of last.pages) {
+      const o = await getOverride(name);
+      if (!o || o.at !== last.at) throw new HttpError(409, 'Sidan har ändrats igen efter AI-ändringen, så den kan inte ångras automatiskt.');
+    }
+    for (const name of last.pages) {
+      const prev = await redis('GET', 'page:hist:' + name);
+      const value = prev && prev !== 'null' ? JSON.parse(prev) : null;
+      await setOverride(name, value);
+    }
+    await redis('DEL', 'ai:last');
+    return { instant: true };
+  }
   const restore = [];
   for (const f of last.files) {
     const now = await ghFile(f.path);
@@ -443,11 +505,11 @@ async function undo() {
 
 export async function agentHandler(req, res, s) {
   const action = queryParam(req, 'agent');
-  const ready = Boolean(process.env.GITHUB_TOKEN && process.env.GROQ_API_KEY);
+  const ready = Boolean(process.env.GROQ_API_KEY);
 
   if (req.method === 'GET') {
     const last = await redis('GET', 'ai:last');
-    return send(res, 200, { ready, github: Boolean(process.env.GITHUB_TOKEN), ai: Boolean(process.env.GROQ_API_KEY), last: last ? (({ commit, at, request }) => ({ commit, at, request }))(JSON.parse(last)) : null });
+    return send(res, 200, { ready, mode: mode(), github: Boolean(process.env.GITHUB_TOKEN), ai: Boolean(process.env.GROQ_API_KEY), last: last ? (({ commit, at, request }) => ({ commit, at, request }))(JSON.parse(last)) : null });
   }
 
   requireAppHeader(req);
@@ -456,14 +518,14 @@ export async function agentHandler(req, res, s) {
 
   if (action === 'undo') return send(res, 200, await undo());
 
-  if (!ready) throw new HttpError(503, !process.env.GITHUB_TOKEN ? 'GITHUB_TOKEN saknas på Vercel. Se instruktionen i README.' : 'GROQ_API_KEY saknas på Vercel.');
+  if (!ready) throw new HttpError(503, 'GROQ_API_KEY saknas på Vercel.');
 
   if (action === 'start') {
     const text = String(b.message || '').trim().slice(0, 2000);
     if (!text) throw new HttpError(400, 'Skriv vad du vill ändra.');
     // Fortsätter samma session om admin ber om något mer innan publicering.
     let sess = await loadSession(b.sessionId);
-    if (!sess || sess.published) sess = { id: crypto.randomBytes(9).toString('hex'), request: text, messages: [], edits: {}, base: {}, actions: [], events: [], steps: 0, done: false, summary: '' };
+    if (!sess || sess.published) sess = { id: crypto.randomBytes(9).toString('hex'), mode: mode(), origin: origin(req), request: text, messages: [], edits: {}, base: {}, actions: [], events: [], steps: 0, done: false, summary: '' };
     sess.messages.push({ role: 'user', content: text });
     sess.done = false; sess.steps = Math.min(sess.steps, MAX_STEPS - 20);
     const from = sess.events.length;

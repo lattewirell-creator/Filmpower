@@ -1,6 +1,9 @@
-import { handle, send, getSession, dbReady, CATEGORIES } from './_lib.js';
+import { handle, send, getSession, dbReady, CATEGORIES, queryParam } from './_lib.js';
+import { servePage } from './_pages.js';
 
 export default handle(async (req, res) => {
+  // AI-versionen av en sida (hemsidan eller bloggen), se _pages.js.
+  if (queryParam(req, 'page')) return servePage(req, res, queryParam(req, 'page'));
   const s = await getSession(req);
   send(res, 200, {
     user: s ? { role: s.role, label: s.label, verified: Boolean(s.verified), avatar: s.avatar || '', anon: Boolean(s.anon) } : null,

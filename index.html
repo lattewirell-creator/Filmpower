@@ -2,6 +2,22 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
+<script>
+// Admin-AI:ns publicerade version av sidan (sparad i databasen) visas i stället för den här, om det finns en.
+// Går något fel visas den vanliga sidan. Den undanskymda resten av originalet läggs i ett dolt element.
+(function () {
+  if (window.__fpPage || /[?&]original=/.test(location.search)) return;
+  window.__fpPage = 1;
+  try {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/api/me?page=home', false);
+    x.send();
+    if (x.status === 200 && /<\/html>\s*$/i.test(x.responseText)) {
+      document.write(x.responseText.replace(/<\/body>\s*<\/html>\s*$/i, '') + '<plaintext hidden style="display:none">');
+    }
+  } catch (e) {}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Film Power är en filmstudio för kortfilm och indieproduktioner. Vi filmar och klipper, från första tagning till färdig film. Filmning från 150 kr.">
 <meta property="og:title" content="Film Power – Film studio">

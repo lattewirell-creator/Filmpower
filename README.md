@@ -49,9 +49,14 @@ När du är inloggad som admin finns knappen **Bygg med AI** i hemsidans sidomen
 - **Kontroll innan publicering:** trasig JavaScript, trasig serverkod eller en sida som tömts stoppas automatiskt.
 - **Ångra:** den senaste AI-ändringen kan ångras med ett klick i panelen. Hela historiken finns också på GitHub.
 - **Låsta filer:** inloggning, sessioner och AI-panelen själv (api/_lib.js, api/_agent.js, api/users.js, api/login.js, api/logout.js, api/me.js, vendor/, vercel.json och package.json). Då kan en ändring aldrig låsa ute dig eller stoppa Ångra.
-- Varje publicering blir en deploy på Vercel. Samla gärna flera ändringar i samma uppdrag.
+- I fullt läge blir varje publicering en deploy på Vercel. Samla gärna flera ändringar i samma uppdrag.
 
-**Engångsinställning: en GitHub-nyckel**
+**Två lägen**
+
+- **Med bara `GROQ_API_KEY` (som nu):** AI:n ändrar hemsidan och bloggen (text, design och funktioner i sidorna) och blogginläggen. Ändringarna sparas i databasen och syns några sekunder efter Publicera, utan deploy. Varje sida har ett litet skript överst i `<head>` som visar AI-versionen om det finns en. Ändras själva sidfilen senare (en ny deploy) slutar AI-versionen gälla, så den döljer aldrig nyare ändringar. Då ber man AI:n göra om ändringen.
+- **Med även `GITHUB_TOKEN`:** AI:n sparar ändringarna i GitHub-repot och kan också ändra serverkoden och skapa nya filer. Varje publicering blir en deploy.
+
+**Valfritt: en GitHub-nyckel för fullt läge**
 
 1. På github.com: klicka på din profilbild, sedan **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens** och **Generate new token**.
 2. Namn: `filmpower-ai`. Välj hur länge den ska gälla, t.ex. ett år.
