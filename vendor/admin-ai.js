@@ -6,15 +6,24 @@
   window.__fpAdminAI = true;
 
   var API = '/api/users?agent=';
+  // Koden som krävs för AI:n. Sparas bara i fliken, så den behöver skrivas igen i en ny flik.
+  var code = '';
+  try { code = sessionStorage.getItem('fp_ai_code') || ''; } catch (e) {}
   function call(action, body) {
+    var headers = { 'x-ai-code': code };
+    if (body) { headers['content-type'] = 'application/json'; headers['x-fp'] = '1'; }
     return fetch(API + action, {
       method: body ? 'POST' : 'GET',
       credentials: 'same-origin',
-      headers: body ? { 'content-type': 'application/json', 'x-fp': '1' } : {},
+      headers: headers,
       body: body ? JSON.stringify(body) : undefined,
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
-        if (!r.ok) throw new Error(d.error || 'Något gick fel. Försök igen.');
+        if (!r.ok) {
+          var err = new Error(d.error || 'Något gick fel. Försök igen.');
+          err.needCode = r.status === 403 && /kod/i.test(d.error || '');
+          throw err;
+        }
         return d;
       });
     });
@@ -47,7 +56,7 @@
       '.aai-fab.aai-float{position:fixed;left:max(20px,env(safe-area-inset-left,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));z-index:80;height:3rem;padding:0 1.1rem;background:#141614;color:#f4f1e8;border:0}',
       '.aai-fab svg,.aai-head svg{width:1.2rem;height:1.2rem}',
       '.aai{position:fixed;left:max(20px,env(safe-area-inset-left,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));z-index:81;width:min(27rem,calc(100vw - 32px));height:min(40rem,calc(100dvh - 40px));display:flex;flex-direction:column;background:var(--bg,#fafaf8);color:var(--ink,#141614);border:1px solid var(--line,#e4e6e1);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.32);overflow:hidden;font:400 .95rem/1.5 var(--body,system-ui,sans-serif)}',
-      '.aai[hidden],.aai-fab[hidden]{display:none}',
+      '.aai[hidden],.aai-fab[hidden],.aai-form[hidden]{display:none}',
       '.aai-head{display:flex;align-items:center;gap:.6rem;padding:.8rem 1rem;border-bottom:1px solid var(--line,#e4e6e1)}',
       '.aai-head .mk{display:grid;place-items:center;width:2.2rem;height:2.2rem;border-radius:50%;background:#141614;color:#f4f1e8;flex:none}',
       '.aai-head div{flex:1;display:grid;line-height:1.25}.aai-head b{font-weight:600}.aai-head small{color:var(--muted,#5d625b);font-size:.8rem}',
@@ -68,6 +77,9 @@
       '.aai-form button:disabled{opacity:.45;cursor:default}',
       '.aai-dots{display:inline-flex;gap:.25rem}.aai-dots i{width:.4rem;height:.4rem;border-radius:50%;background:var(--muted,#5d625b);animation:aaib 1.2s infinite}',
       '.aai-dots i:nth-child(2){animation-delay:.15s}.aai-dots i:nth-child(3){animation-delay:.3s}@keyframes aaib{0%,80%,100%{opacity:.25}40%{opacity:1}}',
+      '.aai-lock{margin:auto;display:grid;gap:.7rem;justify-items:center;text-align:center;max-width:16rem}',
+      '.aai-lock input{width:9rem;text-align:center;letter-spacing:.5em;font:600 1.4rem/1 var(--body,system-ui,sans-serif);padding:.6rem .4rem .6rem .9rem;border:1px solid var(--line,#e4e6e1);border-radius:12px;background:var(--bg,#fff);color:inherit}',
+      '.aai-lock p{margin:0;color:var(--muted,#5d625b);font-size:.88rem}.aai-lock .bad{color:#c0392b}',
       '@media (max-width:560px){.aai{left:0;bottom:0;width:100vw;height:100dvh;border-radius:0;border:0}}',
     ].join('\n');
     document.head.appendChild(css);
@@ -109,16 +121,46 @@
     function add(cls, text) { var d = el('div', cls, text); log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
     function setBusy(b) { busy = b; sendBtn.disabled = b; ta.disabled = b; }
 
+    // Kodlåset: visas tills rätt kod är skriven. Servern kollar koden vid varje anrop.
+    function lock(msg) {
+      code = ''; try { sessionStorage.removeItem('fp_ai_code'); } catch (e) {}
+      statusLoaded = false;
+      log.innerHTML = ''; form.hidden = true;
+      var f = el('form', 'aai-lock');
+      f.innerHTML = '<b>Skriv koden för att använda AI:n</b><input type="password" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="Kod"><button class="aai-btn pri" type="submit">Lås upp</button><p></p>';
+      var inp = f.querySelector('input'), p = f.querySelector('p'), btn = f.querySelector('button');
+      if (msg) { p.textContent = msg; p.className = 'bad'; }
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!inp.value.trim()) return inp.focus();
+        code = inp.value.trim(); btn.disabled = true;
+        call('status').then(function (s) {
+          try { sessionStorage.setItem('fp_ai_code', code); } catch (e) {}
+          f.remove(); form.hidden = false; statusLoaded = true; greet(s); ta.focus();
+        }).catch(function (err) {
+          if (!err.needCode) code = '';
+          btn.disabled = false; inp.value = ''; inp.focus();
+          p.textContent = err.message; p.className = 'bad';
+        });
+      });
+      log.appendChild(f);
+      setTimeout(function () { inp.focus(); }, 0);
+    }
+    function fail(err) { if (err.needCode) lock(err.message); else add('aai-err', err.message); }
+    function greet(s) {
+      add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
+      if (!s.ready) add('aai-err', 'GROQ_API_KEY saknas på Vercel, så jag kan inte arbeta än.');
+      else if (s.mode === 'db') add('aai-step', 'Jag kan ändra hemsidan och bloggen (text, design och funktioner i sidorna) och blogginläggen. Ändringar syns direkt efter Publicera. Serverkod kräver en GitHub-nyckel.');
+      if (s.last) undoCard(s.last);
+    }
     function open() {
-      box.hidden = false; ta.focus();
-      if (statusLoaded) return;
-      statusLoaded = true;
+      box.hidden = false;
+      if (statusLoaded) return ta.focus();
+      if (!code) return lock();
+      statusLoaded = true; ta.focus();
       call('status').then(function (s) {
-        add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
-        if (!s.ready) add('aai-err', 'GROQ_API_KEY saknas på Vercel, så jag kan inte arbeta än.');
-        else if (s.mode === 'db') add('aai-step', 'Jag kan ändra hemsidan och bloggen (text, design och funktioner i sidorna) och blogginläggen. Ändringar syns direkt efter Publicera. Serverkod kräver en GitHub-nyckel.');
-        if (s.last) undoCard(s.last);
-      }).catch(function (err) { add('aai-err', err.message); });
+        greet(s);
+      }).catch(function (err) { statusLoaded = false; fail(err); });
     }
     function close() { box.hidden = true; }
     buttons.forEach(function (b) { b.addEventListener('click', function () { if (box.hidden) open(); else close(); }); });
@@ -133,7 +175,7 @@
         if (!window.confirm('Ångra den senaste AI-ändringen? Sajten går tillbaka till hur den var innan.')) return;
         b.disabled = true;
         call('undo', {}).then(function (r) { c.remove(); add('aai-bot', 'Ändringen är ångrad. ' + (r.instant ? 'Ladda om sidan om några sekunder.' : 'Sajten uppdateras om ungefär en minut.')); })
-          .catch(function (err) { b.disabled = false; add('aai-err', err.message); });
+          .catch(function (err) { b.disabled = false; fail(err); });
       });
       row.appendChild(b); c.appendChild(row); log.appendChild(c);
     }
@@ -209,7 +251,7 @@
       wait.innerHTML = '<span class="aai-dots"><i></i><i></i><i></i></span>';
       from = 0;
       step(call('start', { message: text, sessionId: sessionId }))
-        .catch(function (err) { add('aai-err', err.message); })
+        .catch(fail)
         .then(function () { wait.remove(); setBusy(false); ta.focus(); });
     });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });

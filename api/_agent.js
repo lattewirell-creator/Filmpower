@@ -503,9 +503,25 @@ async function undo() {
 
 // ---------- Ingång (anropas från api/users.js, som redan kräver admin) ----------
 
+// Extra kod som krävs för att använda AI:n, utöver admin-inloggningen. Bara fingeravtrycket ligger i koden.
+// Kan bytas med AI_CODE på Vercel. Efter 10 fel i rad låses AI:n i 15 minuter.
+const CODE_HASH = 'fd21cc3cb5062bc4ac714c489e1ca0e37a577c19ba23b0d00e9767f598d37636';
+const sha = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
+
+async function requireCode(req) {
+  const fails = Number(await redis('GET', 'ai:codefail')) || 0;
+  if (fails >= 10) throw new HttpError(429, 'För många fel koder. Försök igen om 15 minuter.');
+  const want = process.env.AI_CODE ? sha(process.env.AI_CODE) : CODE_HASH;
+  const given = sha(String(req.headers['x-ai-code'] || '').trim());
+  if (crypto.timingSafeEqual(Buffer.from(given), Buffer.from(want))) { if (fails) await redis('DEL', 'ai:codefail'); return; }
+  if (req.headers['x-ai-code']) await pipeline([['INCR', 'ai:codefail'], ['EXPIRE', 'ai:codefail', 900]]);
+  throw new HttpError(403, req.headers['x-ai-code'] ? 'Fel kod.' : 'Skriv koden för att använda AI:n.');
+}
+
 export async function agentHandler(req, res, s) {
   const action = queryParam(req, 'agent');
   const ready = Boolean(process.env.GROQ_API_KEY);
+  await requireCode(req);
 
   if (req.method === 'GET') {
     const last = await redis('GET', 'ai:last');

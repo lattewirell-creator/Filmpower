@@ -45,6 +45,8 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 När du är inloggad som admin finns knappen **Bygg med AI** i hemsidans sidomeny (på mobil som en ikon bredvid menyknappen) och i bloggens sidhuvud bredvid Logga ut. Beskriv vad du vill ändra eller bygga, till exempel "Lägg till en sektion med kundomdömen under priserna" eller "Gör en knapp för att dela inlägg på Instagram". AI:n letar upp rätt ställe i koden, gör ändringarna och kan också skriva, ta bort och fästa blogginlägg.
 
+AI:n kräver en kod utöver admin-inloggningen. Panelen frågar efter den första gången i varje flik. Efter 10 fel koder låses AI:n i 15 minuter. Vill du byta kod, lägg in en ny som `AI_CODE` under Environment Variables på Vercel och gör en redeploy.
+
 - **Inget går ut förrän du trycker Publicera.** Du ser vilka filer som ändrats och kan öppna **Förhandsgranska** för att se sidan i en ny flik först. Vill du justera något skriver du det innan du publicerar.
 - **Kontroll innan publicering:** trasig JavaScript, trasig serverkod eller en sida som tömts stoppas automatiskt.
 - **Ångra:** den senaste AI-ändringen kan ångras med ett klick i panelen. Hela historiken finns också på GitHub.
