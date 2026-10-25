@@ -416,6 +416,8 @@ textarea.input { resize: vertical; min-height: 11rem; line-height: 1.6; }
 .img-pick { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
 .img-pick label { font-weight: 500; }
 .img-pick:focus-within label { outline: 2px solid var(--brand); outline-offset: 3px; }
+.t-video { background: #000; object-fit: contain; aspect-ratio: 16 / 9; height: auto; }
+.img-preview video { display: block; width: 100%; max-height: 18rem; border-radius: 12px; background: #000; }
 .img-preview { display: grid; gap: .7rem; justify-items: start; }
 .img-preview img { max-width: 100%; max-height: 22rem; border-radius: 10px; border: 1px solid var(--line); }
 
@@ -606,11 +608,17 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           </div>
         </div>
         <div class="field">
-          <span class="field-label">Bild <span class="muted">(valfri)</span></span>
+          <span class="field-label">Bild eller video <span class="muted">(valfritt)</span></span>
           <div class="img-pick" id="img-pick">
             <label class="btn btn-ghost btn-small" for="p-image">Lägg till bild</label>
             <input id="p-image" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
-            <span class="help" id="img-help">JPG, PNG eller WebP. Stora bilder krymps automatiskt.</span>
+            <label class="btn btn-ghost btn-small" for="p-video" id="vid-pick">Lägg till video</label>
+            <input id="p-video" type="file" accept="video/mp4,video/webm,video/quicktime" class="visually-hidden">
+            <span class="help" id="img-help">Bild: JPG, PNG eller WebP. Video: MP4, WebM eller MOV, högst 100 MB.</span>
+          </div>
+          <div class="img-preview" id="vid-preview" hidden>
+            <video id="vid-preview-el" controls playsinline preload="metadata"></video>
+            <button type="button" class="btn btn-ghost btn-small" id="vid-remove">Ta bort video</button>
           </div>
           <div class="img-preview" id="img-preview" hidden>
             <img id="img-preview-el" alt="Förhandsvisning av bilden">
@@ -1062,6 +1070,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       $('new-code-value').textContent = '';
       $('post-form').reset();
       clearImage();
+      clearVideo();
       setMsg($('post-msg'), ''); setMsg($('code-msg'), '');
       if (location.hash) history.replaceState(null, '', location.pathname);
       enterGuest();
@@ -1976,6 +1985,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       im.decoding = 'async';
       main.appendChild(im);
     }
+    if (item.video) main.appendChild(videoEl(item.video, 't-img t-video'));
     main.appendChild(actionBar(item, false));
     grid.appendChild(main);
     art.appendChild(grid);
@@ -2235,6 +2245,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       im.alt = '';
       box.appendChild(im);
     }
+    if (item.video) box.appendChild(videoEl(item.video, 'd-img t-video'));
 
     var d = new Date(item.createdAt);
     var meta = el('div', 'd-meta');
@@ -2415,13 +2426,71 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     });
   }
 
+  // ---------- Video ----------
+  // Videon laddas upp direkt till Vercel Blob när man väljer den, med förlopp i procent.
+  function videoEl(url, cls) {
+    var v = el('video', cls);
+    v.src = url;
+    v.controls = true;
+    v.preload = 'metadata';
+    v.playsInline = true;
+    v.addEventListener('click', function (e) { e.stopPropagation(); });
+    return v;
+  }
+
+  var MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+  state.video = ''; state.videoUploading = false;
+
+  function clearVideo() {
+    state.video = ''; state.videoUploading = false;
+    $('p-video').value = '';
+    $('vid-preview').hidden = true;
+    $('vid-preview-el').removeAttribute('src');
+    $('vid-pick').hidden = false;
+  }
+
+  $('p-video').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (!file) return;
+    function fail(msg) { clearVideo(); $('img-help').textContent = msg; $('img-help').className = 'help msg error'; }
+    if (!/^video\/(mp4|webm|quicktime)$/.test(file.type)) return fail('Videon måste vara MP4, WebM eller MOV.');
+    if (file.size > MAX_VIDEO_BYTES) return fail('Videon är större än 100 MB. Korta den eller exportera i lägre upplösning.');
+    var ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4';
+    var name = (file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'video').slice(0, 40);
+    state.videoUploading = true; state.video = '';
+    $('vid-pick').hidden = true;
+    $('vid-preview-el').src = URL.createObjectURL(file);
+    $('vid-preview').hidden = false;
+    $('img-help').className = 'help';
+    $('img-help').textContent = 'Laddar upp videon… 0 %';
+    import('/vendor/blob-client.js').then(function (m) {
+      return m.upload('videos/' + name + '.' + ext, file, {
+        access: 'public',
+        handleUploadUrl: '/api/image?video=1',
+        contentType: file.type,
+        multipart: file.size > 20 * 1024 * 1024,
+        onUploadProgress: function (p) { if (state.videoUploading) $('img-help').textContent = 'Laddar upp videon… ' + Math.round(p.percentage) + ' %'; },
+      });
+    }).then(function (blob) {
+      if (!state.videoUploading) return;
+      state.video = blob.url; state.videoUploading = false;
+      $('img-help').textContent = 'Videon är uppladdad.';
+    }).catch(function (err) {
+      var msg = err && err.message || '';
+      fail(/private/i.test(msg) ? 'Blob-lagringen i Vercel är privat. Skapa en ny Blob-lagring med Public access och koppla den till projektet.'
+        : 'Videon gick inte att ladda upp. ' + msg.replace(/^Vercel Blob: /, ''));
+    });
+  });
+  $('vid-remove').addEventListener('click', clearVideo);
+
   function clearImage() {
     state.image = '';
     $('p-image').value = '';
     $('img-preview').hidden = true;
     $('img-preview-el').removeAttribute('src');
     $('img-pick').hidden = false;
-    $('img-help').textContent = 'JPG, PNG eller WebP. Stora bilder krymps automatiskt.';
+    $('img-help').textContent = 'Bild: JPG, PNG eller WebP. Video: MP4, WebM eller MOV, högst 100 MB.';
     $('img-help').className = 'help';
   }
 
@@ -2467,7 +2536,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   $('post-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var body = { title: $('p-title').value, category: $('p-cat').value, link: $('p-link').value, body: $('p-body').value, image: state.image || '' };
+    if (state.videoUploading) { setMsg($('post-msg'), 'Vänta tills videon har laddats upp.', 'error'); return; }
+    var body = { title: $('p-title').value, category: $('p-cat').value, link: $('p-link').value, body: $('p-body').value, image: state.image || '', video: state.video || '' };
     var pin = $('p-pin').checked;
     if (!body.title.trim() || !body.body.trim()) { setMsg($('post-msg'), 'Fyll i rubrik och text.', 'error'); return; }
     $('post-btn').disabled = true;
@@ -2477,6 +2547,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       state.items.unshift(item);
       $('post-form').reset();
       clearImage();
+      clearVideo();
       setMsg($('post-msg'), '');
       closeCompose();
       state.filter = 'Alla';

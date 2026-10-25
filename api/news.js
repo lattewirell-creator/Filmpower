@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { del } from '@vercel/blob';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
   HttpError, redis, pipeline, CATEGORIES, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
@@ -7,6 +8,7 @@ import {
 const MAX_LIST = 200;
 // Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
 const MAX_IMAGE_CHARS = 900_000;
+const VIDEO_RE = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/videos\/[A-Za-z0-9._\/-]+\.(mp4|webm|mov)$/i;
 
 function clean(s, max) {
   return String(s || '').replace(/\r\n/g, '\n').trim().slice(0, max);
@@ -47,6 +49,13 @@ export default handle(async (req, res) => {
       }
     }
 
+    // Videon ligger redan i Vercel Blob (uppladdad direkt från webbläsaren). Här sparas bara adressen.
+    let video = '';
+    if (b.video) {
+      video = String(b.video);
+      if (!VIDEO_RE.test(video)) throw new HttpError(400, 'Ogiltig video.');
+    }
+
     let image = '';
     if (b.image) {
       const data = String(b.image);
@@ -58,7 +67,7 @@ export default handle(async (req, res) => {
 
     const item = {
       id: crypto.randomBytes(6).toString('hex'),
-      title, body, category, link, image,
+      title, body, category, link, image, video,
       author: s.label,
       authorKey: s.user || '',
       createdAt: Date.now(),
@@ -93,9 +102,10 @@ export default handle(async (req, res) => {
       ['HDEL', 'news', id], ['ZREM', 'news:idx', id], ['DEL', 'comments:' + id],
       ['HDEL', 'news:likes', id], ['HDEL', 'news:comments', id], ['HDEL', 'news:views', id],
     ];
-    const { image } = JSON.parse(raw);
+    const { image, video } = JSON.parse(raw);
     if (image) cmds.push(['DEL', 'img:' + image]);
     await pipeline(cmds);
+    if (video && process.env.BLOB_READ_WRITE_TOKEN) await del(video).catch((err) => console.error('Kunde inte ta bort videon:', err));
     return send(res, 200, { ok: true });
   }
 
