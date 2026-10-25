@@ -12,7 +12,7 @@ import os from 'node:os';
 import nodePath from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { send, readBody, queryParam, requireAppHeader, HttpError, redis, pipeline, CATEGORIES } from './_lib.js';
-import { PAGE_BY_PATH, origin, fetchStatic, getOverride, setOverride, nameOfPath, isCustom } from './_pages.js';
+import { PAGE_BY_PATH, PAGES, origin, fetchStatic, getOverride, setOverride, nameOfPath, isCustom, versions, restoreVersion } from './_pages.js';
 import { findImages, saveImageFromUrl, saveUploaded, readWebPage, listUsers, siteStats, checkUserChange, applyUserChange } from './_aitools.js';
 
 // Två lägen: med GITHUB_TOKEN sparas ändringarna i repot (allt kan ändras, även serverkod, och Vercel deployar).
@@ -554,13 +554,24 @@ function describe(name, a, out) {
   }
 }
 
-// Sammanfattning av ändringarna, för förhandsvisningen.
+// Synlig text på en rad, utan taggar, så att admin ser vad som ändrats och inte koden.
+const visible = (line) => line.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+// Sammanfattning av ändringarna, för förhandsvisningen: antal rader och före/efter för texten.
 function changes(sess) {
   return Object.keys(sess.edits).map((path) => {
     const before = sess.base[path] ? sess.base[path].content.split('\n') : [];
     const after = sess.edits[path].split('\n');
     const a = new Set(before), b = new Set(after);
-    return { path, created: !sess.base[path], added: after.filter((l) => !a.has(l)).length, removed: before.filter((l) => !b.has(l)).length };
+    const removedLines = before.filter((l) => !b.has(l)), addedLines = after.filter((l) => !a.has(l));
+    const diff = [];
+    if (sess.base[path]) {
+      const minus = removedLines.map(visible).filter((t) => t && !/[{};]$/.test(t)), plus = addedLines.map(visible).filter((t) => t && !/[{};]$/.test(t));
+      for (let i = 0; i < Math.max(minus.length, plus.length) && diff.length < 8; i++) diff.push({ before: (minus[i] || '').slice(0, 140), after: (plus[i] || '').slice(0, 140) });
+      const code = removedLines.length + addedLines.length - minus.length - plus.length;
+      if (code > 0) diff.push({ code });
+    }
+    return { path, created: !sess.base[path], added: addedLines.length, removed: removedLines.length, diff };
   }).filter((c) => c.created || c.added || c.removed);
 }
 
@@ -730,6 +741,22 @@ export async function agentHandler(req, res, s) {
   if (action === 'upload') return send(res, 200, { url: await saveUploaded(b.data) });
 
   if (action === 'undo') return send(res, 200, await undo());
+
+  // Versionshistorik för hemsidan och bloggen.
+  if (action === 'versions') {
+    const out = [];
+    for (const name of Object.keys(PAGES)) out.push(...(await versions(req, name)));
+    return send(res, 200, { versions: out.sort((x, y) => y.savedAt - x.savedAt) });
+  }
+  if (action === 'restore') {
+    if (!PAGES[b.page]) throw new HttpError(400, 'Okänd sida.');
+    try {
+      const v = await restoreVersion(req, b.page, b.savedAt);
+      if (v) await redis('SET', 'ai:last', JSON.stringify({ mode: 'db', at: v.at, request: v.request, pages: [b.page] }), 'EX', 30 * 86400);
+      else await redis('DEL', 'ai:last');
+    } catch (err) { throw new HttpError(409, err.message); }
+    return send(res, 200, { ok: true, instant: true });
+  }
 
   if (!ready) throw new HttpError(503, 'GROQ_API_KEY saknas på Vercel.');
 

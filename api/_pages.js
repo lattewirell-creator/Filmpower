@@ -74,6 +74,35 @@ export async function setOverride(name, value) {
   if (value) await redis('SET', 'page:override:' + name, JSON.stringify(value));
   else await redis('DEL', 'page:override:' + name);
   if (isCustom(name)) await redis(value ? 'SADD' : 'SREM', 'pages:custom', name.slice(5));
+  // Historik: de 10 senaste versionerna av sidan, så att admin kan gå tillbaka flera steg.
+  if (!isCustom(name)) {
+    await redis('LPUSH', 'page:versions:' + name, JSON.stringify(value ? { ...value, savedAt: Date.now() } : { original: true, savedAt: Date.now() }));
+    await redis('LTRIM', 'page:versions:' + name, 0, 9);
+  }
+}
+
+export async function versions(req, name) {
+  const list = (await redis('LRANGE', 'page:versions:' + name, 0, 9)).map((r) => JSON.parse(r));
+  const st = await staticHash(req, name).catch(() => null);
+  const cur = await getOverride(name);
+  return list.map((v) => ({
+    page: name,
+    savedAt: v.savedAt,
+    request: v.original ? 'Originalet, utan AI-ändringar' : String(v.request || ''),
+    usable: v.original || v.baseHash === st,
+    current: v.original ? !cur : Boolean(cur && cur.at === v.at),
+  }));
+}
+
+export async function restoreVersion(req, name, savedAt) {
+  const list = (await redis('LRANGE', 'page:versions:' + name, 0, 9)).map((r) => JSON.parse(r));
+  const v = list.find((x) => x.savedAt === Number(savedAt));
+  if (!v) throw new Error('Versionen finns inte längre.');
+  if (v.original) { await setOverride(name, null); return null; }
+  if (v.baseHash !== (await staticHash(req, name))) throw new Error('Den versionen gjordes för en äldre version av sidan och kan inte återställas.');
+  const value = { html: v.html, baseHash: v.baseHash, at: Date.now(), request: 'Återställd: ' + String(v.request || '').replace(/^Återställd: /, '') };
+  await setOverride(name, value);
+  return value;
 }
 
 const NOT_FOUND = '<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sidan finns inte</title></head><body style="font-family:system-ui;display:grid;place-items:center;min-height:90vh;text-align:center"><div><h1>Sidan finns inte</h1><p><a href="/">Till Film Power</a></p></div></body></html>';
