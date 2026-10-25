@@ -1,11 +1,17 @@
 import { handle, send, getSession, dbReady, CATEGORIES, queryParam } from './_lib.js';
 import { servePage } from './_pages.js';
+import { reviewsHandler } from './_reviews.js';
+import { dataHandler } from './_data.js';
 
 export default handle(async (req, res) => {
   // AI-versionen av en sida (hemsidan eller bloggen), se _pages.js.
   if (queryParam(req, 'page')) return servePage(req, res, queryParam(req, 'page'));
   // Egna sidor som AI:n byggt, på /sida/namn.
   if (queryParam(req, 'sida')) return servePage(req, res, 'sida:' + String(queryParam(req, 'sida')).toLowerCase());
+  // Recensioner från besökare, se _reviews.js och vendor/reviews.js.
+  if (queryParam(req, 'reviews')) return reviewsHandler(req, res);
+  // Listor som admin-AI:n skapat för funktioner den byggt, se _data.js.
+  if (queryParam(req, 'data')) return dataHandler(req, res);
   const s = await getSession(req);
   send(res, 200, {
     user: s ? { role: s.role, label: s.label, verified: Boolean(s.verified), avatar: s.avatar || '', anon: Boolean(s.anon) } : null,

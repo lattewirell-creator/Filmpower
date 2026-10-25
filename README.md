@@ -47,6 +47,10 @@ När du är inloggad som admin finns knappen **Bygg med AI** i hemsidans sidomen
 
 Utöver att ändra sidorna kan AI:n bygga helt nya sidor (de visas på `/sida/namn`), hitta fria bilder och spara dem hos sajten, använda bilder du laddar upp med bildknappen i panelen, läsa andra webbsidor, visa statistik och godkänna, blockera eller verifiera konton. Bilderna sparas i Vercel Blob om den är kopplad, annars i databasen.
 
+AI:n kan också bygga funktioner som sparar saker, som recensioner, gästbok, anmälningar och omröstningar, utan GitHub-nyckel. Den skapar då en lista i databasen (läses och sparas via `/api/me?data=namn`, se `api/_data.js`) och bygger formulär och visning på sidan själv.
+
+AI-motor: Groq används som standard (`GROQ_API_KEY`). Läggs `ANTHROPIC_API_KEY` in på Vercel används Claude i stället, vilket ger mycket bättre resultat. Skapa nyckeln på console.anthropic.com, sätt gärna en månadsgräns där och gör en redeploy. Modellen kan bytas med `CLAUDE_MODEL`.
+
 AI:n kräver en kod utöver admin-inloggningen. Panelen frågar efter den första gången i varje flik. Efter 10 fel koder låses AI:n i 15 minuter. Vill du byta kod, lägg in en ny som `AI_CODE` under Environment Variables på Vercel och gör en redeploy.
 
 - **Inget går ut förrän du trycker Publicera.** Du ser vilka filer som ändrats och kan öppna **Förhandsgranska** för att se sidan i en ny flik först. Vill du justera något skriver du det innan du publicerar.

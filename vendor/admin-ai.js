@@ -210,13 +210,13 @@
       }
       add('aai-bot', 'Hej! Beskriv vad du vill ändra eller bygga på hemsidan eller bloggen, eller fråga mig vad som helst. Jag gör ändringarna och visar dem för dig. Inget syns för besökarna förrän du trycker Publicera.');
       var tips = el('div', 'aai-tips');
-      ['Gör en ny sida om oss med bilder', 'Lägg till kundomdömen under priserna', 'Byt bilden högst upp mot en filmkamera', 'Skriv ett blogginlägg om ljussättning', 'Vilka konton väntar på godkännande?', 'Vad kan jag förbättra på hemsidan?'].forEach(function (t) {
+      ['Gör en recensionssektion där besökare kan skriva egna recensioner', 'Gör en ny sida om oss med bilder', 'Byt bilden högst upp mot en filmkamera', 'Skriv ett blogginlägg om ljussättning', 'Vilka konton väntar på godkännande?', 'Vad kan jag förbättra på hemsidan?'].forEach(function (t) {
         var c = el('button', 'aai-btn aai-tip', t); c.type = 'button';
         c.addEventListener('click', function () { if (busy) return; tips.remove(); ta.value = t; form.requestSubmit(); });
         tips.appendChild(c);
       });
       if (!s.ready) add('aai-err', 'GROQ_API_KEY saknas på Vercel, så jag kan inte arbeta än.');
-      else add('aai-step', 'Jag kan ändra allt på hemsidan och bloggen, bygga nya sidor, hitta och lägga in bilder (eller använda dina, tryck på bildknappen), läsa andra webbsidor, skriva blogginlägg och sköta konton. Ändringar syns direkt efter Publicera.');
+      else add('aai-step', 'Jag kör på ' + (s.engine || 'Groq') + '. Jag kan ändra och bygga om allt på hemsidan och bloggen, bygga nya sidor och funktioner som sparar saker (recensioner, gästbok, anmälningar, omröstningar), lägga in bilder (även dina, tryck på bildknappen), läsa andra webbsidor, skriva blogginlägg och sköta konton. Ändringar syns direkt efter Publicera.');
       if (s.ready) log.appendChild(tips);
       if (s.last) undoCard(s.last);
     }
