@@ -289,6 +289,7 @@ async function runTool(sess, name, args) {
     }
     case 'create_list': {
       const nm = String(args.name || '').toLowerCase();
+      if (typeof args.fields === 'string') { try { args.fields = JSON.parse(args.fields); } catch { throw new Error('fields ska vara ett JSON-objekt.'); } }
       const cfg = checkConfig(nm, args);
       sess.actions = sess.actions.filter((a) => !(a.type === 'create_list' && a.name === nm));
       sess.actions.push({ type: 'create_list', name: nm, cfg });
@@ -437,7 +438,8 @@ function compact(messages, hard) {
 }
 
 // Grov uppskattning av antal tokens (HTML och svenska blir ungefär 3 tecken per token).
-const estimate = (sess) => Math.ceil((systemPrompt(sess).length + JSON.stringify(toolsFor(sess)).length + JSON.stringify(sess.messages).length) / 3);
+const estimate = (sess) => Math.ceil((systemPrompt(sess).length + JSON.stringify(toolsFor(sess, true)).length + JSON.stringify(sess.messages).length) / 3);
+const TOOLS_FOR_GEMINI = (sess) => toolsFor(sess).map(geminiTool);
 
 const DB_NOTE = `
 
@@ -455,9 +457,9 @@ const TOOL_GROUPS = [
   [/ta bort.*sida|radera.*sida/i, ['delete_page']],
 ];
 const OPTIONAL = new Set(TOOL_GROUPS.flatMap(([, names]) => names));
-function toolsFor(sess) {
+function toolsFor(sess, groq) {
   let tools = sess.mode === 'db' ? TOOLS.filter((t) => !['list_files', 'outline'].includes(t.name)) : TOOLS;
-  if (sess.provider === 'claude') return tools;
+  if (!groq && (sess.provider === 'claude' || useGemini())) return tools;
   const asked = sess.messages.filter((m) => m.role === 'user' && typeof m.content === 'string').map((m) => m.content).join(' ');
   const want = new Set(TOOL_GROUPS.filter(([re]) => re.test(asked)).flatMap(([, names]) => names));
   return tools.filter((t) => !OPTIONAL.has(t.name) || want.has(t.name));
@@ -474,36 +476,95 @@ function retrySeconds(r, data) {
   return m ? (Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0)) || 20 : 20;
 }
 
+// ---------- Google Gemini (gratis nyckel från aistudio.google.com, GEMINI_API_KEY på Vercel) ----------
+// Mycket större gränser än Groq: kan läsa hela sidor och får alla verktyg. Groq blir reserv.
+
+const GEMINI_BASE = () => process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai';
+const useGemini = () => Boolean(process.env.GEMINI_API_KEY);
+
+// Google byter modellnamn ofta. Välj de bästa Flash-modellerna som faktiskt finns, sparat ett dygn.
+async function geminiModels() {
+  if (process.env.GEMINI_MODEL) return [process.env.GEMINI_MODEL];
+  const cached = await redis('GET', 'ai:gemini-models');
+  if (cached) return JSON.parse(cached);
+  let ids = [];
+  try {
+    const r = await fetch(GEMINI_BASE() + '/models', { headers: { authorization: 'Bearer ' + process.env.GEMINI_API_KEY }, signal: AbortSignal.timeout(8000) });
+    const d = await r.json();
+    ids = (d.data || []).map((m) => String(m.id || '').replace(/^models\//, ''));
+  } catch { /* använder reservlistan */ }
+  const ver = (id) => Number((/gemini-(\d+(?:\.\d+)?)/.exec(id) || [])[1] || 0);
+  const pick = (re) => ids.filter((id) => re.test(id)).sort((a, b) => ver(b) - ver(a));
+  const list = [...new Set([
+    ...pick(/^gemini-\d+(\.\d+)?-flash$/).slice(0, 2),
+    ...pick(/^gemini-\d+(\.\d+)?-flash-preview(-\d+-\d+)?$/).slice(0, 1),
+    'gemini-2.5-flash',
+    ...pick(/^gemini-\d+(\.\d+)?-flash-lite$/).slice(0, 1),
+  ])];
+  if (ids.length) await redis('SET', 'ai:gemini-models', JSON.stringify(list), 'EX', 86400);
+  return list;
+}
+
+// Gemini godtar inte additionalProperties och inte objekt utan egenskaper i verktygsbeskrivningarna.
+function geminiTool(t) {
+  const fix = (node, top) => {
+    if (!node || typeof node !== 'object') return node;
+    const out = { ...node };
+    delete out.additionalProperties;
+    if (out.type === 'object') {
+      const props = Object.entries(out.properties || {});
+      if (!props.length) return top ? null : { type: 'string', description: (out.description || '') + ' Skriv som JSON-text.' };
+      out.properties = Object.fromEntries(props.map(([k, v]) => [k, fix(v)]));
+    }
+    return out;
+  };
+  const parameters = fix(t.parameters, true);
+  return { type: 'function', function: { name: t.name, description: t.description, ...(parameters ? { parameters } : {}) } };
+}
+
+// Groq godtar inte Geminis extra fält i gamla verktygsanrop.
+const forGroq = (messages) => messages.map((m) => (m.tool_calls ? { ...m, tool_calls: m.tool_calls.map(({ id, type, function: f }) => ({ id, type: type || 'function', function: { name: f.name, arguments: f.arguments } })) } : m));
+
 async function callModel(sess) {
-  const models = process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : MODELS;
+  const groqModels = !process.env.GROQ_API_KEY ? [] : process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : MODELS;
+  const plan = [
+    ...(useGemini() ? (await geminiModels()).map((model) => ({ model, gemini: true })) : []),
+    ...groqModels.map((model) => ({ model, gemini: false })),
+  ];
   const cool = (sess.cool ||= {}), tpm = (sess.tpm ||= {});
   const errors = [];
   let wait = Infinity, tooBig = 0;
   const est = estimate(sess);
-  for (const model of models) {
+  let geminiWaiting = false;
+  for (const { model, gemini } of plan) {
+    // Väntar Gemini bara en kort stund (gränsen per minut) är det bättre att vänta än att byta till den svagare Groq.
+    if (!gemini && geminiWaiting) continue;
     if (cool[model] > Date.now()) { const w = (cool[model] - Date.now()) / 1000; if (w < 3600) wait = Math.min(wait, w); continue; }
     // Två försök per modell: blir det första för stort lär vi oss modellens gräns och krymper svaret.
     for (let attempt = 0; attempt < 2; attempt++) {
-      const room = tpm[model] ? tpm[model] - est - 200 : 4096;
+      const room = gemini ? 16000 : tpm[model] ? tpm[model] - est - 200 : 4096;
       if (room < 900) { tooBig++; break; }
-      const maxTokens = Math.min(4096, room);
-      const r = await fetch((process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
+      const maxTokens = Math.min(gemini ? 16000 : 4096, room);
+      const r = await fetch(gemini ? GEMINI_BASE() + '/chat/completions' : (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1') + '/chat/completions', {
         method: 'POST',
-        headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
+        headers: { authorization: 'Bearer ' + (gemini ? process.env.GEMINI_API_KEY : process.env.GROQ_API_KEY), 'content-type': 'application/json' },
         body: JSON.stringify({
           model,
-          temperature: 0.2,
           max_tokens: maxTokens,
-          ...(model.includes('gpt-oss') ? { reasoning_effort: model.includes('120b') && maxTokens >= 3000 ? 'medium' : 'low' } : {}),
-          tools: toolsFor(sess).map((t) => ({ type: 'function', function: t })),
+          ...(gemini ? { reasoning_effort: 'medium' } : { temperature: 0.2 }),
+          ...(!gemini && model.includes('gpt-oss') ? { reasoning_effort: model.includes('120b') && maxTokens >= 3000 ? 'medium' : 'low' } : {}),
+          tools: gemini ? TOOLS_FOR_GEMINI(sess) : toolsFor(sess, true).map((t) => ({ type: 'function', function: t })),
           tool_choice: 'auto',
-          messages: [{ role: 'system', content: systemPrompt(sess) }, ...sess.messages],
+          messages: [{ role: 'system', content: systemPrompt(sess) }, ...(gemini ? sess.messages : forGroq(sess.messages))],
         }),
-        signal: AbortSignal.timeout(35000),
+        signal: AbortSignal.timeout(gemini ? 40000 : 35000),
       });
-      const data = await r.json().catch(() => ({}));
+      const raw = await r.json().catch(() => ({}));
+      const data = Array.isArray(raw) ? raw[0] || {} : raw;
       const msg = (data.error && data.error.message) || '';
-      if (r.ok && data.choices && data.choices[0]) return data.choices[0].message;
+      if (r.ok && data.choices && data.choices[0]) { sess.lastModel = (gemini ? 'Gemini ' : 'Groq ') + model; return data.choices[0].message; }
+      // Gemini: dagskvoten för modellen är slut (eller modellen ingår inte i gratisnivån). Prova nästa.
+      if (gemini && (r.status === 429 || r.status === 403) && /per.?day|daily|PerDay|limit: 0|free_tier/i.test(JSON.stringify(data))) { cool[model] = Date.now() + 6 * 3600_000; errors.push(model + ': dagskvoten slut'); break; }
       // För stort anrop för modellens gräns per minut: "Limit 8000, Requested 9876".
       if (r.status === 413 || (r.status === 429 && /Requested \d+/.test(msg) && /Limit (\d+)/.test(msg) && Number(/Requested (\d+)/.exec(msg)[1]) > Number(/Limit (\d+)/.exec(msg)[1]))) {
         const lim = /Limit (\d+)/.exec(msg);
@@ -515,6 +576,7 @@ async function callModel(sess) {
         const sec = retrySeconds(r, data);
         cool[model] = Date.now() + sec * 1000;
         wait = Math.min(wait, sec);
+        if (gemini && sec <= 60) geminiWaiting = true;
         break;
       }
       // Modellen skrev ett trasigt verktygsanrop. Be den försöka igen.
@@ -525,8 +587,9 @@ async function callModel(sess) {
       break;
     }
   }
-  if (wait < Infinity) { const e = new Error('Groq har för många anrop just nu.'); e.retry = Math.ceil(wait); throw e; }
+  if (wait < Infinity) { const e = new Error('AI-tjänsten har för många anrop just nu.'); e.retry = Math.ceil(wait); throw e; }
   if (tooBig) { const e = new Error('Anropet blev för stort för Groqs gräns.'); e.tooBig = true; throw e; }
+  if (errors.length && errors.every((e) => /dagskvoten slut/.test(e))) { const e = new Error('Dagens gratiskvot hos Google Gemini är slut. Den fylls på varje morgon, svensk tid. Skriv "fortsätt" då, så jobbar jag vidare där jag var.'); e.daily = true; throw e; }
   throw new Error(errors.join(' | ') || 'Ingen AI-modell svarade.');
 }
 
@@ -572,15 +635,16 @@ async function work(sess) {
     if (sess.steps >= MAX_STEPS) { sess.done = true; sess.summary = 'Jag hann inte bli klar. Det här är gjort hittills. Be mig gärna fortsätta.'; break; }
     sess.steps++;
     // Claude har gott om plats och historiken får inte ändras i efterhand (tankeblocken hör ihop med den).
-    if (!claude) compact(sess.messages);
+    // Med Gemini finns gott om plats, och dess tankesignaturer i verktygsanropen ska skickas tillbaka orörda.
+    if (!claude && !useGemini()) compact(sess.messages);
     let msg;
     try { msg = claude ? await callClaude(sess) : await callModel(sess); sess.waits = 0; sess.shrunk = false; } catch (err) {
       if (err.tooBig && !sess.shrunk) { sess.shrunk = true; sess.steps--; compact(sess.messages, true); continue; }
       if (!err.retry) {
         // Visa felet i panelen i stället för ett allmänt serverfel, och behåll det som hunnit göras.
         sess.done = true;
-        sess.summary = err.tooBig
-          ? 'Uppgiften blev för stor för Groqs gratisnivå på en gång. Dela upp den i mindre steg, t.ex. en sektion i taget, så går det. Med en Anthropic-nyckel (Claude) försvinner den gränsen.'
+        sess.summary = err.daily ? err.message : err.tooBig
+          ? 'Uppgiften blev för stor för Groqs gratisnivå på en gång. Dela upp den i mindre steg, t.ex. en sektion i taget, så går det. Med en gratis Gemini-nyckel försvinner den gränsen.'
           : 'AI-tjänsten svarade med ett fel: ' + err.message.slice(0, 300) + '. Försök igen om en stund.';
         break;
       }
@@ -590,7 +654,7 @@ async function work(sess) {
       if (err.retry > 120 || sess.waits > 6) {
         const min = Math.max(1, Math.ceil(err.retry / 60));
         sess.done = true;
-        sess.summary = `Groqs gratiskvot är slut för stunden. Försök igen om ungefär ${min > 90 ? Math.ceil(min / 60) + ' timmar' : min === 1 ? 'en minut' : min + ' minuter'}, skriv då "fortsätt" så jobbar jag vidare där jag var.`;
+        sess.summary = `Den gratis AI-kvoten är slut för stunden. Försök igen om ungefär ${min > 90 ? Math.ceil(min / 60) + ' timmar' : min === 1 ? 'en minut' : min + ' minuter'}, skriv då "fortsätt" så jobbar jag vidare där jag var.`;
         break;
       }
       if (sess.waits === 1) sess.events.push({ t: 'wait', text: 'Groq säger åt mig att vänta en stund, jag fortsätter strax av mig själv…' });
@@ -860,12 +924,12 @@ async function requireCode(req) {
 
 export async function agentHandler(req, res, s) {
   const action = queryParam(req, 'agent');
-  const ready = Boolean(process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY);
+  const ready = Boolean(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY);
   await requireCode(req);
 
   if (req.method === 'GET') {
     const last = await redis('GET', 'ai:last');
-    return send(res, 200, { ready, mode: mode(), github: Boolean(process.env.GITHUB_TOKEN), ai: Boolean(process.env.GROQ_API_KEY), engine: useClaude() ? 'Claude' : 'Groq', last: last ? (({ commit, at, request }) => ({ commit, at, request }))(JSON.parse(last)) : null });
+    return send(res, 200, { ready, mode: mode(), github: Boolean(process.env.GITHUB_TOKEN), ai: Boolean(process.env.GROQ_API_KEY), engine: useClaude() ? 'Claude' : useGemini() ? 'Google Gemini' + (process.env.GROQ_API_KEY ? ' (Groq som reserv)' : '') : 'Groq', last: last ? (({ commit, at, request }) => ({ commit, at, request }))(JSON.parse(last)) : null });
   }
 
   requireAppHeader(req);
@@ -893,7 +957,7 @@ export async function agentHandler(req, res, s) {
     return send(res, 200, { ok: true, instant: true });
   }
 
-  if (!ready) throw new HttpError(503, 'Ingen AI-nyckel på Vercel. Lägg in GROQ_API_KEY eller ANTHROPIC_API_KEY.');
+  if (!ready) throw new HttpError(503, 'Ingen AI-nyckel på Vercel. Lägg in GEMINI_API_KEY (gratis) eller GROQ_API_KEY.');
 
   if (action === 'start') {
     const text = String(b.message || '').trim().slice(0, 2000);

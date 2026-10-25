@@ -49,7 +49,7 @@ Utöver att ändra sidorna kan AI:n bygga helt nya sidor (de visas på `/sida/na
 
 AI:n kan också bygga funktioner som sparar saker, som recensioner, gästbok, anmälningar och omröstningar, utan GitHub-nyckel. Den skapar då en lista i databasen (läses och sparas via `/api/me?data=namn`, se `api/_data.js`) och bygger formulär och visning på sidan själv.
 
-AI-motor: Groq används som standard (`GROQ_API_KEY`). Läggs `ANTHROPIC_API_KEY` in på Vercel används Claude i stället, vilket ger mycket bättre resultat. Skapa nyckeln på console.anthropic.com, sätt gärna en månadsgräns där och gör en redeploy. Modellen kan bytas med `CLAUDE_MODEL`.
+AI-motor, gratis: lägg in `GEMINI_API_KEY` på Vercel (gratis nyckel från aistudio.google.com, inget betalkort). Gemini kan läsa hela sidor och är mycket bättre än Groq på att bygga. Sajten väljer själv den bästa gratismodellen (kan styras med `GEMINI_MODEL`). Finns `GROQ_API_KEY` också används Groq som reserv när Geminis dagskvot är slut. Med `ANTHROPIC_API_KEY` används Claude i stället (kostar pengar).
 
 AI:n kräver en kod utöver admin-inloggningen. Panelen frågar efter den första gången i varje flik. Efter 10 fel koder låses AI:n i 15 minuter. Vill du byta kod, lägg in en ny som `AI_CODE` under Environment Variables på Vercel och gör en redeploy.
 
