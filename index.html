@@ -172,6 +172,21 @@ section.block { padding-block: clamp(4rem, 10vw, 7rem); border-top: 1px solid va
 .phone { display: inline-block; max-width: 100%; margin-top: 2.2rem; font-family: var(--display); font-size: clamp(1.25rem, 5vw, 2.4rem); letter-spacing: .01em; color: var(--brand); text-decoration: none; overflow-wrap: anywhere; }
 .copy { margin-top: 1rem; }
 .hint { margin-top: .8rem; font-size: .9rem; color: var(--muted); min-height: 1.4em; }
+/* Kontaktformuläret: skickas via besökarens egen e-posttjänst */
+.mail-form { max-width: 38rem; margin: 2.4rem auto 0; display: grid; gap: 1rem; text-align: left; }
+.mf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.mf-field { display: grid; gap: .4rem; font-size: .92rem; font-weight: 500; }
+.mf-field input, .mf-field select, .mf-field textarea { width: 100%; box-sizing: border-box; font: 400 1rem/1.4 var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: .8rem .95rem; }
+.mf-field textarea { resize: vertical; min-height: 8rem; }
+.mf-field input:focus, .mf-field select:focus, .mf-field textarea:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: transparent; }
+.mf-send { display: grid; gap: .9rem; justify-items: start; margin-top: .3rem; }
+.mf-alt { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; font-size: .9rem; color: var(--muted); }
+.chip-btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: .4rem .85rem; font: 500 .88rem var(--body); cursor: pointer; }
+.chip-btn:hover, .chip-btn[aria-pressed="true"] { border-color: var(--brand); color: var(--brand); }
+.mail-form .hint.error { color: #c0392b; }
+.mf-or { margin-top: 2.6rem; color: var(--muted); font-size: .95rem; }
+.mf-or + .phone { margin-top: .4rem; }
+@media (max-width: 560px) { .mf-row { grid-template-columns: 1fr; } .mf-send .btn-primary { width: 100%; } }
 
 footer { border-top: 1px solid var(--line); padding-block: 2rem; font-size: .9rem; color: var(--muted); }
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
@@ -181,25 +196,27 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .three { gap: 2rem; }
 }
 
-/* Filmnedräkning och animerad logga */
+/* 3D-animation i Apple-stil: filmrutor som snurrar runt FP-ikonen, sedan taglinen */
 .reel-wrap { display: grid; gap: 1.2rem; }
-.screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; border-radius: 14px; background: #161613; color: #e9e4d6; box-shadow: 0 30px 60px -30px rgba(0,0,0,.6); isolation: isolate; }
-.screen canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; mix-blend-mode: screen; }
-.screen .vignette { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.65) 100%); }
-.leader { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; }
-.leader svg { width: 100%; height: 100%; }
-.leader .ring { fill: none; stroke: #d9d3c2; }
-.leader .cross { stroke: #d9d3c2; stroke-width: 2; opacity: .7; }
-.leader .sweep { fill: rgba(233,228,214,.16); }
-.leader .num { font-family: var(--display); font-weight: 700; font-size: 230px; fill: #f1ece0; }
-.title-card { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; align-content: center; gap: .6em; background: #0f100e; text-align: center; padding: 1rem; }
-.title-card .wm { display: flex; align-items: center; gap: .42em; font-family: var(--display); font-weight: 700; font-size: clamp(1.8rem, 6.4vw, 4.4rem); line-height: 1; color: #f4f1e8; white-space: nowrap; }
-.title-card .fp-mark { display: grid; place-items: center; width: 1.3em; height: 1.3em; flex: none; background: #f4f1e8; color: #0f100e; border-radius: .07em; letter-spacing: -.04em; font-size: 1em; }
-.title-card .fp-name { letter-spacing: .06em; min-width: 6.4em; text-align: left; }
-.title-card .wm .caret { display: inline-block; width: .08em; height: .9em; margin-left: .04em; background: #86bb6c; vertical-align: -.08em; opacity: 0; }
-.title-card .tag { margin: 0; font-family: var(--body); font-size: clamp(.9rem, 2.2vw, 1.25rem); letter-spacing: .32em; text-transform: uppercase; color: #b9b5a8; }
-.screen.playing .title-card { opacity: 0; }
-.screen .burn { position: absolute; inset: 0; z-index: 5; background: #fffbe8; opacity: 0; pointer-events: none; }
+.screen { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 22px; background: radial-gradient(80% 70% at 50% 38%, #1d2a1a 0%, #0c0e0c 55%, #050605 100%); color: #f4f1e8; box-shadow: 0 40px 80px -40px rgba(0,0,0,.7); isolation: isolate; container-type: inline-size; }
+.stage { position: absolute; inset: 0; perspective: 140cqw; perspective-origin: 50% 42%; }
+.rig { position: absolute; left: 50%; top: 46%; width: 0; height: 0; transform-style: preserve-3d; will-change: transform; }
+.orbit { position: absolute; transform-style: preserve-3d; will-change: transform; }
+.frame { opacity: var(--o, 1); position: absolute; left: -9.5cqw; top: -6.2cqw; width: 19cqw; height: 12.4cqw; border-radius: 1.1cqw; overflow: hidden; backface-visibility: hidden; background: var(--scene); box-shadow: 0 0 0 .25cqw rgba(255,255,255,.08), 0 2cqw 4cqw rgba(0,0,0,.45); }
+.frame::before, .frame::after { content: ""; position: absolute; left: 0; right: 0; height: 1.4cqw; background: rgba(8,9,8,.85) repeating-linear-gradient(90deg, transparent 0 .7cqw, rgba(244,241,232,.55) .7cqw 1.6cqw, transparent 1.6cqw 2.4cqw); background-size: 2.4cqw .55cqw; background-repeat: repeat-x; background-position: 0 50%; }
+.frame::before { top: 0; } .frame::after { bottom: 0; }
+.frame .shine { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.18), transparent 40%); }
+.icon { position: absolute; left: -8cqw; top: -8cqw; width: 16cqw; height: 16cqw; transform-style: preserve-3d; will-change: transform, opacity; }
+.icon .layer { position: absolute; inset: 0; border-radius: 3.6cqw; background: #2a3027; }
+.icon .face { position: absolute; inset: 0; border-radius: 3.6cqw; display: grid; place-items: center; overflow: hidden; background: linear-gradient(160deg, #fbf9f2 0%, #e7e3d6 55%, #cfcabb 100%); color: #101210; font: 700 7.4cqw/1 var(--display); letter-spacing: -.04em; box-shadow: inset 0 .3cqw .4cqw rgba(255,255,255,.9), inset 0 -.4cqw .8cqw rgba(0,0,0,.18); }
+.icon .face::after { content: ""; position: absolute; inset: -40%; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.85) 50%, transparent 58%); transform: translateX(var(--gloss, -120%)); }
+.icon .face small { position: absolute; bottom: 1.6cqw; font: 600 1.05cqw/1 var(--body); letter-spacing: .32em; color: #3d7a2c; }
+.floor { position: absolute; left: 50%; top: 72%; width: 70cqw; height: 18cqw; margin-left: -35cqw; background: radial-gradient(50% 50% at 50% 50%, rgba(134,187,108,.22), transparent 70%); filter: blur(2cqw); opacity: var(--floor, 0); }
+.copyline { position: absolute; left: 0; right: 0; bottom: 11%; display: grid; justify-items: center; gap: 1.6cqw; text-align: center; padding: 0 4cqw; pointer-events: none; }
+.copyline .eyebrow { font: 500 1.35cqw/1 var(--body); letter-spacing: .42em; text-transform: uppercase; color: #9fb596; opacity: 0; }
+.copyline h3 { font: 600 5.6cqw/1.05 var(--body); letter-spacing: -.035em; margin: 0; color: #f4f1e8; }
+.copyline h3 .w { display: inline-block; opacity: 0; will-change: transform, opacity, filter; }
+.copyline h3 .w.grad { background: linear-gradient(90deg, #c8e6b4, #86bb6c 45%, #f4f1e8); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .reel-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; }
 .reel-bar p { color: var(--muted); font-size: .95rem; margin: 0; }
 
@@ -318,7 +335,7 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
     <a href="#kontakt">Kontakt</a>
   </nav>
   <a class="news-link" href="/nyheter/">
-    <span>Nyheter för filmskapare</span>
+    <span>Nyheter och blogg för filmskapare</span>
   </a>
   <div class="side-foot">
     <span class="label">Mejla oss</span>
@@ -358,27 +375,27 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
 
   <section class="block" id="film" aria-label="Film Power, animation">
     <div class="wrap reel-wrap">
-      <div class="screen" id="screen">
-        <div class="leader" aria-hidden="true">
-          <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
-            <line class="cross" x1="0" y1="450" x2="1600" y2="450"/>
-            <line class="cross" x1="800" y1="0" x2="800" y2="900"/>
-            <path class="sweep" id="sweep" d=""/>
-            <circle class="ring" cx="800" cy="450" r="330" stroke-width="6"/>
-            <circle class="ring" cx="800" cy="450" r="290" stroke-width="3"/>
-            <text class="num" id="leader-num" x="800" y="450" text-anchor="middle" dominant-baseline="central">3</text>
-          </svg>
+      <div class="screen" id="screen" role="img" aria-label="Filmrutor snurrar i 3D runt Film Powers logga. Texten: Vi får bilder att röra sig.">
+        <div class="floor" id="reel-floor" aria-hidden="true"></div>
+        <div class="stage" aria-hidden="true">
+          <div class="rig" id="reel-rig">
+            <div class="orbit" id="reel-orbit"></div>
+          </div>
         </div>
-        <div class="title-card" id="title-card">
-          <div class="wm" aria-label="Film Power"><span class="fp-mark" id="reel-mark">FP</span><span class="fp-name" id="reel-wm">FILM POWER</span></div>
-          <p class="tag" id="reel-tag">Din idé. Vår film.</p>
+        <div class="stage" aria-hidden="true">
+          <div class="rig" id="reel-rig2">
+            <div class="icon" id="reel-icon">
+              <div class="face">FP<small>FILM POWER</small></div>
+            </div>
+          </div>
         </div>
-        <canvas id="grain" aria-hidden="true"></canvas>
-        <div class="vignette" aria-hidden="true"></div>
-        <div class="burn" id="burn" aria-hidden="true"></div>
+        <div class="copyline" aria-hidden="true">
+          <span class="eyebrow" id="reel-eyebrow">Film Power · Film studio</span>
+          <h3 id="reel-line"><span class="w">Vi</span> <span class="w">får</span> <span class="w">bilder</span> <span class="w">att</span> <span class="w grad">röra</span> <span class="w grad">sig.</span></h3>
+        </div>
       </div>
       <div class="reel-bar">
-        <p>Från första nedräkning till sluttext. Så ser det ut när vi gör film.</p>
+        <p>Från första bildruta till sluttext. Så känns det när vi gör film.</p>
         <button class="btn btn-ghost" type="button" id="reel-play">Spela igen</button>
       </div>
     </div>
@@ -430,6 +447,30 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
       <p class="label">Kontakt</p>
       <h2>Har du en idé? Mejla oss.</h2>
       <p class="lead">Berätta vad du vill göra så berättar vi hur vi kan hjälpa dig. Det kostar inget att fråga.</p>
+      <form class="mail-form" id="mail-form" novalidate>
+        <div class="mf-row">
+          <label class="mf-field"><span>Ditt namn</span><input id="mf-name" autocomplete="name" placeholder="Anna Svensson"></label>
+          <label class="mf-field"><span>Din e-post</span><input id="mf-email" type="email" autocomplete="email" inputmode="email" placeholder="anna@gmail.com"></label>
+        </div>
+        <label class="mf-field"><span>Vad gäller det?</span>
+          <select id="mf-topic">
+            <option>Reklamfilm</option><option selected>Kortfilm</option><option>Långfilm</option><option>Musikvideo</option><option>Klippning</option><option>Något annat</option>
+          </select>
+        </label>
+        <label class="mf-field"><span>Meddelande</span><textarea id="mf-msg" rows="5" placeholder="Vad vill du filma, när och var? Har du en budget eller ett datum i tankarna?"></textarea></label>
+        <div class="mf-send">
+          <button class="btn btn-primary" type="submit" id="mf-primary">Skicka med e-postappen</button>
+          <div class="mf-alt" role="group" aria-label="Välj e-posttjänst">
+            <span>Eller skicka med</span>
+            <button type="button" class="chip-btn" data-p="gmail">Gmail</button>
+            <button type="button" class="chip-btn" data-p="outlook">Outlook</button>
+            <button type="button" class="chip-btn" data-p="yahoo">Yahoo</button>
+            <button type="button" class="chip-btn" data-p="app">E-postappen</button>
+          </div>
+        </div>
+        <p class="hint" id="mf-hint" role="status" aria-live="polite"></p>
+      </form>
+      <p class="mf-or">Eller mejla direkt till</p>
       <a class="phone" href="mailto:FILMPOWER.vercel@gmail.com" id="phone">FILMPOWER.vercel@gmail.com</a>
       <div class="copy"><button class="btn btn-ghost" type="button" id="copy-btn">Kopiera adressen</button></div>
       <p class="hint" id="copy-hint" role="status" aria-live="polite"></p>
@@ -471,6 +512,63 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
   window.addEventListener('scroll', markActive, { passive: true });
   markActive();
 })();
+// Kontaktformuläret. Klick på vår mejladress leder hit. Mejlet skickas via besökarens egen tjänst,
+// och tjänsten väljs utifrån e-postadressen hen skriver (Gmail, Outlook, Yahoo eller e-postappen).
+(function () {
+  var TO = 'FILMPOWER.vercel@gmail.com';
+  var form = document.getElementById('mail-form'), hint = document.getElementById('mf-hint');
+  var primary = document.getElementById('mf-primary'), email = document.getElementById('mf-email');
+  var NAMES = { gmail: 'Gmail', outlook: 'Outlook', yahoo: 'Yahoo', app: 'e-postappen' };
+  var chosen = '';
+  try { chosen = localStorage.getItem('fp_mail') || ''; } catch (e) {}
+
+  function guess(addr) {
+    var d = (String(addr).split('@')[1] || '').toLowerCase();
+    if (/^(gmail|googlemail)\./.test(d)) return 'gmail';
+    if (/^(outlook|hotmail|live|msn)\./.test(d)) return 'outlook';
+    if (/^(yahoo|ymail|rocketmail)\./.test(d)) return 'yahoo';
+    return d ? 'app' : '';
+  }
+  function provider() { return guess(email.value) || chosen || 'app'; }
+  function paint() {
+    var p = provider();
+    primary.textContent = 'Skicka med ' + NAMES[p];
+    Array.prototype.forEach.call(form.querySelectorAll('.chip-btn'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === p)); });
+  }
+  email.addEventListener('input', paint);
+  paint();
+  document.getElementById('mf-msg').addEventListener('input', function () { if (hint.classList.contains('error')) { hint.textContent = ''; hint.className = 'hint'; } });
+
+  function compose(p) {
+    var name = document.getElementById('mf-name').value.trim(), topic = document.getElementById('mf-topic').value;
+    var msg = document.getElementById('mf-msg').value.trim(), from = email.value.trim();
+    if (!msg) { hint.className = 'hint error'; hint.textContent = 'Skriv ett meddelande först.'; document.getElementById('mf-msg').focus(); return; }
+    var subject = 'Förfrågan om ' + topic.toLowerCase() + (name ? ' från ' + name : '');
+    var body = msg + '\n\n' + [name, from].filter(Boolean).join('\n');
+    var e = encodeURIComponent, url;
+    if (p === 'gmail') url = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + e(TO) + '&su=' + e(subject) + '&body=' + e(body);
+    else if (p === 'outlook') url = 'https://outlook.live.com/mail/0/deeplink/compose?to=' + e(TO) + '&subject=' + e(subject) + '&body=' + e(body);
+    else if (p === 'yahoo') url = 'https://compose.mail.yahoo.com/?to=' + e(TO) + '&subject=' + e(subject) + '&body=' + e(body);
+    else url = 'mailto:' + TO + '?subject=' + e(subject) + '&body=' + e(body);
+    try { localStorage.setItem('fp_mail', p); } catch (err) {}
+    chosen = p; paint();
+    hint.className = 'hint';
+    hint.textContent = p === 'app' ? 'Ditt e-postprogram öppnas med mejlet ifyllt. Tryck Skicka där.' : NAMES[p] + ' öppnas i en ny flik med mejlet ifyllt. Tryck Skicka där.';
+    if (p === 'app') window.location.href = url; else window.open(url, '_blank', 'noopener');
+  }
+  form.addEventListener('submit', function (e) { e.preventDefault(); compose(provider()); });
+  Array.prototype.forEach.call(form.querySelectorAll('.chip-btn'), function (b) { b.addEventListener('click', function () { compose(b.dataset.p); }); });
+
+  // Alla länkar till vår mejladress leder till formuläret i stället för att öppna ett tomt mejl.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="mailto:"]');
+    if (!a || a.id === 'phone' || e.metaKey || e.ctrlKey) return;
+    e.preventDefault();
+    document.getElementById('kontakt').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function () { document.getElementById('mf-name').focus({ preventScroll: true }); }, 500);
+  });
+})();
+
 (function () {
   var btn = document.getElementById('copy-btn'), hint = document.getElementById('copy-hint');
   btn.addEventListener('click', function () {
@@ -538,123 +636,109 @@ body.developing { transform-origin: 50% 50vh; animation: develop 1.7s cubic-bezi
 })();
 </script>
 <script>
-// Filmnedräkning 3-2-1 med filmkorn, följt av att loggan skrivs fram.
+// 3D-animationen: filmrutor snurrar runt FP-ikonen, ikonen flyger in och glänser,
+// kameran backar och taglinen tonar fram ord för ord. Rutorna fortsätter snurra långsamt efteråt.
 (function () {
   var screen = document.getElementById('screen');
   if (!screen) return;
-  var canvas = document.getElementById('grain'), ctx = canvas.getContext('2d');
-  var sweep = document.getElementById('sweep'), num = document.getElementById('leader-num');
-  var burn = document.getElementById('burn'), wm = document.getElementById('reel-wm'), tag = document.getElementById('reel-tag');
+  var rig = document.getElementById('reel-rig'), rig2 = document.getElementById('reel-rig2'), orbit = document.getElementById('reel-orbit'), icon = document.getElementById('reel-icon');
+  var face = icon.querySelector('.face'), floor = document.getElementById('reel-floor'), eyebrow = document.getElementById('reel-eyebrow');
+  var words = [].slice.call(document.querySelectorAll('#reel-line .w'));
   var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var WORD = 'FILM POWER'.split('');
-  var mark = document.getElementById('reel-mark');
-  var raf = 0, t0 = 0, playing = false;
 
-  // Lågupplöst brus som skalas upp ger korn som på riktig film.
-  var gw = 384, gh = 216, noise = document.createElement('canvas');
-  noise.width = gw; noise.height = gh;
-  var nctx = noise.getContext('2d'), img = nctx.createImageData(gw, gh);
-  function grain(strength) {
-    var w = canvas.clientWidth, h = canvas.clientHeight;
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
-    var d = img.data;
-    for (var i = 0; i < d.length; i += 4) { var v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255 * strength; }
-    nctx.putImageData(img, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(noise, 0, 0, w, h);
-    // Repor och damm
-    ctx.fillStyle = 'rgba(255,255,255,.35)';
-    if (Math.random() < .5) ctx.fillRect(Math.random() * w, 0, 1, h);
-    for (var k = 0; k < 4; k++) ctx.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 3, 1 + Math.random() * 2);
+  // Tolv filmrutor i en cylinder. Varje ruta är en målad "scen" med himmel, sol och horisont.
+  var SCENES = [
+    'radial-gradient(18% 30% at 70% 58%, #ffd27a, transparent 70%), linear-gradient(180deg, #2b1e4f 0%, #c2566b 52%, #f2a65a 64%, #1a1410 66%, #0e0b09 100%)',
+    'radial-gradient(10% 18% at 30% 30%, #fffbe8, transparent 70%), linear-gradient(180deg, #0b1d3a 0%, #1f4d7a 55%, #0f2a40 60%, #071521 100%)',
+    'linear-gradient(180deg, #a9d3e8 0%, #e8f1e4 48%, #3d6b35 50%, #24451f 100%)',
+    'radial-gradient(40% 25% at 50% 100%, #ff4f8b55, transparent 70%), linear-gradient(180deg, #0a0a1f 0%, #1b1446 60%, #0a0a1f 100%)',
+    'radial-gradient(14% 24% at 50% 46%, #fff1c2, transparent 70%), linear-gradient(180deg, #f6c58b 0%, #e98c4a 50%, #a8592d 52%, #5c2e17 100%)',
+    'linear-gradient(180deg, #d7e4ec 0%, #9fb7c6 46%, #e9eef0 48%, #b9c7cf 100%)',
+    'radial-gradient(20% 30% at 25% 60%, #86bb6c, transparent 70%), linear-gradient(180deg, #101a12 0%, #1d3a22 60%, #0c140d 100%)',
+    'radial-gradient(12% 20% at 75% 35%, #ffe9a8, transparent 70%), linear-gradient(180deg, #3a6ea5 0%, #8fc1e3 55%, #e6c99a 57%, #c49a62 100%)'
+  ];
+  var N = 12;
+  for (var i = 0; i < N; i++) {
+    var f = document.createElement('div');
+    f.className = 'frame';
+    f.style.setProperty('--scene', SCENES[i % SCENES.length]);
+    f.style.transform = 'rotateY(' + (i * 360 / N) + 'deg) translateZ(38cqw)';
+    f.innerHTML = '<span class="shine"></span>';
+    orbit.appendChild(f);
+  }
+  // Ikonens tjocklek: lager bakom framsidan.
+  for (var k = 1; k <= 10; k++) {
+    var l = document.createElement('div');
+    l.className = 'layer';
+    l.style.transform = 'translateZ(' + (-k * 0.16) + 'cqw)';
+    l.style.filter = 'brightness(' + (1 - k * 0.05) + ')';
+    icon.insertBefore(l, face);
   }
 
-  function wedge(frac) {
-    if (frac <= 0) return '';
-    if (frac >= 1) frac = 0.9999;
-    var a = frac * Math.PI * 2 - Math.PI / 2, r = 1200;
-    var x = 800 + r * Math.cos(a), y = 450 + r * Math.sin(a);
-    return 'M800 450 L800 ' + (450 - r) + ' A' + r + ' ' + r + ' 0 ' + (frac > .5 ? 1 : 0) + ' 1 ' + x.toFixed(1) + ' ' + y.toFixed(1) + ' Z';
-  }
+  function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function seg(t, a, b) { return clamp((t - a) / (b - a)); }
+  function outCubic(x) { return 1 - Math.pow(1 - x, 3); }
+  function outExpo(x) { return x >= 1 ? 1 : 1 - Math.pow(2, -10 * x); }
+  function inOut(x) { return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function outBack(x) { var c = 1.4; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); }
 
-  function buildWord(n) {
-    wm.replaceChildren(document.createTextNode(WORD.slice(0, n).join('')));
-    var caret = document.createElement('span');
-    caret.className = 'caret';
-    wm.appendChild(caret);
-    return caret;
+  var raf = 0, t0 = 0, running = false, visible = true;
+  var END = 6.2;
+
+  function render(t) {
+    var spin = t * 22;                                   // grader, rutorna snurrar hela tiden
+    var intro = outExpo(seg(t, 0, 1.8));                 // kameran åker in
+    var pull = inOut(seg(t, 2.9, 4.2));                  // kameran backar och lyfter
+    var tilt = -36 + 20 * intro;                         // från ovanifrån till nästan rakt framifrån
+    orbit.style.transform = 'rotateX(' + tilt + 'deg) rotateY(' + spin + 'deg)';
+    // Opacitet på själva ringen skulle platta till 3D-djupet, så den sätts på varje ruta i stället.
+    orbit.style.setProperty('--o', String(intro * (1 - .35 * pull)));
+    var lift = -9 * pull, scale = (.82 + .18 * intro) * (1 - .32 * pull);
+    rig.style.transform = rig2.style.transform = 'translateY(' + lift + 'cqw) scale(' + scale + ')';
+
+    var fly = seg(t, .55, 2.1), fx = outBack(fly);
+    icon.style.opacity = String(outCubic(clamp(fly * 2.2)));
+    icon.style.transform = 'translateZ(' + (-70 * (1 - outCubic(fly)) + 6) + 'cqw) rotateY(' + (150 * (1 - fx) + Math.sin(t * .9) * 6 * seg(t, 2.1, 3)) + 'deg) rotateX(' + (Math.sin(t * .7) * 4) + 'deg)';
+    face.style.setProperty('--gloss', (-120 + 240 * inOut(seg(t, 2.1, 2.9))) + '%');
+    floor.style.setProperty('--floor', String(intro * (1 - .4 * pull)));
+
+    eyebrow.style.opacity = String(outCubic(seg(t, 3.5, 4.3)));
+    words.forEach(function (w, i) {
+      var x = outCubic(seg(t, 3.7 + i * .14, 4.5 + i * .14));
+      w.style.opacity = String(x);
+      w.style.filter = 'blur(' + ((1 - x) * 12).toFixed(2) + 'px)';
+      w.style.transform = 'translateY(' + ((1 - x) * .45).toFixed(3) + 'em) scale(' + (1.06 - .06 * x).toFixed(3) + ')';
+    });
   }
 
   function frame(now) {
     var t = (now - t0) / 1000;
-    if (t < 3) {
-      // Nedräkning: en sekund per siffra
-      var n = 3 - Math.floor(t), f = t % 1;
-      num.textContent = n;
-      sweep.setAttribute('d', wedge(f));
-      screen.style.filter = 'brightness(' + (0.92 + Math.random() * 0.16) + ')';
-      grain(.22);
-    } else if (t < 3.35) {
-      screen.classList.remove('playing');
-      screen.style.filter = '';
-      burn.style.opacity = String(1 - (t - 3) / 0.35);
-      buildWord(0).style.opacity = 1;
-      mark.style.opacity = 0;
-      tag.style.opacity = 0;
-      grain(.16);
-    } else if (t < 5.2) {
-      burn.style.opacity = 0;
-      var m = Math.max(0, Math.min(1, (t - 3.35) / 0.35));
-      mark.style.opacity = m;
-      mark.style.transform = 'scale(' + (0.6 + 0.4 * (1 - Math.pow(1 - m, 3))) + ')';
-      var shown = Math.min(WORD.length, Math.floor((t - 3.75) / 0.11) + 1);
-      var caret = buildWord(Math.max(0, shown));
-      caret.style.opacity = (Math.floor(t * 3) % 2) ? 1 : 0;
-      tag.style.opacity = Math.max(0, Math.min(1, (t - 4.9) / 0.5));
-      grain(.12);
-    } else if (t < 6.4) {
-      buildWord(WORD.length).style.opacity = (Math.floor(t * 3) % 2) ? 1 : 0;
-      tag.style.opacity = Math.min(1, (t - 4.9) / 0.5);
-      grain(.12 * (1 - (t - 5.2) / 1.2));
-    } else {
-      stop();
-      return;
-    }
-    raf = requestAnimationFrame(frame);
-  }
-
-  function stop() {
-    playing = false;
-    cancelAnimationFrame(raf);
-    screen.classList.remove('playing');
-    screen.style.filter = '';
-    burn.style.opacity = 0;
-    buildWord(WORD.length).remove();
-    mark.style.opacity = 1;
-    mark.style.transform = '';
-    tag.style.opacity = 1;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    render(t);
+    // Efter introt fortsätter bara rutorna att snurra, och bara när animationen syns.
+    if (visible) raf = requestAnimationFrame(frame); else running = false;
   }
 
   function play() {
-    if (calm) return;
+    if (calm) { render(END + 2); return; }
     cancelAnimationFrame(raf);
-    playing = true;
-    screen.classList.add('playing');
-    tag.style.opacity = 0;
     t0 = performance.now();
+    running = true;
     raf = requestAnimationFrame(frame);
   }
 
+  render(calm ? END + 2 : 0);
   document.getElementById('reel-play').addEventListener('click', play);
   if (calm) { document.getElementById('reel-play').hidden = true; return; }
-  // Spelas automatiskt första gången duken syns. Tills dess visas slutbilden.
   if ('IntersectionObserver' in window) {
+    var started = false;
     var io = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting && !document.documentElement.classList.contains('intro-on')) { io.disconnect(); play(); }
-    }, { threshold: 0.6 });
+      visible = entries[0].isIntersecting;
+      if (!visible || document.documentElement.classList.contains('intro-on')) return;
+      if (!started) { started = true; play(); }
+      else if (!running) { running = true; t0 = performance.now() - (END + 1) * 1000; raf = requestAnimationFrame(frame); }
+    }, { threshold: 0.35 });
     io.observe(screen);
-  }
+  } else play();
   window.__playReel = play;
 })();
 </script>
