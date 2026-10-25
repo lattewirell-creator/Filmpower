@@ -13,6 +13,8 @@ jobs:
           for m in CLAP_STRIPES SEAL_PATH p-runby compose-fab tab-following; do printf "%s: " $m; grep -c "$m" app.html || true; done
           echo "--- utan cache-buster"; curl -s -D h2.txt -o app2.html https://filmpower.vercel.app/nyheter/; grep -iE "^(age|x-vercel-cache|cache-control)" h2.txt; printf "CLAP_STRIPES: "; grep -c CLAP_STRIPES app2.html || true
           echo "--- api"; curl -s https://filmpower.vercel.app/api/me; echo
+          echo "--- AI-versioner av sidorna (204 = ingen, 200 = finns)"; for p in home nyheter; do printf "%s: " $p; curl -s -o /dev/null -w "%{http_code}\n" "https://filmpower.vercel.app/api/me?page=$p"; done
+          echo "--- sidskriptet finns:"; grep -c "__fpPage" app.html || true
       - name: Vercels status för de senaste commitarna
         env:
           GH_TOKEN: ${{ github.token }}
