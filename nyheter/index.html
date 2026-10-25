@@ -1133,6 +1133,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   // Alla kan läsa nyheterna. Att gilla, spara, kommentera och skriva kräver inloggning.
   function enterGuest() {
     state.user = null;
+    if (window.fpAdminAICheck) window.fpAdminAICheck();
     $('who').hidden = true;
     $('guest-login').hidden = false;
     $('greeting').textContent = 'Nyheter för filmskapare';
@@ -1183,6 +1184,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     selectTab('tab-all');
     loadKnownUsers().then(loadFollowing).then(loadNews).then(route);
     if (admin && state.dbReady) loadUsers();
+    if (window.fpAdminAICheck) window.fpAdminAICheck();
   }
 
   function renderWho() {

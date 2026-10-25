@@ -43,7 +43,7 @@ Webbplats och nyhetsapp för Film Power, byggd för Vercel.
 
 ## Bygg med AI (för admin)
 
-När du är inloggad som admin finns knappen **Bygg med AI** nere till vänster på både hemsidan och bloggen. Beskriv vad du vill ändra eller bygga, till exempel "Lägg till en sektion med kundomdömen under priserna" eller "Gör en knapp för att dela inlägg på Instagram". AI:n letar upp rätt ställe i koden, gör ändringarna och kan också skriva, ta bort och fästa blogginlägg.
+När du är inloggad som admin finns knappen **Bygg med AI** i hemsidans sidomeny (på mobil som en ikon bredvid menyknappen) och i bloggens sidhuvud bredvid Logga ut. Beskriv vad du vill ändra eller bygga, till exempel "Lägg till en sektion med kundomdömen under priserna" eller "Gör en knapp för att dela inlägg på Instagram". AI:n letar upp rätt ställe i koden, gör ändringarna och kan också skriva, ta bort och fästa blogginlägg.
 
 - **Inget går ut förrän du trycker Publicera.** Du ser vilka filer som ändrats och kan öppna **Förhandsgranska** för att se sidan i en ny flik först. Vill du justera något skriver du det innan du publicerar.
 - **Kontroll innan publicering:** trasig JavaScript, trasig serverkod eller en sida som tömts stoppas automatiskt.

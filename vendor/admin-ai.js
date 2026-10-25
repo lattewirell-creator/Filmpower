@@ -20,16 +20,31 @@
     });
   }
 
-  fetch('/api/me', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
-    if (d && d.user && d.user.role === 'admin') build();
-  }).catch(function () {});
+  // Kollar om den inloggade är admin. Anropas vid sidladdning och av bloggen vid in- och utloggning.
+  var built = null;
+  function check() {
+    fetch('/api/me', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+      var admin = Boolean(d && d.user && d.user.role === 'admin');
+      if (admin && !built) built = build();
+      else if (!admin && built) { built.remove(); built = null; }
+    }).catch(function () {});
+  }
+  window.fpAdminAICheck = check;
+  check();
 
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
 
   function build() {
+    var made = [];
     var css = el('style');
     css.textContent = [
-      '.aai-fab{position:fixed;left:max(20px,env(safe-area-inset-left,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));z-index:80;display:inline-flex;align-items:center;gap:.5rem;height:3rem;padding:0 1.1rem 0 .95rem;border:0;border-radius:999px;background:#141614;color:#f4f1e8;font:500 .95rem/1 var(--body,system-ui,sans-serif);box-shadow:0 10px 26px rgba(0,0,0,.3);cursor:pointer}',
+      '.aai-fab{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid var(--line,#e4e6e1);border-radius:999px;background:transparent;color:var(--ink,#141614);font:500 .92rem/1 var(--body,system-ui,sans-serif);cursor:pointer}',
+      '.aai-fab:hover{border-color:var(--brand,#3d7a2c);color:var(--brand,#3d7a2c)}',
+      '.aai-fab.aai-wide{width:100%;height:2.9rem}',
+      '.aai-fab.aai-icon{width:2.75rem;height:2.75rem;padding:0;flex:none}.aai-fab.aai-icon span{display:none}',
+      '.aai-fab.aai-small{width:2.3rem;height:2.3rem}',
+      '.content > .topbar > .aai-fab{margin-left:auto}',
+      '.aai-fab.aai-float{position:fixed;left:max(20px,env(safe-area-inset-left,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));z-index:80;height:3rem;padding:0 1.1rem;background:#141614;color:#f4f1e8;border:0}',
       '.aai-fab svg,.aai-head svg{width:1.2rem;height:1.2rem}',
       '.aai{position:fixed;left:max(20px,env(safe-area-inset-left,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));z-index:81;width:min(27rem,calc(100vw - 32px));height:min(40rem,calc(100dvh - 40px));display:flex;flex-direction:column;background:var(--bg,#fafaf8);color:var(--ink,#141614);border:1px solid var(--line,#e4e6e1);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.32);overflow:hidden;font:400 .95rem/1.5 var(--body,system-ui,sans-serif)}',
       '.aai[hidden],.aai-fab[hidden]{display:none}',
@@ -53,15 +68,30 @@
       '.aai-form button:disabled{opacity:.45;cursor:default}',
       '.aai-dots{display:inline-flex;gap:.25rem}.aai-dots i{width:.4rem;height:.4rem;border-radius:50%;background:var(--muted,#5d625b);animation:aaib 1.2s infinite}',
       '.aai-dots i:nth-child(2){animation-delay:.15s}.aai-dots i:nth-child(3){animation-delay:.3s}@keyframes aaib{0%,80%,100%{opacity:.25}40%{opacity:1}}',
-      '@media (max-width:560px){.aai{left:0;bottom:0;width:100vw;height:100dvh;border-radius:0;border:0}.aai-fab span{display:none}.aai-fab{width:3.2rem;padding:0;justify-content:center}}',
+      '@media (max-width:560px){.aai{left:0;bottom:0;width:100vw;height:100dvh;border-radius:0;border:0}}',
     ].join('\n');
     document.head.appendChild(css);
+    made.push(css);
 
     var ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
-    var fab = el('button', 'aai-fab');
-    fab.type = 'button';
-    fab.innerHTML = ICON + '<span>Bygg med AI</span>';
-    fab.setAttribute('aria-label', 'Bygg med AI');
+    // Knappen läggs i sidornas egna menyer så att den aldrig ligger framför innehållet:
+    // hemsidans sidomeny (dator) och toppfält (mobil), och bloggens sidhuvud.
+    function makeBtn(cls) {
+      var b = el('button', 'aai-fab ' + cls);
+      b.type = 'button';
+      b.innerHTML = ICON + '<span>Bygg med AI</span>';
+      b.setAttribute('aria-label', 'Bygg med AI');
+      b.title = 'Bygg med AI';
+      return b;
+    }
+    var buttons = [];
+    var sideFoot = document.querySelector('.side-foot'), homeTop = document.querySelector('body > .content > .topbar .menu-btn, .topbar .menu-btn');
+    var who = document.getElementById('who'), logout = document.getElementById('logout-btn');
+    if (sideFoot) { var b1 = makeBtn('aai-wide'); sideFoot.insertBefore(b1, sideFoot.firstChild); buttons.push(b1); }
+    if (homeTop) { var b2 = makeBtn('aai-icon'); homeTop.parentNode.insertBefore(b2, homeTop); buttons.push(b2); homeTop.parentNode.style.gap = '.5rem'; }
+    if (who && logout) { var b3 = makeBtn('aai-icon aai-small'); who.insertBefore(b3, logout); buttons.push(b3); }
+    if (!buttons.length) { var b4 = makeBtn('aai-float'); document.body.appendChild(b4); buttons.push(b4); }
+    made = made.concat(buttons);
     var box = el('section', 'aai');
     box.hidden = true;
     box.setAttribute('role', 'dialog');
@@ -69,8 +99,8 @@
     box.innerHTML = '<div class="aai-head"><span class="mk">' + ICON + '</span><div><b>Bygg med AI</b><small>Ändra hemsidan och bloggen. Inget går ut förrän du publicerar.</small></div><button class="aai-x" type="button" aria-label="Stäng">×</button></div>' +
       '<div class="aai-log" aria-live="polite"></div>' +
       '<form class="aai-form"><textarea rows="2" maxlength="2000" placeholder="T.ex. Lägg till en sektion med kundomdömen under priserna"></textarea><button type="submit" aria-label="Skicka">↑</button></form>';
-    document.body.appendChild(fab);
     document.body.appendChild(box);
+    made.push(box);
 
     var log = box.querySelector('.aai-log'), form = box.querySelector('form'), ta = form.querySelector('textarea'), sendBtn = form.querySelector('button');
     var sessionId = '', busy = false, from = 0, statusLoaded = false;
@@ -80,7 +110,7 @@
     function setBusy(b) { busy = b; sendBtn.disabled = b; ta.disabled = b; }
 
     function open() {
-      box.hidden = false; fab.hidden = true; ta.focus();
+      box.hidden = false; ta.focus();
       if (statusLoaded) return;
       statusLoaded = true;
       call('status').then(function (s) {
@@ -89,8 +119,8 @@
         if (s.last) undoCard(s.last);
       }).catch(function (err) { add('aai-err', err.message); });
     }
-    function close() { box.hidden = true; fab.hidden = false; }
-    fab.addEventListener('click', open);
+    function close() { box.hidden = true; }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { if (box.hidden) open(); else close(); }); });
     box.querySelector('.aai-x').addEventListener('click', close);
 
     function undoCard(last) {
@@ -182,5 +212,6 @@
         .then(function () { wait.remove(); setBusy(false); ta.focus(); });
     });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+    return { remove: function () { made.forEach(function (n) { n.remove(); }); } };
   }
 })();
