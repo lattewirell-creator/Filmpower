@@ -1260,19 +1260,16 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       moved = [];
     }
   }
-  // Bloggen som egen hemsida på /blogg: eget namn, Hem är bloggflödet, Nyheter länkar till /nyheter.
+  // Bloggen som egen hemsida på /blogg: eget namn, Blogg är flödet och Hem går tillbaka till /nyheter.
   if (BLOG_SITE) {
     document.title = 'Film Power Blogg';
     document.querySelector('.logo .sub').textContent = 'Blogg';
+    // Hem tar en tillbaka till nyheterna. Blogg är bloggflödet, som är förvalt här.
     var hb = $('tab-blog'), na = $('tab-all');
-    hb.replaceChildren();
-    hb.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Hem');
-    na.replaceChildren();
-    na.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M10 6h6M10 10h6M10 14h4"/></svg>Nyheter');
     na.dataset.href = '/nyheter/';
     na.removeAttribute('data-panel');
-    // Nyheter direkt efter Hem, så att den syns även på mobil där flikraden scrollar i sidled.
-    hb.parentNode.insertBefore(na, hb.nextSibling);
+    na.lastChild.textContent = 'Hem';
+    hb.parentNode.insertBefore(na, hb);
     $('tab-popular').hidden = true;
   } else {
     $('tab-blog').dataset.href = '/blogg';
@@ -2778,7 +2775,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   // ---------- Flikar ----------
   var TITLES = { all: 'Nyheter', blog: 'Blogg', following: 'Följer', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik', 'panel-messages': 'Meddelanden', 'panel-explore': 'Utforska', 'panel-notifs': 'Notiser' };
-  if (BLOG_SITE) TITLES.blog = 'Hem';
+  if (BLOG_SITE) TITLES.blog = 'Blogg';
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
   tabs.forEach(function (t) {
     t.addEventListener('click', function () {
