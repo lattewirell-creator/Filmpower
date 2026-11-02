@@ -2819,6 +2819,16 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     }, function () { return 'Videon gick inte att ladda upp. ' + raw; });
   }
 
+  // Laddar upp en video till Vercel Blob. Sajten säger om Blob är kopplad med nyckel eller med Vercels nya OIDC-inloggning.
+  function blobUpload(pathname, file, opts) {
+    var check = fetch('/api/image?video=check&t=' + Date.now(), { credentials: 'same-origin' }).then(function (r) { return r.json(); }).catch(function () { return {}; });
+    return Promise.all([import('/vendor/blob-client.js'), check]).then(function (a) {
+      var m = a[0], c = a[1] || {};
+      if (c.configured === false) throw new Error('Videolagringen är inte kopplad till sajten.');
+      return c.mode === 'oidc' ? m.uploadPresigned(pathname, file, opts) : m.upload(pathname, file, opts);
+    });
+  }
+
   // Video i skrivrutan: laddas upp direkt till Vercel Blob medan man skriver.
   function clearXcVideo() { xc.video = ''; xc.uploading = false; $('xc-vid').hidden = true; $('xc-vid-el').removeAttribute('src'); updateComposer(); }
   $('xc-vid-remove').addEventListener('click', clearXcVideo);
@@ -2837,8 +2847,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     updateComposer();
     var token = {};
     xc.token = token;
-    import('/vendor/blob-client.js').then(function (m) {
-      return m.upload('videos/' + name + '.' + ext, file, {
+    Promise.resolve().then(function () {
+      return blobUpload('videos/' + name + '.' + ext, file, {
         access: 'public', handleUploadUrl: '/api/image?video=1', contentType: file.type, multipart: file.size > 20 * 1024 * 1024,
         onUploadProgress: function (p) { if (xc.token === token) $('xc-vid-msg').textContent = 'Laddar upp videon… ' + Math.round(p.percentage) + ' %'; },
       });
@@ -3725,8 +3735,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('vid-preview').hidden = false;
     $('img-help').className = 'help';
     $('img-help').textContent = 'Laddar upp videon… 0 %';
-    import('/vendor/blob-client.js').then(function (m) {
-      return m.upload('videos/' + name + '.' + ext, file, {
+    Promise.resolve().then(function () {
+      return blobUpload('videos/' + name + '.' + ext, file, {
         access: 'public',
         handleUploadUrl: '/api/image?video=1',
         contentType: file.type,

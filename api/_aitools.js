@@ -2,7 +2,7 @@
 // Används av _agent.js. Låst för AI:n själv.
 import crypto from 'node:crypto';
 import { put } from '@vercel/blob';
-import { redis, blobToken } from './_lib.js';
+import { redis, blobMode, blobAuth } from './_lib.js';
 
 const UA = 'FilmPower/1.0 (+https://filmpower.vercel.app)';
 
@@ -51,9 +51,9 @@ export async function findImages(query) {
 // Vercel Blob om den är kopplad, annars i databasen (som profilbilderna).
 export async function storeImage(buf, type) {
   if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) throw new Error('Bara JPEG, PNG, WebP och GIF går.');
-  if (blobToken()) {
+  if (blobMode()) {
     const ext = type.split('/')[1].replace('jpeg', 'jpg');
-    const b = await put(`ai/${crypto.randomBytes(8).toString('hex')}.${ext}`, buf, { access: 'public', contentType: type, token: blobToken() });
+    const b = await put(`ai/${crypto.randomBytes(8).toString('hex')}.${ext}`, buf, { access: 'public', contentType: type, ...blobAuth() });
     return b.url;
   }
   if (buf.length > 700_000) throw new Error('Bilden är för stor för databasen (max 700 kB). Välj en mindre bild eller koppla Vercel Blob.');

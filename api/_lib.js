@@ -340,3 +340,18 @@ export function blobToken() {
   }
   return '';
 }
+
+// Vercel kopplar numera Blob utan nyckel: projektet får BLOB_STORE_ID och loggar in med OIDC.
+// blobMode säger vilket sätt som finns, blobAuth ger rätt inloggning till put och del.
+export function blobMode() {
+  if (blobToken()) return 'token';
+  if (process.env.BLOB_STORE_ID) return 'oidc';
+  return '';
+}
+
+export function blobAuth(req) {
+  const token = blobToken();
+  if (token) return { token };
+  const h = req && req.headers && req.headers['x-vercel-oidc-token'];
+  return h ? { oidcToken: String(h) } : {};
+}
