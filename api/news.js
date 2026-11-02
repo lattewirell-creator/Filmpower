@@ -30,15 +30,22 @@ export default handle(async (req, res) => {
   const admin = s.role === 'admin';
 
   if (req.method === 'POST') {
-    if (!admin && !s.verified) throw new HttpError(403, 'Bara verifierade konton kan publicera inlägg.');
-    if (!admin) await rateLimit('rl:post:' + actorId(s), 10, 3600, 'Du har publicerat många inlägg på kort tid. Vänta en stund.');
     const b = await readBody(req, 1_000_000);
-    const title = clean(b.title, 140);
-    const body = clean(b.body, 5000);
-    const category = CATEGORIES.includes(b.category) ? b.category : CATEGORIES[0];
+    // Bloggen: korta inlägg utan rubrik, som på Twitter. Alla med eget konto får skriva där.
+    const blog = b.kind === 'blog';
+    if (blog) {
+      if (!s.user && !admin) throw new HttpError(403, 'Skapa ett eget konto för att skriva i bloggen.');
+      if (!admin) await rateLimit('rl:blog:' + actorId(s), 30, 3600, 'Du har skrivit många inlägg på kort tid. Vänta en stund.');
+    } else {
+      if (!admin && !s.verified) throw new HttpError(403, 'Bara verifierade konton kan publicera nyheter.');
+      if (!admin) await rateLimit('rl:post:' + actorId(s), 10, 3600, 'Du har publicerat många inlägg på kort tid. Vänta en stund.');
+    }
+    const title = blog ? '' : clean(b.title, 140);
+    const body = clean(b.body, blog ? 1000 : 5000);
+    const category = blog ? '' : CATEGORIES.includes(b.category) ? b.category : CATEGORIES[0];
     let link = clean(b.link, 500);
-    if (!title) throw new HttpError(400, 'Nyheten behöver en rubrik.');
-    if (!body) throw new HttpError(400, 'Nyheten behöver en text.');
+    if (!blog && !title) throw new HttpError(400, 'Nyheten behöver en rubrik.');
+    if (!body && !(blog && b.image)) throw new HttpError(400, blog ? 'Skriv något först.' : 'Nyheten behöver en text.');
     if (link) {
       try {
         const u = new URL(link);
@@ -74,7 +81,7 @@ export default handle(async (req, res) => {
 
     const item = {
       id: crypto.randomBytes(6).toString('hex'),
-      title, body, category, link, image, video, ...(quoteOf ? { quoteOf } : {}),
+      title, body, category, link, image, video, ...(quoteOf ? { quoteOf } : {}), ...(blog ? { kind: 'blog' } : {}),
       author: s.label,
       authorKey: s.user || '',
       createdAt: Date.now(),

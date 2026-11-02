@@ -99,7 +99,7 @@ export async function repliesOf(key) {
   for (let i = 0; i < pairs.length; i++) {
     const post = res[2 * i] && JSON.parse(res[2 * i]), c = res[2 * i + 1] && JSON.parse(res[2 * i + 1]);
     if (!post || !c || c.anon) continue;
-    out.push({ postId: post.id, postTitle: post.title, postAuthorKey: post.authorKey || 'filmpower', id: c.id, text: c.text, createdAt: c.createdAt });
+    out.push({ postId: post.id, postTitle: post.title || (post.body || '').slice(0, 60) + ((post.body || '').length > 60 ? '…' : ''), postAuthorKey: post.authorKey || 'filmpower', id: c.id, text: c.text, createdAt: c.createdAt });
   }
   return out;
 }
