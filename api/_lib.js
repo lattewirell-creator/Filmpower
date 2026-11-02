@@ -330,3 +330,13 @@ export async function orgInfo(keys) {
   }
   return map;
 }
+
+// Nyckeln till Vercel Blob. Vercel döper den till BLOB_READ_WRITE_TOKEN, men om lagringen kopplades
+// med ett eget prefix heter den t.ex. FILMPOWER_VIDEO_READ_WRITE_TOKEN. Alla varianter hittas.
+export function blobToken() {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
+  for (const [k, v] of Object.entries(process.env)) {
+    if (/READ_WRITE_TOKEN$/.test(k) && /^vercel_blob_rw_/.test(v || '')) return v;
+  }
+  return '';
+}

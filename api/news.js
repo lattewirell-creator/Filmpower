@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { del } from '@vercel/blob';
 import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
-  HttpError, redis, pipeline, CATEGORIES, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
+  HttpError, redis, pipeline, CATEGORIES, blobToken, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
 } from './_lib.js';
 import { notify, mentionsIn } from './_social.js';
 
@@ -124,7 +124,7 @@ export default handle(async (req, res) => {
     const { image, video } = JSON.parse(raw);
     if (image) cmds.push(['DEL', 'img:' + image]);
     await pipeline(cmds);
-    if (video && process.env.BLOB_READ_WRITE_TOKEN) await del(video).catch((err) => console.error('Kunde inte ta bort videon:', err));
+    if (video && blobToken()) await del(video, { token: blobToken() }).catch((err) => console.error('Kunde inte ta bort videon:', err));
     return send(res, 200, { ok: true });
   }
 

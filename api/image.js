@@ -1,14 +1,16 @@
 import { handleUpload } from '@vercel/blob/client';
-import { handle, send, readBody, queryParam, getSession, HttpError, redis } from './_lib.js';
+import { handle, send, readBody, queryParam, getSession, HttpError, redis, blobToken } from './_lib.js';
 
 // Videor laddas upp direkt från webbläsaren till Vercel Blob. Den här funktionen ger bara tillstånd.
 const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 async function videoToken(req, res) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new HttpError(503, 'Videolagringen är inte kopplad. Koppla Blob-lagringen till projektet i Vercel och gör en redeploy.');
+  const token = blobToken();
+  if (!token) throw new HttpError(503, 'Videolagringen är inte kopplad. Koppla Blob-lagringen till projektet i Vercel och gör en redeploy.');
   const body = await readBody(req, 20_000);
   const result = await handleUpload({
+    token,
     body,
     request: req,
     onBeforeGenerateToken: async () => {
@@ -26,7 +28,7 @@ export default handle(async (req, res) => {
   // Felsökning för videouppladdning: är lagringen kopplad och får den inloggade ladda upp? Visar aldrig nyckeln.
   if (req.method === 'GET' && queryParam(req, 'video') === 'check') {
     const s = await getSession(req);
-    const t = process.env.BLOB_READ_WRITE_TOKEN || '';
+    const t = blobToken();
     return send(res, 200, {
       configured: Boolean(t),
       tokenLooksRight: /^vercel_blob_rw_/.test(t),

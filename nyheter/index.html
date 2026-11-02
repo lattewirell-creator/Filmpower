@@ -576,6 +576,37 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 .notif .n-snip { color: var(--muted); font-size: .93rem; margin-top: .2rem; overflow-wrap: anywhere; }
 .notif .n-time { color: var(--muted); font-size: .85rem; }
 
+/* Mjuka animationer: sidor tonar in, inlägg glider in, knappar trycks in, menyer och fönster skalas fram */
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-spring: cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes fxIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fxItem { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fxPop { 0% { opacity: 0; transform: scale(.96); background: color-mix(in srgb, var(--brand) 18%, transparent); } 60% { opacity: 1; transform: scale(1.01); } 100% { transform: none; background: transparent; } }
+@keyframes fxMenu { from { opacity: 0; transform: scale(.92) translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes fxFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fxModal { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes fxToast { from { opacity: 0; transform: translate(-50%, 14px) scale(.96); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes heartPop { 0% { transform: scale(1); } 30% { transform: scale(.7); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes repostSpin { from { transform: rotate(-90deg) scale(.8); } to { transform: none; } }
+.fx-in { animation: fxIn .32s var(--ease-out) both; }
+.fx-item { animation: fxItem .42s var(--ease-out) both; }
+.fx-pop { animation: fxPop .6s var(--ease-out) both; }
+.menu { animation: fxMenu .18s var(--ease-out) both; transform-origin: top right; }
+.act-wrap .menu { transform-origin: top left; }
+.modal-back:not([hidden]) { animation: fxFade .2s ease both; }
+.modal-back:not([hidden]) .modal { animation: fxModal .32s var(--ease-out) both; }
+.toast:not([hidden]) { animation: fxToast .3s var(--ease-spring) both; }
+.act.like.pop svg { animation: heartPop .45s var(--ease-spring); }
+.act.repost.pop svg { animation: repostSpin .45s var(--ease-spring); }
+.btn, .act, .tab, .p-tab, .icon-btn, .chip, .xr-item, .member, .notif, .fab, .follow-btn { transition: background-color .2s ease, color .2s ease, border-color .2s ease, opacity .15s ease, transform .16s var(--ease-out), box-shadow .2s ease; }
+.btn:active:not(:disabled), .act:active, .icon-btn:active, .chip:active, .fab:active, .tab:active { transform: scale(.95); }
+.p-tab[aria-selected="true"]::after { animation: fxIn .3s var(--ease-out) both; }
+.tweet { transition: background-color .2s ease; }
+.bubble { animation: fxItem .3s var(--ease-out) both; }
+@media (prefers-reduced-motion: reduce) {
+  .fx-in, .fx-item, .fx-pop, .menu, .modal-back:not([hidden]), .modal-back:not([hidden]) .modal, .toast:not([hidden]), .act.pop svg, .bubble, .p-tab[aria-selected="true"]::after { animation: none !important; }
+  .btn:active, .act:active, .icon-btn:active, .chip:active, .fab:active, .tab:active { transform: none !important; }
+}
+
 /* Sidomeny till vänster som på Twitter (dator) */
 :root { --xs-half: 34rem; }
 /* Högerspalt med sök, Dagens nyheter och Vad händer (breda skärmar) */
@@ -1154,6 +1185,23 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   // På mobil ligger de kvar högst upp. Platshållare minns var de ska tillbaka.
   var deskQuery = window.matchMedia('(min-width: 1000px)');
   var moved = [];
+  // Spelar upp en CSS-animation på nytt på ett element (tar bort klassen, ritar om, lägger till den).
+  function replay(node, cls) {
+    if (!node) return;
+    node.classList.remove(cls);
+    void node.offsetWidth;
+    node.classList.add(cls);
+  }
+  function animateIn(panelId) { replay($(panelId), 'fx-in'); }
+  // Inläggen glider in ett efter ett, de första tolv med lite fördröjning.
+  function staggerIn(container) {
+    Array.prototype.forEach.call(container.querySelectorAll(':scope > .tweet, :scope > .member, :scope > .notif, :scope > .reply-card'), function (n, i) {
+      if (i > 11) return;
+      n.style.animationDelay = (i * 35) + 'ms';
+      replay(n, 'fx-item');
+      n.addEventListener('animationend', function done() { n.classList.remove('fx-item'); n.style.animationDelay = ''; n.removeEventListener('animationend', done); });
+    });
+  }
   function placeLayout() {
     var desk = deskQuery.matches;
     if (desk && !moved.length) {
@@ -1564,6 +1612,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('tabs').hidden = true;
     $('app-head').hidden = true;
     state.panel = except;
+    animateIn(except);
     document.body.classList.toggle('in-dm', except === 'panel-messages');
     // Profil-fliken lyser när man är på sitt eget konto.
     tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.id === 'tab-me' && except === 'panel-account')); });
@@ -2702,6 +2751,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     stopThreadPoll();
     document.body.classList.toggle('in-dm', state.panel === 'panel-messages');
     PANELS.forEach(function (p) { $(p).hidden = p !== state.panel; });
+    animateIn(state.panel);
     $('tabs').hidden = false;
     $('app-head').hidden = false;
     $('view-title').textContent = TITLES[tab.dataset.view || state.panel];
@@ -2813,6 +2863,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       xc.image = ''; $('xc-img').hidden = true;
       xc.token = null; clearXcVideo();
       renderFeed();
+      var first = $('feed').querySelector('.tweet');
+      if (first) { first.classList.remove('fx-item'); replay(first, 'fx-pop'); }
       toast(state.view === 'blog' ? 'Ditt inlägg är postat.' : 'Ditt inlägg är postat i Bloggen.');
     }).catch(function (err) { toast(err.message); }).then(updateComposer);
   });
@@ -2990,6 +3042,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       return;
     }
     items.forEach(function (item) { var rp = state.repostShown[item.id]; feed.appendChild(renderTweet(item, { repostBy: rp ? rp.by : '' })); });
+    staggerIn(feed);
   }
 
   function authorHead(item, withTime) {
@@ -3164,6 +3217,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var on = !item.liked;
     item.liked = on; item.likes = Math.max(0, item.likes + (on ? 1 : -1));
     refreshItem(item);
+    if (on) Array.prototype.forEach.call(document.querySelectorAll('[data-id="' + item.id + '"] .act.like, .d-actions .act.like'), function (b) { replay(b, 'pop'); });
     api('post?id=' + encodeURIComponent(item.id) + '&action=' + (on ? 'like' : 'unlike'), { method: 'POST' })
       .then(function (d) { item.liked = d.liked; item.likes = d.likes; refreshItem(item); })
       .catch(function (err) { item.liked = !on; item.likes = Math.max(0, item.likes + (on ? -1 : 1)); refreshItem(item); toast(err.message); });
@@ -3173,6 +3227,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var on = !item.reposted;
     item.reposted = on; item.reposts = Math.max(0, (item.reposts || 0) + (on ? 1 : -1));
     refreshItem(item);
+    if (on) Array.prototype.forEach.call(document.querySelectorAll('[data-id="' + item.id + '"] .act.repost'), function (b) { replay(b, 'pop'); });
     api('post?id=' + encodeURIComponent(item.id) + '&action=' + (on ? 'repost' : 'unrepost'), { method: 'POST' })
       .then(function (d) { item.reposted = d.reposted; item.reposts = d.reposts; refreshItem(item); toast(on ? 'Delat vidare. Det syns på din profil och för dem som följer dig.' : 'Delningen är borttagen.'); })
       .catch(function (err) { item.reposted = !on; item.reposts = Math.max(0, item.reposts + (on ? -1 : 1)); refreshItem(item); toast(err.message); });
@@ -3383,6 +3438,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     closeMenu();
     stopThreadPoll();
     PANELS.forEach(function (p) { $(p).hidden = p !== 'panel-post'; });
+    animateIn('panel-post');
     $('panel-post').hidden = false;
     $('tabs').hidden = true;
     $('app-head').hidden = true;
