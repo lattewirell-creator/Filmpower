@@ -656,6 +656,13 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 .xr-foot a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .xr-pop, .xr-card { animation: none; } }
 .xside, .xright { display: none; }
+/* Väg ut från bloggen och nyheterna till Film Powers hemsida. */
+.exit-link { display: inline-flex; align-items: center; gap: .2rem; margin-right: auto; padding: .35rem .75rem .35rem .45rem; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); text-decoration: none; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.exit-link svg { width: 1rem; height: 1rem; }
+.exit-link:hover { background: var(--soft); }
+.xs-exit { display: flex; align-items: center; gap: 1rem; padding: .7rem 1rem; margin-top: .3rem; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 1.05rem; }
+.xs-exit svg { width: 1.45rem; height: 1.45rem; }
+.xs-exit:hover { background: var(--soft); color: var(--ink); }
 @media (min-width: 1000px) {
   body.app-on .topbar { display: none; }
   body.app-on .xside { display: flex; flex-direction: column; gap: .3rem; position: fixed; top: 0; bottom: 0; left: max(0px, calc(50% - var(--xs-half))); width: 15.5rem; padding: 1rem 1rem 1.2rem .6rem; border-right: 1px solid var(--line); overflow-y: auto; z-index: 20; background: var(--bg); }
@@ -690,6 +697,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <a class="logo" href="/" aria-label="Till Film Powers startsida">
       <span class="wordmark" aria-label="Film Power">film<span class="sep">://</span>power</span><span class="sub">Nyheter/blogg</span>
     </a>
+    <a class="exit-link" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Hemsidan</a>
     <div class="who" id="who" hidden>
       <button class="account-btn" type="button" id="who-name" aria-label="Mitt konto"></button>
       <span class="badge" id="who-badge"></span>
@@ -727,6 +735,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 <aside class="xside" id="xside" aria-label="Meny">
   <div id="xs-logo"></div>
   <div id="xs-nav"></div>
+  <a class="xs-exit" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l-5-5 5-5"/><path d="M11 12h10"/></svg>Till hemsidan</a>
   <div class="xs-who" id="xs-who"></div>
 </aside>
 
