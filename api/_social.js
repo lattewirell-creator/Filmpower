@@ -252,12 +252,13 @@ export async function notifications(s) {
   const me = myKey(s);
   if (!me) throw new HttpError(403, 'Skapa ett eget konto för att få notiser.');
   const [raws] = await pipeline([['LRANGE', 'notif:' + me, 0, 99], ['SET', 'notifunread:' + me, '0']]);
-  const list = raws.map((r) => JSON.parse(r));
+  const list = (raws || []).map((r) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean);
   const who = new Map((await people(list.map((n) => n.by).filter(Boolean), s)).map((p) => [p.username.toLowerCase(), p]));
   const posts = [...new Set(list.map((n) => n.postId).filter(Boolean))];
   const raw = posts.length ? await redis('HMGET', 'news', ...posts) : [];
   const label = new Map(posts.map((id, i) => {
-    const p = raw[i] && JSON.parse(raw[i]);
+    let p = null;
+    try { p = raw[i] && JSON.parse(raw[i]); } catch { /* trasig rad */ }
     return [id, p ? p.title || (p.body || '').slice(0, 80) : ''];
   }));
   return list.map((n) => ({ ...n, who: who.get(n.by) || null, postLabel: n.postId ? label.get(n.postId) || '' : '' }));

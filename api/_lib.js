@@ -40,6 +40,8 @@ export async function redis(...cmd) {
 }
 
 export async function pipeline(cmds) {
+  // Upstash svarar med fel på en tom pipeline, till exempel när en lista med personer är tom.
+  if (!cmds.length) return [];
   const data = await call('/pipeline', cmds);
   return data.map((d) => {
     if (d.error) throw new Error('Redis-fel: ' + d.error);
