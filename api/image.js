@@ -23,6 +23,17 @@ async function videoToken(req, res) {
 
 // Visar en bild som hör till en nyhet, en profilbild eller en banner. Nyheterna är öppna, så bilderna är det också.
 export default handle(async (req, res) => {
+  // Felsökning för videouppladdning: är lagringen kopplad och får den inloggade ladda upp? Visar aldrig nyckeln.
+  if (req.method === 'GET' && queryParam(req, 'video') === 'check') {
+    const s = await getSession(req);
+    const t = process.env.BLOB_READ_WRITE_TOKEN || '';
+    return send(res, 200, {
+      configured: Boolean(t),
+      tokenLooksRight: /^vercel_blob_rw_/.test(t),
+      signedIn: Boolean(s),
+      allowed: Boolean(s && (s.role === 'admin' || s.verified || s.user)),
+    });
+  }
   if (req.method === 'POST' && queryParam(req, 'video')) {
     try { return await videoToken(req, res); } catch (err) {
       if (err instanceof HttpError) throw err;

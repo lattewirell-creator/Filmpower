@@ -2715,6 +2715,19 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
   $('xc-img-remove').addEventListener('click', function () { xc.image = ''; $('xc-img').hidden = true; updateComposer(); });
 
+  // Ett begripligt felmeddelande när en video inte går att ladda upp. Frågar servern vad som saknas.
+  function videoError(err) {
+    var raw = ((err && err.message) || '').replace(/^Vercel Blob: /, '');
+    return api('image?video=check').then(function (c) {
+      if (!c.configured) return 'Videolagringen är inte kopplad till sajten. Admin behöver koppla Vercel Blob till projektet och göra en redeploy.';
+      if (!c.tokenLooksRight) return 'Nyckeln till videolagringen ser fel ut. Koppla om Vercel Blob till projektet i Vercel och gör en redeploy.';
+      if (!c.signedIn) return 'Du är utloggad. Logga in igen och försök på nytt.';
+      if (!c.allowed) return 'Skapa ett eget konto för att ladda upp video.';
+      if (/private/i.test(raw)) return 'Blob-lagringen i Vercel är privat. Skapa en ny Blob-lagring med Public access och koppla den till projektet.';
+      return 'Videon gick inte att ladda upp. ' + raw;
+    }, function () { return 'Videon gick inte att ladda upp. ' + raw; });
+  }
+
   // Video i skrivrutan: laddas upp direkt till Vercel Blob medan man skriver.
   function clearXcVideo() { xc.video = ''; xc.uploading = false; $('xc-vid').hidden = true; $('xc-vid-el').removeAttribute('src'); updateComposer(); }
   $('xc-vid-remove').addEventListener('click', clearXcVideo);
@@ -2746,7 +2759,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     }).catch(function (err) {
       if (xc.token !== token) return;
       clearXcVideo();
-      toast('Videon gick inte att ladda upp. ' + ((err && err.message) || '').replace(/^Vercel Blob: /, ''));
+      videoError(err).then(toast);
     });
   });
   $('xcompose').addEventListener('submit', function (e) {
