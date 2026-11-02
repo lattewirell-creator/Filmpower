@@ -336,7 +336,7 @@ export async function orgInfo(keys) {
 export function blobToken() {
   if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
   for (const [k, v] of Object.entries(process.env)) {
-    if (/READ_WRITE_TOKEN$/.test(k) && /^vercel_blob_rw_/.test(v || '')) return v;
+    if (/(READ_WRITE_TOKEN|BLOB)/i.test(k) && /^vercel_blob_rw_/.test(v || '')) return v;
   }
   return '';
 }

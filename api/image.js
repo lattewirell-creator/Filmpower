@@ -34,6 +34,11 @@ export default handle(async (req, res) => {
       tokenLooksRight: /^vercel_blob_rw_/.test(t),
       signedIn: Boolean(s),
       allowed: Boolean(s && (s.role === 'admin' || s.verified || s.user)),
+      // Bara namnen, aldrig värdena, så att vi ser om Vercel gett sajten någon Blob-variabel.
+      blobVars: Object.keys(process.env).filter((k) => /BLOB|READ_WRITE/i.test(k)),
+      env: process.env.VERCEL_ENV || '',
+      project: process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || '',
+      commit: String(process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7),
     });
   }
   if (req.method === 'POST' && queryParam(req, 'video')) {
