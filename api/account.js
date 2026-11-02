@@ -25,6 +25,9 @@ export default handle(async (req, res) => {
       avatar: u ? u.avatar || '' : '',
       banner: u ? u.banner || '' : '',
       bio: u ? u.bio || '' : '',
+      location: u ? u.location || '' : '',
+      website: u ? u.website || '' : '',
+      birthday: u ? u.birthday || '' : '',
       anon: Boolean(s.anon),
       createdAt: u ? u.createdAt : null,
       liked: Number(liked) || 0,
@@ -84,6 +87,27 @@ export default handle(async (req, res) => {
     u.bio = String(b.bio).replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 160);
   }
 
+  // Plats, webbplats och födelsedag, som på en Twitter-profil.
+  const line = (v, max) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+  if (b.location !== undefined) u.location = line(b.location, 30);
+  if (b.website !== undefined) {
+    let w = line(b.website, 100);
+    if (w) {
+      if (!/^https?:\/\//i.test(w)) w = 'https://' + w;
+      try {
+        const url = new URL(w);
+        if (!/^https?:$/.test(url.protocol) || !url.hostname.includes('.')) throw new Error();
+        w = url.toString().replace(/\/$/, '');
+      } catch { throw new HttpError(400, 'Webbplatsen ser inte ut som en adress. Skriv t.ex. minsida.se'); }
+    }
+    u.website = w;
+  }
+  if (b.birthday !== undefined) {
+    const d = String(b.birthday || '');
+    if (d && !(/^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d)) && d < new Date().toISOString().slice(0, 10) && d > '1900-01-01')) throw new HttpError(400, 'Ogiltigt födelsedatum.');
+    u.birthday = d;
+  }
+
   if (b.newPassword !== undefined) {
     const ok = await checkPassword(String(b.currentPassword || ''), u.salt, u.hash);
     if (!ok) throw new HttpError(400, 'Nuvarande lösenord stämmer inte.');
@@ -98,5 +122,5 @@ export default handle(async (req, res) => {
   await redis('HSET', 'users', s.user, JSON.stringify(u));
   if (oldAvatar && oldAvatar !== u.avatar) await redis('DEL', 'img:' + oldAvatar);
   if (oldBanner && oldBanner !== u.banner) await redis('DEL', 'img:' + oldBanner);
-  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', banner: u.banner || '', bio: u.bio || '' });
+  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', banner: u.banner || '', bio: u.bio || '', location: u.location || '', website: u.website || '', birthday: u.birthday || '' });
 });

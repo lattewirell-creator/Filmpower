@@ -3,6 +3,7 @@ import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession, HttpError,
   redis, pipeline, rateLimit, readerSession, actorId, displayName, withStats, withAuthors, affKey, orgInfo,
 } from './_lib.js';
+import { keyActor, myKey, replyActor } from './_social.js';
 
 const MAX_COMMENT = 1000;
 
@@ -74,6 +75,9 @@ export default handle(async (req, res) => {
     const text = String(b.text || '').replace(/\r\n/g, '\n').trim().slice(0, MAX_COMMENT);
     if (!text) throw new HttpError(400, 'Skriv något först.');
     await rateLimit('rl:comment:' + a, 20, 600, 'Du har kommenterat mycket på kort tid. Vänta några minuter.');
+    // Den som blivit blockerad av inläggets författare kan inte svara, som på Twitter.
+    const owner = JSON.parse(raw).authorKey || 'filmpower';
+    if (await redis('SISMEMBER', 'blocked:' + keyActor(owner), myKey(s) || a)) throw new HttpError(403, 'Du kan inte svara på det här kontots inlägg.');
     const c = {
       id: crypto.randomBytes(6).toString('hex'),
       author: displayName(s),
@@ -86,6 +90,8 @@ export default handle(async (req, res) => {
     const [, count] = await pipeline([
       ['HSET', 'comments:' + id, c.id, JSON.stringify(c)],
       ['HINCRBY', 'news:comments', id, 1],
+      // Svaren visas under fliken Svar på profilen.
+      ...(!c.anon && replyActor(a) ? [['ZADD', 'replies:' + a, c.createdAt, id + ':' + c.id]] : []),
     ]);
     const myOrg = s.affiliateOf ? (await orgInfo([s.affiliateOf])).get(s.affiliateOf) || null : null;
     const shown = c.anon
@@ -106,6 +112,7 @@ export default handle(async (req, res) => {
     const [, count] = await pipeline([
       ['HDEL', 'comments:' + id, cid],
       ['HINCRBY', 'news:comments', id, -1],
+      ...(replyActor(c.actor) ? [['ZREM', 'replies:' + c.actor, id + ':' + cid]] : []),
     ]);
     return send(res, 200, { ok: true, comments: Math.max(0, count) });
   }

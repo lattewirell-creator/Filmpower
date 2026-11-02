@@ -19,10 +19,19 @@ export default handle(async (req, res) => {
       users.push({ id: flat[i], username: u.username, displayName: u.displayName || '', status: u.status, role: u.role === 'admin' ? 'admin' : 'member', verified: Boolean(u.verified), affiliateOf: affKey(u), createdAt: u.createdAt });
     }
     users.sort((a, b) => ORDER[a.status] - ORDER[b.status] || b.createdAt - a.createdAt);
-    return send(res, 200, { users });
+    const reports = (await redis('LRANGE', 'reports', 0, 49)).map((r) => JSON.parse(r));
+    return send(res, 200, { users, reports });
   }
 
   requireAppHeader(req);
+  // En anmälan är hanterad och tas bort ur listan.
+  const rid = queryParam(req, 'report');
+  if (rid && req.method === 'DELETE') {
+    const all = await redis('LRANGE', 'reports', 0, -1);
+    const hit = all.find((r) => JSON.parse(r).id === rid);
+    if (hit) await redis('LREM', 'reports', 1, hit);
+    return send(res, 200, { ok: true });
+  }
   const id = queryParam(req, 'id');
   if (!id) throw new HttpError(400, 'Id saknas.');
   const raw = await redis('HGET', 'users', id);

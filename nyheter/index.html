@@ -227,6 +227,58 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .p-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 3.5rem; height: 4px; border-radius: 2px; background: var(--brand); }
 .avatar.anon { background: var(--line); color: var(--muted); font-family: var(--body); font-weight: 600; }
 
+/* Mer som på Twitter: knappar, följer dig, svar, media, följarlistor och meddelanden */
+.p-btns { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
+.p-btns .btn { margin-bottom: 0; }
+.p-btns .icon-btn { width: 2.4rem; height: 2.4rem; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; color: var(--ink); background: var(--bg); }
+.p-btns .icon-btn:hover { background: var(--soft); }
+.p-btns .icon-btn svg { width: 1.15rem; height: 1.15rem; }
+.p-btns .menu { top: 2.8rem; }
+.p-handle-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.follows-you { font-size: .75rem; padding: .1rem .45rem; border-radius: 6px; background: var(--soft); color: var(--muted); }
+.p-meta a { color: var(--brand); text-decoration: none; display: inline-flex; align-items: center; gap: .35rem; overflow-wrap: anywhere; }
+.p-meta a:hover { text-decoration: underline; }
+.p-stats a { color: inherit; text-decoration: none; }
+.p-stats a:hover { text-decoration: underline; }
+.p-tabs { overflow-x: auto; scrollbar-width: none; }
+.p-tab { white-space: nowrap; min-width: max-content; padding-inline: 1rem; }
+.pinned-row.p-pin { margin: .2rem 0 -.2rem 3.4rem; }
+.reply-card { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); gap: .8rem; padding: .9rem .75rem; margin-inline: -.75rem; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+.reply-card:hover { background: color-mix(in srgb, var(--soft) 60%, transparent); }
+.reply-card .r-to { color: var(--muted); font-size: .9rem; margin-top: .1rem; }
+.reply-card .r-to b { color: var(--brand); font-weight: 500; }
+.reply-card p { margin-top: .3rem; white-space: pre-line; overflow-wrap: anywhere; }
+.media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin: .6rem -.75rem 0; }
+.media-grid a { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--soft); display: block; }
+.media-grid img, .media-grid video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-grid .play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 1.6rem; text-shadow: 0 2px 8px rgba(0,0,0,.6); pointer-events: none; }
+.p-block { margin-top: 1.4rem; }
+.f-tabs { display: flex; border-bottom: 1px solid var(--line); margin-inline: -.75rem; }
+.f-tabs a { flex: 1; text-align: center; padding: .9rem .5rem; color: var(--muted); text-decoration: none; font-weight: 500; position: relative; }
+.f-tabs a[aria-current="page"] { color: var(--ink); font-weight: 600; }
+.f-tabs a[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 3.5rem; height: 4px; border-radius: 2px; background: var(--brand); }
+.f-row { grid-template-columns: 2.75rem minmax(0, 1fr) auto; }
+.f-row .m-txt .handle-row { display: flex; gap: .4rem; align-items: center; }
+.f-row .m-bio { margin-top: .2rem; }
+.tab .count.dm { background: var(--brand); color: var(--on-brand, #fff); }
+.dm-list .member .m-last { color: var(--muted); font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-list .member.unread .m-last { color: var(--ink); font-weight: 600; }
+.dm-dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--brand); }
+.dm-new { display: grid; gap: .5rem; margin-bottom: 1rem; }
+.dm-pick { display: grid; }
+.dm-thread { display: flex; flex-direction: column; gap: .35rem; padding: .8rem 0 1rem; min-height: 40vh; }
+.bubble { max-width: 78%; padding: .6rem .9rem; border-radius: 18px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4; }
+.bubble.them { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 5px; }
+.bubble.mine { align-self: flex-end; background: var(--brand); color: var(--on-brand, #fff); border-bottom-right-radius: 5px; }
+.bubble-time { font-size: .75rem; color: var(--muted); margin: .1rem .4rem .5rem; }
+.bubble-time.mine { align-self: flex-end; } .bubble-time.them { align-self: flex-start; }
+.dm-compose { position: sticky; bottom: 0; display: flex; gap: .5rem; align-items: flex-end; padding: .7rem 0 max(.7rem, env(safe-area-inset-bottom, 0px)); background: var(--bg); border-top: 1px solid var(--line); }
+.dm-compose textarea { flex: 1; resize: none; max-height: 8rem; min-height: 2.8rem !important; height: 2.8rem; padding-block: .65rem; }
+body.in-dm .fab { display: none; }
+.dm-with { display: flex; align-items: center; gap: .6rem; min-width: 0; color: inherit; text-decoration: none; }
+.dm-with .avatar { width: 2.2rem; height: 2.2rem; font-size: .9rem; }
+.report-row small { display: block; white-space: pre-line; }
+
 /* Redigera profil */
 .modal-back { position: fixed; inset: 0; z-index: 60; display: grid; place-items: start center; overflow-y: auto; background: rgba(0, 0, 0, .55); padding: max(2.5rem, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 2.5rem max(16px, env(safe-area-inset-left, 0px)); }
 .modal { width: min(38rem, 100%); background: var(--bg); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
@@ -553,6 +605,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Sparade</button>
       <button class="tab" role="tab" id="tab-members" data-panel="panel-members" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Medlemmar</button>
+      <button class="tab" role="tab" id="tab-messages" data-panel="panel-messages" aria-selected="false" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg>Meddelanden<span class="count dm" id="dm-count" hidden></span></button>
       <span class="tab-sep" data-admin hidden></span>
       <button class="tab" role="tab" id="tab-write" data-panel="panel-write" hidden aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Skriv</button>
@@ -609,6 +663,19 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         <div class="dh-txt"><h2 id="acc-title">Mitt konto</h2><span class="muted" id="acc-count"></span></div>
       </div>
       <div id="acc-view"></div>
+    </div>
+
+    <div id="panel-follows" hidden>
+      <div class="detail-head">
+        <button class="icon-btn" type="button" id="fol-back" aria-label="Tillbaka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="dh-txt"><h2 id="fol-title">Följare</h2><span class="muted" id="fol-handle"></span></div>
+      </div>
+      <nav class="f-tabs" id="fol-tabs" aria-label="Följare och följer"></nav>
+      <div class="member-list" id="fol-list"></div>
+    </div>
+
+    <div id="panel-messages" role="tabpanel" hidden>
+      <div id="dm-body"></div>
     </div>
 
     <div id="panel-write" role="tabpanel" hidden>
@@ -768,6 +835,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
             <textarea class="input bio-input" id="acc-bio" maxlength="160" rows="3" placeholder="Berätta kort om dig och vad du filmar"></textarea>
             <span class="help" id="bio-count">0 / 160</span>
           </div>
+          <div class="row2">
+            <div class="field"><label for="acc-location">Plats</label><input class="input" id="acc-location" maxlength="30" autocomplete="address-level2" placeholder="T.ex. Stockholm"></div>
+            <div class="field"><label for="acc-website">Webbplats</label><input class="input" id="acc-website" maxlength="100" inputmode="url" autocomplete="url" placeholder="minsida.se"></div>
+          </div>
+          <div class="field"><label for="acc-birthday">Födelsedag <span class="muted">(valfri, dag och månad visas på profilen)</span></label><input class="input" id="acc-birthday" type="date" min="1900-01-02"></div>
           <p class="msg" id="name-msg" role="status" aria-live="polite"></p>
         </form>
       </div>
@@ -798,6 +870,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
+  var PANELS = ['panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-follows', 'panel-messages', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'];
   var state = {
     user: null, categories: [], items: [], dbReady: false,
     filter: 'Alla', sort: 'new', view: 'all', panel: 'panel-feed',
@@ -816,6 +889,14 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
     cal: '<rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/>',
+    place: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    cake: '<path d="M4 21h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 16c2 1.3 4 1.3 6 0s4-1.3 6 0 4 1.3 4 0M12 12V8M12 4.5v.5"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/>',
+    mute: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>',
+    block: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+    flag: '<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',
+    back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+    send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
   };
   function icon(name, extra) {
     var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1101,13 +1182,29 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
 
   // ---------- Följa konton ----------
-  state.following = {};
+  state.following = {}; state.muted = {}; state.blocked = {}; state.unread = 0; state.canDm = false; state.meKey = ''; state.myPin = '';
+  function toSet(list) { var o = {}; (list || []).forEach(function (k) { o[k] = true; }); return o; }
   function loadFollowing() {
     return api('profile?following=1').then(function (d) {
-      state.following = {};
-      (d.following || []).forEach(function (k) { state.following[k] = true; });
+      state.following = toSet(d.following);
+      state.muted = toSet(d.muted);
+      state.blocked = toSet(d.blocked);
+      state.canDm = !!d.canDm;
+      state.meKey = d.me || '';
+      state.myPin = d.pinnedPost || '';
+      setUnread(d.unread || 0);
+      $('tab-messages').hidden = !state.canDm;
     }).catch(function () {});
   }
+  function setUnread(n) {
+    state.unread = n;
+    $('dm-count').textContent = n > 99 ? '99+' : n;
+    $('dm-count').hidden = !n;
+  }
+  // Olästa meddelanden kollas en gång i minuten när fliken syns.
+  setInterval(function () { if (state.user && state.canDm && document.visibilityState === 'visible' && state.panel !== 'panel-messages') loadFollowing(); }, 60000);
+  // Inlägg och kommentarer från tystade och blockerade konton visas inte.
+  function hiddenAuthor(key) { key = (key || 'filmpower').toLowerCase(); return !!(state.muted[key] || state.blocked[key]); }
 
   function setFollow(username, on) {
     var key = username.toLowerCase();
@@ -1155,7 +1252,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('greeting').textContent = 'Nyheter för filmskapare';
     Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = true; });
     state.following = {};
-    ['tab-write', 'compose-fab', 'tab-saved', 'tab-following'].forEach(function (id) { $(id).hidden = true; });
+    ['tab-write', 'compose-fab', 'tab-saved', 'tab-following', 'tab-messages'].forEach(function (id) { $(id).hidden = true; });
+    state.muted = {}; state.blocked = {}; state.canDm = false; state.meKey = '';
     document.querySelector('.tab-sep').hidden = true;
     $('db-notice').hidden = true;
     show('view-app');
@@ -1219,10 +1317,12 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function hidePanels(except) {
     closeMenu();
-    ['panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'].forEach(function (p) { $(p).hidden = p !== except; });
+    stopThreadPoll();
+    PANELS.forEach(function (p) { $(p).hidden = p !== except; });
     $('tabs').hidden = true;
     $('app-head').hidden = true;
     state.panel = except;
+    document.body.classList.toggle('in-dm', except === 'panel-messages');
     window.scrollTo(0, 0);
   }
 
@@ -1239,16 +1339,53 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     box.appendChild(cover);
 
     var head = el('div', 'p-head');
-    var anonMe = opts.me && state.user.anon;
+    var anonMe = opts.me && state.user && state.user.anon;
+    var own = opts.me || p.isMe;
+    var key = (p.username || '').toLowerCase();
     head.appendChild(avatarEl('p-avatar', p.brand ? 'FP' : (p.name || '?').charAt(0), p.avatar, p.brand));
+    var btns = el('div', 'p-btns');
+    // Andras profil: meny (⋯), meddelande och följ. Egen profil: dela och redigera.
+    if (key && !own) {
+      btns.appendChild(moreButton('Fler val för ' + p.name, function (m) {
+        menuItem(m, 'share', 'Dela profilen', function () { closeMenu(); shareProfile(p); });
+        if (!state.user) return;
+        menuItem(m, 'mute', (p.mutedByMe ? 'Sluta tysta @' : 'Tysta @') + p.username, function () { closeMenu(); relationAction(key, p.mutedByMe ? 'unmute' : 'mute', p.name); });
+        menuItem(m, 'block', (p.blockedByMe ? 'Avblockera @' : 'Blockera @') + p.username, function () { closeMenu(); relationAction(key, p.blockedByMe ? 'unblock' : 'block', p.name); }, 'danger');
+        menuItem(m, 'flag', 'Anmäl @' + p.username, function () { closeMenu(); reportAccount(key, p.name, ''); });
+      }));
+      if (state.canDm && !p.blockedByMe && !p.blocksMe && key !== state.meKey) {
+        var mb = el('button', 'icon-btn');
+        mb.type = 'button';
+        mb.title = 'Meddelande';
+        mb.setAttribute('aria-label', 'Skicka meddelande till ' + p.name);
+        mb.appendChild(icon('mail'));
+        mb.addEventListener('click', function () { location.hash = 'meddelanden-' + key; });
+        btns.appendChild(mb);
+      }
+      if (p.blockedByMe) {
+        var ub = el('button', 'btn btn-small btn-danger', 'Blockerad');
+        ub.type = 'button';
+        ub.addEventListener('mouseenter', function () { ub.textContent = 'Avblockera'; });
+        ub.addEventListener('mouseleave', function () { ub.textContent = 'Blockerad'; });
+        ub.addEventListener('click', function () { relationAction(key, 'unblock', p.name); });
+        btns.appendChild(ub);
+      } else if (!p.blocksMe) btns.appendChild(followButton(p, function () { if (fcount) fcount.textContent = (p.followers || 0).toLocaleString('sv-SE'); }));
+    } else if (key) {
+      var sb = el('button', 'icon-btn');
+      sb.type = 'button';
+      sb.title = 'Dela profilen';
+      sb.setAttribute('aria-label', 'Dela profilen');
+      sb.appendChild(icon('share'));
+      sb.addEventListener('click', function () { shareProfile(p); });
+      btns.appendChild(sb);
+    }
     if (opts.edit) {
       var eb = el('button', 'btn btn-ghost btn-small', 'Redigera profil');
       eb.type = 'button';
       eb.addEventListener('click', openEdit);
-      head.appendChild(eb);
-    } else if (!opts.me && p.username && !p.isMe && !(p.brand && state.user && myInitial() === 'FP')) {
-      head.appendChild(followButton(p, function () { if (fcount) fcount.textContent = (p.followers || 0).toLocaleString('sv-SE'); }));
+      btns.appendChild(eb);
     }
+    head.appendChild(btns);
     box.appendChild(head);
 
     var nm = el('div', 'p-name');
@@ -1256,11 +1393,27 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (p.verified) nm.appendChild(verified(p.brand));
     if (p.affiliate) nm.appendChild(affBadge(p.affiliate));
     box.appendChild(nm);
-    box.appendChild(el('div', 'p-handle', p.handle || '@' + p.username));
-    if (p.bio) { var bio = el('p', 'p-bio'); bio.appendChild(linkify(p.bio)); box.appendChild(bio); }
-
+    var hr = el('div', 'p-handle-row');
+    hr.appendChild(el('span', 'p-handle', p.handle || '@' + p.username));
+    if (p.followsYou && !own) hr.appendChild(el('span', 'follows-you', 'Följer dig'));
+    box.appendChild(hr);
+    if (p.bio && !p.blocksMe) { var bio = el('p', 'p-bio'); bio.appendChild(linkify(p.bio)); box.appendChild(bio); }
 
     var meta = el('div', 'p-meta');
+    if (p.location) { var lo = el('span'); lo.appendChild(icon('place')); lo.appendChild(document.createTextNode(p.location)); meta.appendChild(lo); }
+    if (p.website) {
+      var wa = el('a');
+      wa.href = p.website; wa.target = '_blank'; wa.rel = 'noopener noreferrer nofollow';
+      wa.appendChild(icon('link'));
+      wa.appendChild(document.createTextNode(p.website.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40)));
+      meta.appendChild(wa);
+    }
+    if (p.birthday) {
+      var bd = el('span');
+      bd.appendChild(icon('cake'));
+      bd.appendChild(document.createTextNode('Född ' + new Date(p.birthday + 'T12:00:00').toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' })));
+      meta.appendChild(bd);
+    }
     if (p.createdAt) {
       var j = el('span');
       j.appendChild(icon('cal'));
@@ -1310,7 +1463,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var statDefs = [[items.length, 'Inlägg'], [sum('likes'), 'Gillningar'], [sum('views'), 'Visningar']];
     if (p.followers !== undefined) statDefs.unshift([p.following || 0, 'Följer'], [p.followers, 'Följare']);
     statDefs.forEach(function (c) {
-      var sp = el('span');
+      var link = key && (c[1] === 'Följare' || c[1] === 'Följer');
+      var sp = el(link ? 'a' : 'span');
+      if (link) sp.href = '#profil-' + key + '/' + (c[1] === 'Följare' ? 'foljare' : 'foljer');
       var num = el('b', null, c[0].toLocaleString('sv-SE'));
       if (c[1] === 'Följare') fcount = num;
       sp.appendChild(num);
@@ -1319,8 +1474,31 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     });
     box.appendChild(stats);
 
-    var tabsDef = [['posts', 'Inlägg']];
+    // Blockerat: som på Twitter syns inga inlägg, men den som blockerat kan välja att se dem ändå.
+    if (p.blocksMe) {
+      var bl = el('div', 'empty p-block');
+      bl.appendChild(el('h3', null, '@' + p.username + ' har blockerat dig'));
+      bl.appendChild(el('p', null, 'Du kan inte följa @' + p.username + ' eller se inläggen.'));
+      box.appendChild(bl);
+      return;
+    }
+    if (p.blockedByMe && !opts.showBlocked) {
+      var bb = el('div', 'empty p-block');
+      bb.appendChild(el('h3', null, '@' + p.username + ' är blockerad'));
+      bb.appendChild(el('p', null, 'Vill du se inläggen ändå? Det tar inte bort blockeringen.'));
+      var see = el('button', 'btn btn-ghost btn-small', 'Visa inlägg');
+      see.type = 'button';
+      see.addEventListener('click', function () { profileView(box, p, items, Object.assign({}, opts, { showBlocked: true })); });
+      bb.appendChild(see);
+      box.appendChild(bb);
+      return;
+    }
+
+    var replies = opts.replies || [];
+    var media = items.filter(function (i) { return i.image || i.video; });
+    var tabsDef = [['posts', 'Inlägg'], ['replies', 'Svar'], ['media', 'Media']];
     if (opts.me) tabsDef.push(['liked', 'Gillade'], ['saved', 'Sparade']);
+    if (opts.affiliates && opts.affiliates.length) tabsDef.push(['affiliates', 'Affiliates']);
     var tabBar = el('div', 'p-tabs');
     tabBar.setAttribute('role', 'tablist');
     var list = el('div', 'p-list');
@@ -1336,8 +1514,30 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         } else opts.affiliates.forEach(function (m) { list.appendChild(memberRow(m)); });
         return;
       }
+      if (key === 'replies') {
+        if (!replies.length) { list.appendChild(emptyBox('Inga svar än', opts.me ? 'När du kommenterar ett inlägg syns det här.' : p.name + ' har inte svarat på något än.')); return; }
+        replies.forEach(function (r) { list.appendChild(replyCard(p, r)); });
+        return;
+      }
+      if (key === 'media') {
+        if (!media.length) { list.appendChild(emptyBox('Inga bilder eller videor än', opts.me ? 'Inlägg med bild eller video samlas här.' : p.name + ' har inte delat några bilder eller videor än.')); return; }
+        var grid = el('div', 'media-grid');
+        media.forEach(function (it) {
+          var a = el('a');
+          a.href = '#inlagg-' + it.id;
+          a.setAttribute('aria-label', it.title);
+          if (it.image) { var im = el('img'); im.src = '/api/image?id=' + encodeURIComponent(it.image); im.alt = ''; im.loading = 'lazy'; a.appendChild(im); }
+          else { var v = el('video'); v.src = it.video + '#t=0.5'; v.muted = true; v.preload = 'metadata'; v.setAttribute('playsinline', ''); a.appendChild(v); a.appendChild(el('span', 'play', '▶')); }
+          grid.appendChild(a);
+        });
+        list.appendChild(grid);
+        return;
+      }
       var rows = key === 'posts' ? items.map(function (it) { return findItem(it.id) || it; })
         : state.items.filter(function (i) { return key === 'liked' ? i.liked : i.saved; });
+      // Det fästa inlägget visas först på profilen.
+      var pinnedId = key === 'posts' ? p.pinnedPost : '';
+      if (pinnedId) rows.sort(function (a, b) { return (b.id === pinnedId) - (a.id === pinnedId); });
       if (!rows.length) {
         var empty = el('div', 'empty');
         if (key === 'liked') { empty.appendChild(el('h3', null, 'Inga gillade inlägg än')); empty.appendChild(el('p', null, 'Tryck på hjärtat under ett inlägg så hamnar det här.')); }
@@ -1351,7 +1551,16 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       }
       var saveView = state.view;
       state.view = 'profile';
-      rows.forEach(function (it) { list.appendChild(renderTweet(it)); });
+      rows.forEach(function (it) {
+        var t = renderTweet(it);
+        if (it.id === pinnedId) {
+          var pr = el('div', 'pinned-row p-pin');
+          pr.appendChild(icon('pin'));
+          pr.appendChild(document.createTextNode('Fäst'));
+          t.insertBefore(pr, t.firstChild);
+        }
+        list.appendChild(t);
+      });
       state.view = saveView;
     }
     tabsDef.forEach(function (t) {
@@ -1365,6 +1574,40 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     box.appendChild(tabBar);
     box.appendChild(list);
     show('posts');
+  }
+
+  function emptyBox(title, text) {
+    var e = el('div', 'empty');
+    e.appendChild(el('h3', null, title));
+    e.appendChild(el('p', null, text));
+    return e;
+  }
+
+  // Ett svar under fliken Svar: vem som svarade, på vilket inlägg och vad.
+  function replyCard(p, r) {
+    var a = el('a', 'reply-card');
+    a.href = '#inlagg-' + r.postId;
+    a.appendChild(avatarEl('', p.brand ? 'FP' : (p.name || '?').charAt(0), p.avatar, p.brand));
+    var main = el('div', 't-main');
+    var head = el('div', 't-head');
+    head.appendChild(el('b', null, p.name));
+    if (p.verified) head.appendChild(verified(p.brand));
+    head.appendChild(el('span', 'handle', '@' + p.username + ' · ' + timeAgo(r.createdAt)));
+    main.appendChild(head);
+    var to = el('div', 'r-to', 'Svarar på ');
+    to.appendChild(el('b', null, r.postTitle));
+    main.appendChild(to);
+    var t = el('p');
+    t.appendChild(document.createTextNode(r.text));
+    main.appendChild(t);
+    a.appendChild(main);
+    return a;
+  }
+
+  function shareProfile(p) {
+    var url = location.origin + '/nyheter/#profil-' + p.username.toLowerCase();
+    if (navigator.share) { navigator.share({ title: p.name + ' på Film Power', url: url }).catch(function () {}); return; }
+    try { navigator.clipboard.writeText(url).then(function () { toast('Länken till profilen är kopierad.'); }, function () { toast(url); }); } catch (err) { toast(url); }
   }
 
   // Film Powers egen banner: loggan, sloganen och kameran från introt.
@@ -1397,7 +1640,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return api('profile?u=' + encodeURIComponent(username)).then(function (d) {
       var items = (d.items || []).map(norm);
       items.forEach(function (it) { var ex = findItem(it.id); if (ex) Object.assign(ex, it); });
-      return { profile: d.profile, items: items, affiliates: d.affiliates };
+      return { profile: d.profile, items: items, affiliates: d.affiliates, replies: d.replies || [] };
     });
   }
 
@@ -1434,10 +1677,195 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     loadProfile(username).then(function (d) {
       $('prof-title').textContent = d.profile.name;
       $('prof-count').textContent = countText(d.items.length);
-      profileView($('prof-body'), d.profile, d.items, { me: d.profile.isMe, edit: d.profile.isMe, affiliates: d.affiliates });
+      profileView($('prof-body'), d.profile, d.items, { me: d.profile.isMe, edit: d.profile.isMe && !d.profile.brand, affiliates: d.affiliates, replies: d.replies });
     }).catch(function (err) { profileError($('prof-body'), err); });
   }
   $('prof-back').addEventListener('click', goBack);
+
+  // ---------- Följare och följer ----------
+  function openFollows(username, which) {
+    hidePanels('panel-follows');
+    var key = username.toLowerCase();
+    $('fol-title').textContent = '@' + key;
+    $('fol-handle').textContent = '';
+    var tabsBox = $('fol-tabs');
+    tabsBox.replaceChildren();
+    [['followers', 'Följare', 'foljare'], ['following', 'Följer', 'foljer']].forEach(function (t) {
+      var a = el('a', null, t[1]);
+      a.href = '#profil-' + key + '/' + t[2];
+      if (t[0] === which) a.setAttribute('aria-current', 'page');
+      tabsBox.appendChild(a);
+    });
+    var list = $('fol-list');
+    list.replaceChildren(el('p', 'muted', 'Hämtar…'));
+    api('profile?u=' + encodeURIComponent(key) + '&list=' + which).then(function (d) {
+      list.replaceChildren();
+      if (!d.people.length && !d.others) {
+        list.appendChild(emptyBox(which === 'followers' ? 'Inga följare än' : 'Följer ingen än', which === 'followers' ? 'När någon följer @' + key + ' syns de här.' : 'När @' + key + ' följer någon syns de här.'));
+        return;
+      }
+      d.people.forEach(function (m) { list.appendChild(personRow(m)); });
+      if (d.others) list.appendChild(el('p', 'muted', '+ ' + d.others + ' som loggat in med kod och inte har någon profil.'));
+    }).catch(function (err) { list.replaceChildren(el('p', 'msg error', err.message)); });
+  }
+  $('fol-back').addEventListener('click', goBack);
+
+  function personRow(m) {
+    var row = el('div', 'member f-row');
+    var key = m.username.toLowerCase();
+    row.appendChild(profileLink(key, avatarEl('', m.brand ? 'FP' : m.name.charAt(0), m.avatar, m.brand), 'Profil: ' + m.name));
+    var txt = el('div', 'm-txt');
+    var nm = el('div', 'm-name');
+    nm.appendChild(profileLink(key, el('b', null, m.name)));
+    if (m.verified) nm.appendChild(verified(m.brand));
+    if (m.affiliate) nm.appendChild(affBadge(m.affiliate));
+    txt.appendChild(nm);
+    var hr = el('div', 'handle-row');
+    hr.appendChild(el('span', 'handle', '@' + m.username));
+    if (m.followsYou && !m.isMe) hr.appendChild(el('span', 'follows-you', 'Följer dig'));
+    txt.appendChild(hr);
+    if (m.bio) txt.appendChild(el('span', 'm-bio', m.bio));
+    row.appendChild(txt);
+    if (m.isMe || key === state.meKey || state.blocked[key]) row.appendChild(el('span'));
+    else row.appendChild(followButton(m));
+    return row;
+  }
+
+  // ---------- Direktmeddelanden ----------
+  var dmWith = '', dmTimer = null, dmCount = -1;
+  function stopThreadPoll() { if (dmTimer) { clearInterval(dmTimer); dmTimer = null; } }
+
+  function openMessages(fromTab) {
+    dmWith = '';
+    if (!fromTab) { selectTab('tab-messages'); return; }
+    var body = $('dm-body');
+    body.replaceChildren();
+    if (!state.canDm) { body.appendChild(emptyBox('Meddelanden kräver ett eget konto', 'Logga in med användarnamn och lösenord för att skriva till andra medlemmar.')); return; }
+    var nw = el('div', 'dm-new');
+    var search = el('input', 'input');
+    search.type = 'search';
+    search.placeholder = 'Nytt meddelande: sök på namn eller @användarnamn';
+    search.setAttribute('aria-label', 'Sök person att skriva till');
+    var pick = el('div', 'member-list dm-pick');
+    nw.appendChild(search); nw.appendChild(pick);
+    body.appendChild(nw);
+    search.addEventListener('focus', function () { if (!members.length) api('profile').then(function (d) { members = d.members || []; }); });
+    search.addEventListener('input', function () {
+      var q = search.value.trim().toLowerCase().replace(/^@/, '');
+      pick.replaceChildren();
+      if (!q) return;
+      members.filter(function (m) { var k = m.username.toLowerCase(); return k !== state.meKey && !state.blocked[k] && (m.name.toLowerCase().indexOf(q) > -1 || k.indexOf(q) > -1); }).slice(0, 6).forEach(function (m) {
+        var a = el('a', 'member');
+        a.href = '#meddelanden-' + m.username.toLowerCase();
+        a.appendChild(avatarEl('', m.brand ? 'FP' : m.name.charAt(0), m.avatar, m.brand));
+        var t = el('div', 'm-txt');
+        t.appendChild(el('b', null, m.name));
+        t.appendChild(el('span', 'handle', '@' + m.username));
+        a.appendChild(t);
+        a.appendChild(el('span'));
+        pick.appendChild(a);
+      });
+    });
+    var list = el('div', 'member-list dm-list');
+    list.appendChild(el('p', 'muted', 'Hämtar meddelanden…'));
+    body.appendChild(list);
+    api('profile?dm=1').then(function (d) {
+      setUnread(d.unread || 0);
+      list.replaceChildren();
+      if (!d.conversations.length) { list.appendChild(emptyBox('Inga meddelanden än', 'Skriv till någon genom att söka ovan, eller tryck på kuvertet på en profil.')); return; }
+      d.conversations.forEach(function (c) {
+        var w = c.with, key = w.username.toLowerCase();
+        var a = el('a', 'member' + (c.unread ? ' unread' : ''));
+        a.href = '#meddelanden-' + key;
+        a.appendChild(avatarEl('', w.brand ? 'FP' : w.name.charAt(0), w.avatar, w.brand));
+        var t = el('div', 'm-txt');
+        var nm = el('div', 'm-name');
+        nm.appendChild(el('span', null, w.name));
+        if (w.verified) nm.appendChild(verified(w.brand));
+        nm.appendChild(el('span', 'handle', '@' + w.username + ' · ' + timeAgo(c.last.at)));
+        t.appendChild(nm);
+        t.appendChild(el('span', 'm-last', (c.last.mine ? 'Du: ' : '') + c.last.text));
+        a.appendChild(t);
+        a.appendChild(c.unread ? el('span', 'dm-dot') : el('span'));
+        list.appendChild(a);
+      });
+    }).catch(function (err) { list.replaceChildren(el('p', 'msg error', err.message)); });
+  }
+
+  function openThread(username) {
+    var key = username.toLowerCase();
+    hidePanels('panel-messages');
+    dmWith = key; dmCount = -1;
+    var body = $('dm-body');
+    body.replaceChildren();
+    var head = el('div', 'detail-head');
+    var back = el('button', 'icon-btn');
+    back.type = 'button';
+    back.setAttribute('aria-label', 'Tillbaka till meddelanden');
+    back.appendChild(icon('back'));
+    back.addEventListener('click', function () { location.hash = 'meddelanden'; });
+    head.appendChild(back);
+    var who = el('a', 'dm-with');
+    who.href = '#profil-' + key;
+    head.appendChild(who);
+    body.appendChild(head);
+    var thread = el('div', 'dm-thread');
+    thread.appendChild(el('p', 'muted', 'Hämtar…'));
+    body.appendChild(thread);
+    var form = el('form', 'dm-compose');
+    var ta = el('textarea', 'input');
+    ta.rows = 1; ta.maxLength = 2000;
+    ta.placeholder = 'Skriv ett meddelande';
+    ta.setAttribute('aria-label', 'Meddelande');
+    var send = el('button', 'btn btn-primary btn-small', 'Skicka');
+    send.type = 'submit';
+    form.appendChild(ta); form.appendChild(send);
+    body.appendChild(form);
+
+    function paint(d) {
+      if (d.with) {
+        who.replaceChildren(avatarEl('', d.with.brand ? 'FP' : d.with.name.charAt(0), d.with.avatar, d.with.brand));
+        var t = el('div', 'dh-txt');
+        var h = el('h2', null, d.with.name);
+        t.appendChild(h);
+        t.appendChild(el('span', 'muted', '@' + d.with.username));
+        who.appendChild(t);
+      } else who.textContent = '@' + key;
+      form.hidden = !d.canSend;
+      if (d.messages.length === dmCount) return;
+      dmCount = d.messages.length;
+      thread.replaceChildren();
+      if (!d.with) { thread.appendChild(emptyBox('Kontot finns inte', 'Kontrollera användarnamnet.')); return; }
+      if (!d.messages.length) thread.appendChild(emptyBox('Säg hej till ' + d.with.name, 'Meddelanden här syns bara för er två.'));
+      d.messages.forEach(function (m) {
+        thread.appendChild(el('div', 'bubble ' + (m.mine ? 'mine' : 'them'), m.text));
+        thread.appendChild(el('div', 'bubble-time ' + (m.mine ? 'mine' : 'them'), timeAgo(m.at)));
+      });
+      if (!d.canSend) thread.appendChild(el('p', 'muted', d.blockedByMe ? 'Du har blockerat kontot. Avblockera på profilen för att skriva igen.' : 'Du kan inte skicka meddelanden till det här kontot.'));
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+    function load() {
+      return api('profile?dm=1&u=' + encodeURIComponent(key)).then(paint).then(function () { loadFollowing(); })
+        .catch(function (err) { thread.replaceChildren(el('p', 'msg error', err.message)); stopThreadPoll(); });
+    }
+    load().then(function () { ta.focus(); });
+    stopThreadPoll();
+    dmTimer = setInterval(function () { if (document.visibilityState === 'visible' && dmWith === key) load(); }, 4000);
+
+    ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 128) + 'px'; });
+    ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = ta.value.trim();
+      if (!text) return;
+      send.disabled = true;
+      api('profile?u=' + encodeURIComponent(key) + '&action=dm', { method: 'POST', body: { text: text } }).then(function () {
+        ta.value = ''; ta.style.height = '';
+        dmCount = -1;
+        return load();
+      }).catch(function (err) { toast(err.message); }).then(function () { send.disabled = false; ta.focus(); });
+    });
+  }
 
   // ---------- Medlemmar ----------
   var members = [];
@@ -1491,7 +1919,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         return loadProfile(acc.username.toLowerCase()).then(function (d) {
           $('acc-title').textContent = d.profile.name;
           $('acc-count').textContent = countText(d.items.length);
-          profileView(box, d.profile, d.items, { me: true, edit: true, affiliates: d.affiliates });
+          profileView(box, d.profile, d.items, { me: true, edit: true, affiliates: d.affiliates, replies: d.replies });
         });
       }
       if (acc.kind === 'admin') {
@@ -1499,7 +1927,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
           $('acc-title').textContent = 'Film Power';
           $('acc-count').textContent = countText(d.items.length);
           var p = Object.assign({}, d.profile, { handle: '@filmpower · inloggad med adminkod' });
-          profileView(box, p, d.items, { me: true, edit: false });
+          profileView(box, p, d.items, { me: true, edit: false, affiliates: d.affiliates, replies: d.replies });
         });
       }
       // Inloggad med kod: ingen egen profil, men gillade, sparade och anonymt läge fungerar.
@@ -1532,6 +1960,10 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       showEditBanner(acc.banner);
       $('acc-display').value = acc.displayName || '';
       $('acc-bio').value = acc.bio || '';
+      $('acc-location').value = acc.location || '';
+      $('acc-website').value = acc.website || '';
+      $('acc-birthday').value = acc.birthday || '';
+      $('acc-birthday').max = new Date().toISOString().slice(0, 10);
       updateBioCount();
     }
     $('acc-anon').checked = !!state.user.anon;
@@ -1822,10 +2254,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var name = $('acc-display').value.trim();
     if (name.length < 2) { setMsg($('name-msg'), 'Namnet behöver minst 2 tecken.', 'error'); return; }
     $('profile-save').disabled = true;
-    api('account', { method: 'PATCH', body: { displayName: name, bio: $('acc-bio').value } }).then(function (d) {
+    api('account', { method: 'PATCH', body: { displayName: name, bio: $('acc-bio').value, location: $('acc-location').value, website: $('acc-website').value, birthday: $('acc-birthday').value } }).then(function (d) {
       state.user.label = d.displayName;
       state.account.displayName = d.displayName;
       state.account.bio = d.bio;
+      state.account.location = d.location; state.account.website = d.website; state.account.birthday = d.birthday;
       renderWho();
       $('greeting').textContent = isAdmin() ? 'Inloggad som admin, ' + d.displayName : 'Välkommen, ' + d.displayName;
       closeEdit();
@@ -1860,7 +2293,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
 
   // ---------- Flikar ----------
-  var TITLES = { all: 'Nyheter', following: 'Följer', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik' };
+  var TITLES = { all: 'Nyheter', following: 'Följer', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik', 'panel-messages': 'Meddelanden' };
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
   tabs.forEach(function (t) {
     t.addEventListener('click', function () {
@@ -1875,7 +2308,9 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     state.panel = tab.dataset.panel;
     if (tab.dataset.view) state.view = tab.dataset.view;
     tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.id === tabId)); });
-    ['panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'].forEach(function (p) { $(p).hidden = p !== state.panel; });
+    stopThreadPoll();
+    document.body.classList.toggle('in-dm', state.panel === 'panel-messages');
+    PANELS.forEach(function (p) { $(p).hidden = p !== state.panel; });
     $('tabs').hidden = false;
     $('app-head').hidden = false;
     $('view-title').textContent = TITLES[tab.dataset.view || state.panel];
@@ -1884,6 +2319,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (state.panel === 'panel-users') loadUsers();
     if (state.panel === 'panel-stats') loadStats();
     if (state.panel === 'panel-members') loadMembers();
+    if (state.panel === 'panel-messages') openMessages(true);
   }
 
   // ---------- Nyheter ----------
@@ -1903,6 +2339,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var list = state.items.filter(function (i) { return state.filter === 'Alla' || i.category === state.filter; });
     if (state.view === 'saved') list = list.filter(function (i) { return i.saved; });
     if (state.view === 'following') list = list.filter(function (i) { return state.following[i.authorKey || 'filmpower']; });
+    if (state.view !== 'saved') list = list.filter(function (i) { return !hiddenAuthor(i.authorKey); });
     var dir = state.sort === 'old' ? 1 : -1;
     return list.slice().sort(function (a, b) {
       if (state.view === 'popular') return (b.likes - a.likes) || (b.comments - a.comments) || (b.views - a.views) || (b.createdAt - a.createdAt);
@@ -1991,7 +2428,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     grid.appendChild(profileLink(pa.username, avatarEl('', pa.initial, pa.avatar, pa.brand), 'Profil: ' + pa.name));
     var main = el('div', 't-main');
     var head = authorHead(item, true);
-    if (isAdmin() || item.mine) head.appendChild(adminMenu(item));
+    if (state.user) head.appendChild(postMenu(item));
     main.appendChild(head);
     main.appendChild(el('div', 't-cat', item.category));
 
@@ -2133,11 +2570,23 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   document.addEventListener('click', function (e) { if (openMenu && !e.target.closest('.menu-wrap')) closeMenu(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
 
-  function adminMenu(item) {
+  function menuItem(m, iconName, text, onClick, cls) {
+    var b = el('button', cls || null);
+    b.type = 'button';
+    b.setAttribute('role', 'menuitem');
+    b.appendChild(icon(iconName));
+    b.appendChild(document.createTextNode(text));
+    b.addEventListener('click', function (e) { e.stopPropagation(); onClick(b); });
+    m.appendChild(b);
+    return b;
+  }
+
+  // Menyknapp (⋯) som öppnar en lista med val. build(menu) fyller listan.
+  function moreButton(label, build) {
     var wrap = el('div', 'menu-wrap');
     var btn = el('button', 'icon-btn');
     btn.type = 'button';
-    btn.setAttribute('aria-label', 'Fler val');
+    btn.setAttribute('aria-label', label);
     btn.setAttribute('aria-haspopup', 'menu');
     btn.appendChild(icon('more'));
     btn.addEventListener('click', function (e) {
@@ -2147,30 +2596,69 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       if (wasOpen) return;
       var m = el('div', 'menu');
       m.setAttribute('role', 'menu');
-      var pin = el('button');
-      pin.type = 'button';
-      pin.setAttribute('role', 'menuitem');
-      pin.appendChild(icon('pin'));
-      pin.appendChild(document.createTextNode(item.pinned ? 'Lossa från toppen' : 'Fäst högst upp'));
-      pin.addEventListener('click', function () { closeMenu(); setPinned(item, !item.pinned); });
-      var del = el('button', 'danger');
-      del.type = 'button';
-      del.setAttribute('role', 'menuitem');
-      del.appendChild(icon('trash'));
-      del.appendChild(document.createTextNode('Ta bort inlägget'));
-      del.addEventListener('click', function () {
-        if (del.dataset.armed) { closeMenu(); deletePost(item); return; }
-        del.dataset.armed = '1';
-        del.lastChild.textContent = 'Klicka igen för att ta bort';
-      });
-      if (isAdmin()) m.appendChild(pin);
-      m.appendChild(del);
+      build(m);
+      if (!m.childNodes.length) return;
       wrap.appendChild(m);
       openMenu = m;
       m.firstChild.focus();
     });
     wrap.appendChild(btn);
     return wrap;
+  }
+
+  // Menyn på ett inlägg, som på Twitter: fäst, ta bort, och tysta, blockera eller anmäl författaren.
+  function postMenu(item) {
+    return moreButton('Fler val', function (m) {
+      var pa = postAuthor(item), key = (pa.username || 'filmpower').toLowerCase();
+      var mine = item.mine || (state.meKey === 'filmpower' && !item.authorKey);
+      if (isAdmin()) menuItem(m, 'pin', item.pinned ? 'Lossa från toppen' : 'Fäst högst upp i flödet', function () { closeMenu(); setPinned(item, !item.pinned); });
+      if (mine && state.meKey) menuItem(m, 'pin', state.myPin === item.id ? 'Lossa från din profil' : 'Fäst på din profil', function () { closeMenu(); pinToProfile(item.id, state.myPin !== item.id); });
+      if (isAdmin() || item.mine) {
+        menuItem(m, 'trash', 'Ta bort inlägget', function (b) {
+          if (b.dataset.armed) { closeMenu(); deletePost(item); return; }
+          b.dataset.armed = '1';
+          b.lastChild.textContent = 'Klicka igen för att ta bort';
+        }, 'danger');
+      }
+      if (!mine && key !== state.meKey) {
+        menuItem(m, 'mute', (state.muted[key] ? 'Sluta tysta ' : 'Tysta ') + pa.handle, function () { closeMenu(); relationAction(key, state.muted[key] ? 'unmute' : 'mute', pa.name); });
+        menuItem(m, 'block', (state.blocked[key] ? 'Avblockera ' : 'Blockera ') + pa.handle, function () { closeMenu(); relationAction(key, state.blocked[key] ? 'unblock' : 'block', pa.name); }, 'danger');
+        menuItem(m, 'flag', 'Anmäl inlägget', function () { closeMenu(); reportAccount(key, pa.name, 'Inlägg: ' + item.title); });
+      }
+    });
+  }
+
+  function pinToProfile(id, on) {
+    api('profile?action=pin', { method: 'POST', body: { id: on ? id : '' } }).then(function (d) {
+      state.myPin = d.pinnedPost;
+      toast(on ? 'Inlägget är fäst på din profil.' : 'Inlägget är inte längre fäst på din profil.');
+      if (state.panel === 'panel-profile' || state.panel === 'panel-account') route();
+    }).catch(function (err) { toast(err.message); });
+  }
+
+  // Tysta, blockera och deras motsatser. Uppdaterar flödet och profilen direkt.
+  var REL_TEXT = { mute: ' är tystad. Du ser inte längre inläggen i flödet.', unmute: ' är inte längre tystad.', block: ' är blockerad. Ni följer inte längre varandra och kan inte skriva till varandra.', unblock: ' är inte längre blockerad.' };
+  function relationAction(key, action, name) {
+    if (!state.user) { needLogin('göra det'); return Promise.resolve(); }
+    if (action === 'block' && !window.confirm('Blockera ' + name + '? Ni slutar följa varandra, ' + name + ' kan inte svara på dina inlägg eller skriva till dig, och du ser inte inläggen.')) return Promise.resolve();
+    return api('profile?u=' + encodeURIComponent(key) + '&action=' + action, { method: 'POST' }).then(function (r) {
+      if (r.mutedByMe) state.muted[key] = true; else delete state.muted[key];
+      if (r.blockedByMe) { state.blocked[key] = true; delete state.following[key]; } else delete state.blocked[key];
+      toast(name + REL_TEXT[action]);
+      if (state.panel === 'panel-feed') renderFeed();
+      if (state.panel === 'panel-post' && state.current) renderComments(state.current);
+      if (state.panel === 'panel-profile') route();
+      return r;
+    }).catch(function (err) { toast(err.message); });
+  }
+
+  function reportAccount(key, name, about) {
+    if (!state.user) { needLogin('anmäla'); return; }
+    var why = window.prompt('Varför anmäler du ' + name + '? Admin får se din anmälan.', '');
+    if (why === null) return;
+    api('profile?u=' + encodeURIComponent(key) + '&action=report', { method: 'POST', body: { reason: (about ? about + '\n' : '') + why } })
+      .then(function () { toast('Tack. Admin har fått din anmälan.'); })
+      .catch(function (err) { toast(err.message); });
   }
 
   function setPinned(item, pinned) {
@@ -2198,7 +2686,10 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (m) openPost(m[1]);
     else if (location.hash === '#konto') openAccount();
     else if (/^#profil-[a-z0-9_.-]+$/.test(location.hash)) openProfile(MENTION_ALIASES[location.hash.slice(8)] || location.hash.slice(8));
-    else if (state.panel === 'panel-post' || state.panel === 'panel-account' || state.panel === 'panel-profile') selectTab(state.lastTab || 'tab-all');
+    else if ((m = /^#profil-([a-z0-9_.-]+)\/(foljare|foljer)$/.exec(location.hash))) openFollows(MENTION_ALIASES[m[1]] || m[1], m[2] === 'foljare' ? 'followers' : 'following');
+    else if (location.hash === '#meddelanden') { if (!state.user) needLogin('läsa meddelanden'); else selectTab('tab-messages'); }
+    else if ((m = /^#meddelanden-([a-z0-9_.-]+)$/.exec(location.hash))) { if (!state.user) needLogin('skicka meddelanden'); else openThread(MENTION_ALIASES[m[1]] || m[1]); }
+    else if (['panel-post', 'panel-account', 'panel-profile', 'panel-follows'].indexOf(state.panel) > -1 || (state.panel === 'panel-messages' && dmWith)) selectTab(state.lastTab || 'tab-all');
   }
   window.addEventListener('hashchange', function () {
     // Bakåtknappen går ett steg tillbaka i historiken, oavsett om man kom från flödet, ett inlägg eller en profil.
@@ -2214,7 +2705,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function openPost(id) {
     closeMenu();
-    ['panel-feed', 'panel-account', 'panel-profile', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'].forEach(function (p) { $(p).hidden = true; });
+    stopThreadPoll();
+    PANELS.forEach(function (p) { $(p).hidden = p !== 'panel-post'; });
     $('panel-post').hidden = false;
     $('tabs').hidden = true;
     $('app-head').hidden = true;
@@ -2367,7 +2859,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var list = $('comment-list');
     if (!list) return;
     list.replaceChildren();
-    var comments = state.currentComments || [];
+    var comments = (state.currentComments || []).filter(function (c) { return c.anon || !hiddenAuthor(c.author === 'Film Power' && !c.username ? 'filmpower' : c.username); });
     if (!comments.length) { list.appendChild(el('p', 'no-comments', 'Inga kommentarer än. Bli först!')); return; }
     comments.forEach(function (c) {
       var row = el('div', 'comment');
@@ -2712,7 +3204,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var list = $('user-list');
     if (!state.dbReady) { list.replaceChildren(el('p', 'muted', 'Koppla databasen i Vercel för att hantera konton.')); return; }
     if (!list.childNodes.length) list.replaceChildren(el('p', 'muted', 'Hämtar konton…'));
-    api('users').then(function (d) { renderUsers(d.users || []); })
+    api('users').then(function (d) { renderUsers(d.users || [], d.reports || []); })
       .catch(function (err) { list.replaceChildren(el('p', 'msg error', err.message)); });
   }
 
@@ -2730,13 +3222,34 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     return b;
   }
 
-  function renderUsers(users) {
-    var pending = users.filter(function (u) { return u.status === 'pending'; }).length;
+  function renderUsers(users, reports) {
+    reports = reports || [];
+    var pending = users.filter(function (u) { return u.status === 'pending'; }).length + reports.length;
     $('pending-count').textContent = pending;
     $('pending-count').hidden = pending === 0;
 
     var list = $('user-list');
     list.replaceChildren();
+    // Anmälningar från medlemmar visas överst tills admin markerat dem som klara.
+    if (reports.length) {
+      list.appendChild(el('p', 'label', 'Anmälningar (' + reports.length + ')'));
+      reports.forEach(function (r) {
+        var row = el('div', 'code-row report-row');
+        var info = el('div');
+        var b = el('b');
+        var who = el('a', null, '@' + r.target);
+        who.href = '#profil-' + r.target;
+        b.appendChild(who);
+        b.appendChild(document.createTextNode(' anmäld av ' + r.by));
+        info.appendChild(b);
+        info.appendChild(el('small', null, (r.reason || 'Ingen motivering.') + '\n' + fmtDate(r.at)));
+        row.appendChild(info);
+        var actions = el('div', 'row-actions');
+        actions.appendChild(smallButton('Klar', 'btn-ghost', function () { return api('users?report=' + encodeURIComponent(r.id), { method: 'DELETE' }).then(loadUsers); }));
+        row.appendChild(actions);
+        list.appendChild(row);
+      });
+    }
     list.appendChild(el('p', 'label', 'Konton (' + users.length + ')'));
     if (!users.length) { list.appendChild(el('p', 'muted', 'Ingen har skapat ett konto än. Tipsa dina medlemmar om att gå in på /nyheter och välja Skapa konto.')); return; }
     users.forEach(function (u) {
