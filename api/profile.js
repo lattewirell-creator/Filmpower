@@ -219,6 +219,14 @@ export default handle(async (req, res) => {
 
   const { authorKey, ...pub } = profile;
   const rel = await relation(s, orgKey);
+  // "Följs av X och Y som du följer", som på Twitter.
+  let followedBy = { people: [], count: 0 };
+  if (!s.guest && myKey(s) !== orgKey) {
+    const [mine, theirs] = await pipeline([['SMEMBERS', 'following:' + actorId(s)], ['SMEMBERS', 'followers:' + orgKey]]);
+    const fol = new Set(theirs);
+    const both = mine.filter((k) => fol.has(keyActor(k)));
+    followedBy = { people: (await people(both.slice(0, 3), s)).map(({ name, username, avatar, brand }) => ({ name, username, avatar, brand: Boolean(brand) })), count: both.length };
+  }
   // Inlägg som kontot har delat vidare visas under Inlägg, med "delade vidare".
   const rpl = await redis('ZREVRANGE', 'reposts:' + keyActor(orgKey), 0, 49, 'WITHSCORES');
   let reposts = [];
@@ -231,7 +239,7 @@ export default handle(async (req, res) => {
   // Har kontot blockerat den som tittar visas varken inlägg eller svar, som på Twitter.
   const hidden = rel.blocksMe;
   send(res, 200, {
-    profile: { ...pub, ...rel, dmAllowed: await dmAllowed(s, orgKey), runBy: await runByOf(orgKey), isMe: Boolean(myKey(s) && myKey(s) === orgKey), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing), posts: items.length },
+    profile: { ...pub, ...rel, followedBy, dmAllowed: await dmAllowed(s, orgKey), runBy: await runByOf(orgKey), isMe: Boolean(myKey(s) && myKey(s) === orgKey), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing), posts: items.length },
     items: hidden ? [] : items,
     replies: hidden ? [] : await repliesOf(orgKey),
     reposts: hidden ? [] : reposts,

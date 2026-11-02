@@ -13,7 +13,8 @@ async function videoToken(req, res) {
     request: req,
     onBeforeGenerateToken: async () => {
       const s = await getSession(req);
-      if (!s || !(s.role === 'admin' || s.verified)) throw new Error('Bara verifierade konton kan ladda upp video.');
+      // Alla med eget konto kan lägga upp video i bloggen. Nyheter med video kräver fortfarande verifiering (se news.js).
+      if (!s || !(s.role === 'admin' || s.verified || s.user)) throw new Error('Skapa ett eget konto för att ladda upp video.');
       return { allowedContentTypes: VIDEO_TYPES, maximumSizeInBytes: MAX_VIDEO_BYTES, addRandomSuffix: true };
     },
   });

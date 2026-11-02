@@ -278,6 +278,28 @@ body.in-dm .fab { display: none; }
 .dm-with { display: flex; align-items: center; gap: .6rem; min-width: 0; color: inherit; text-decoration: none; }
 .dm-with .avatar { width: 2.2rem; height: 2.2rem; font-size: .9rem; }
 .report-row small { display: block; white-space: pre-line; }
+/* Profilen som på Twitter: omslag kant i kant, ljus Följ-knapp, följs av ... */
+#prof-body .cover, #acc-view .cover { border-radius: 0; }
+#prof-body .cover::before, #prof-body .cover::after, #acc-view .cover::before, #acc-view .cover::after { display: none; }
+#prof-body .cover:not(.brand):not(.has-img), #acc-view .cover:not(.brand):not(.has-img) { background: color-mix(in srgb, var(--muted) 30%, var(--bg)); }
+body.app-on #prof-body .cover, body.app-on #acc-view .cover { margin-inline: -1.1rem; }
+.p-btns .icon-btn { width: 2.55rem; height: 2.55rem; }
+.p-btns .follow-btn.btn-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.p-btns .follow-btn.btn-primary:hover { opacity: .88; }
+.p-btns .btn { height: 2.55rem; padding-inline: 1.2rem; font-weight: 700; }
+.p-name { font-size: 1.5rem; font-weight: 800; }
+.p-meta a { color: var(--brand); }
+.p-stats { gap: .3rem 1.2rem; }
+.p-followed { display: flex; align-items: center; gap: .6rem; margin-top: .7rem; color: var(--muted); font-size: .9rem; text-decoration: none; }
+.p-followed:hover span:last-child { text-decoration: underline; }
+.p-faces { display: inline-flex; }
+.p-faces .avatar { width: 1.35rem; height: 1.35rem; font-size: .6rem; border: 2px solid var(--bg); box-sizing: content-box; }
+.p-faces .avatar + .avatar { margin-left: -.5rem; }
+.detail-head .dh-txt h2 { display: flex; align-items: center; gap: .3rem; }
+.detail-head .dh-txt h2 .verified { width: 1.2rem; height: 1.2rem; flex: none; }
+.xcompose .xc-vid { margin-top: .4rem; }
+.xcompose .xc-vid video { max-width: 100%; max-height: 18rem; border-radius: 14px; display: block; background: #000; }
+.xcompose .xc-vid small { display: block; color: var(--muted); font-size: .82rem; margin-top: .3rem; }
 .act.repost.on { color: #1f9d55; }
 .act-wrap.menu-wrap { position: relative; display: inline-flex; margin-left: 0; }
 .act-wrap .menu { top: 2.2rem; left: 0; right: auto; }
@@ -705,10 +727,13 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         <div id="xc-avatar"></div>
         <div>
           <textarea id="xc-text" rows="1" maxlength="1000" placeholder="Vad händer?" aria-label="Skriv ett inlägg i bloggen"></textarea>
+          <div class="xc-vid" id="xc-vid" hidden><video id="xc-vid-el" controls playsinline preload="metadata"></video><small id="xc-vid-msg"></small><button type="button" class="btn btn-ghost btn-small" id="xc-vid-remove">Ta bort video</button></div>
           <div class="xc-img" id="xc-img" hidden><img id="xc-img-el" alt="Bilden du lägger till"><button type="button" class="btn btn-ghost btn-small" id="xc-img-remove">Ta bort</button></div>
           <div class="xc-bar" id="xc-bar">
             <label class="icon-btn" for="xc-file" title="Lägg till bild"><span class="visually-hidden">Lägg till bild</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></label>
             <input id="xc-file" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
+            <label class="icon-btn" for="xc-vfile" title="Lägg till video"><span class="visually-hidden">Lägg till video</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="14" height="14" rx="2.5"/><path d="M16.5 10l5-3v10l-5-3"/></svg></label>
+            <input id="xc-vfile" type="file" accept="video/mp4,video/webm,video/quicktime" class="visually-hidden">
             <span class="xc-count" id="xc-count"></span>
             <button class="btn btn-ghost btn-small" type="button" id="xc-news" hidden>Skriv nyhet</button>
             <button class="btn btn-primary btn-small" type="submit" id="xc-post" disabled>Posta</button>
@@ -1012,6 +1037,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     flag: '<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',
     back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
     send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+    chat: '<path d="M21 12a8.5 8.5 0 0 1-12.4 7.6L3 21l1.4-5.4A8.5 8.5 0 1 1 21 12z"/>',
     person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     at: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
     repost: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
@@ -1364,7 +1390,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       $('tab-me').hidden = !state.meKey;
       $('tab-notifs').hidden = !state.meKey;
       setNotifUnread(d.notifUnread || 0);
-      $('compose-fab').hidden = !(canWrite() || state.meKey);
+      $('compose-fab').hidden = BLOG_SITE || !(canWrite() || state.meKey);
       renderComposer();
       state.feedReposts = d.feedReposts || [];
       setUnread(d.unread || 0);
@@ -1464,7 +1490,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = !admin; });
     var writer = admin || user.verified;
     $('tab-write').hidden = true;
-    $('compose-fab').hidden = !writer;
+    $('compose-fab').hidden = !writer || BLOG_SITE;
     document.querySelector('.tab-sep').hidden = !admin;
     $('pin-wrap').hidden = !admin;
     $('db-notice').hidden = state.dbReady;
@@ -1504,7 +1530,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
 
   function monthYear(ts) { return new Date(ts).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }); }
-  function countText(n) { return n + ' inlägg'; }
+  function countText(n) { return n.toLocaleString('sv-SE') + ' inlägg'; }
+  function titleWithBadge(h, p) {
+    h.replaceChildren(document.createTextNode(p.name));
+    if (p.verified) h.appendChild(verified(p.brand));
+  }
 
   // ---------- Profilvy i Twitter-stil (delas av andras profiler och Mitt konto) ----------
   function profileView(box, p, items, opts) {
@@ -1535,7 +1565,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         mb.type = 'button';
         mb.title = 'Meddelande';
         mb.setAttribute('aria-label', 'Skicka meddelande till ' + p.name);
-        mb.appendChild(icon('mail'));
+        mb.appendChild(icon('chat'));
         mb.addEventListener('click', function () { location.hash = 'meddelanden-' + key; });
         btns.appendChild(mb);
       }
@@ -1634,11 +1664,10 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       box.appendChild(rb);
     }
 
-    var sum = function (k) { return items.reduce(function (t, i) { return t + (i[k] || 0); }, 0); };
+    // Som på Twitter: bara Följer och Följare.
     var stats = el('div', 'p-stats');
     var fcount = null;
-    var statDefs = [[items.length, 'Inlägg'], [sum('likes'), 'Gillningar'], [sum('views'), 'Visningar']];
-    if (p.followers !== undefined) statDefs.unshift([p.following || 0, 'Följer'], [p.followers, 'Följare']);
+    var statDefs = p.followers !== undefined ? [[p.following || 0, 'Följer'], [p.followers, 'Följare']] : [[items.length, 'Inlägg']];
     statDefs.forEach(function (c) {
       var link = key && (c[1] === 'Följare' || c[1] === 'Följer');
       var sp = el(link ? 'a' : 'span');
@@ -1650,6 +1679,22 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       stats.appendChild(sp);
     });
     box.appendChild(stats);
+
+    // "Följs av X och Y som du följer"
+    var fb = p.followedBy;
+    if (fb && fb.count && !own) {
+      var row = el('a', 'p-followed');
+      row.href = '#profil-' + key + '/foljare';
+      var faces = el('span', 'p-faces');
+      fb.people.forEach(function (f) { faces.appendChild(avatarEl('', f.brand ? 'FP' : f.name.charAt(0), f.avatar, f.brand)); });
+      row.appendChild(faces);
+      var names = fb.people.map(function (f) { return f.name; });
+      var rest = fb.count - names.length;
+      var txt = 'Följs av ' + (rest > 0 ? names.join(', ') + ' och ' + rest + (rest === 1 ? ' till' : ' till') + ' som du följer'
+        : names.length > 1 ? names.slice(0, -1).join(', ') + ' och ' + names[names.length - 1] : names[0]);
+      row.appendChild(el('span', null, txt));
+      box.appendChild(row);
+    }
 
     // Blockerat: som på Twitter syns inga inlägg, men den som blockerat kan välja att se dem ändå.
     if (p.blocksMe) {
@@ -1673,7 +1718,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
     var replies = opts.replies || [];
     var media = items.filter(function (i) { return i.image || i.video; });
-    var tabsDef = [['posts', 'Inlägg'], ['replies', 'Svar'], ['media', 'Media']];
+    var tabsDef = [['posts', 'Inlägg'], ['replies', 'Svar'], ['reposts', 'Delningar'], ['media', 'Media']];
     if (opts.me) tabsDef.push(['liked', 'Gillade'], ['saved', 'Sparade']);
     if (opts.affiliates && opts.affiliates.length) tabsDef.push(['affiliates', 'Affiliates']);
     var tabBar = el('div', 'p-tabs');
@@ -1714,7 +1759,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         : state.items.filter(function (i) { return key === 'liked' ? i.liked : i.saved; });
       // Delningar blandas med egna inlägg efter tid, som på Twitter.
       var repostAt = {};
-      if (key === 'posts') {
+      if (key === 'reposts') {
+        rows = [];
         (opts.reposts || []).forEach(function (r) {
           var it = findItem(r.item.id);
           if (it) Object.assign(it, r.item); else { it = norm(r.item); state.items.push(it); }
@@ -1729,11 +1775,12 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       if (pinnedId) rows.sort(function (a, b) { return (b.id === pinnedId) - (a.id === pinnedId); });
       if (!rows.length) {
         var empty = el('div', 'empty');
-        if (key === 'liked') { empty.appendChild(el('h3', null, 'Inga gillade inlägg än')); empty.appendChild(el('p', null, 'Tryck på hjärtat under ett inlägg så hamnar det här.')); }
+        if (key === 'reposts') { empty.appendChild(el('h3', null, 'Inga delningar än')); empty.appendChild(el('p', null, opts.me ? 'När du delar vidare ett inlägg syns det här.' : p.name + ' har inte delat vidare något än.')); }
+        else if (key === 'liked') { empty.appendChild(el('h3', null, 'Inga gillade inlägg än')); empty.appendChild(el('p', null, 'Tryck på hjärtat under ett inlägg så hamnar det här.')); }
         else if (key === 'saved') { empty.appendChild(el('h3', null, 'Inga sparade inlägg än')); empty.appendChild(el('p', null, 'Tryck på bokmärket under ett inlägg så hamnar det här.')); }
         else {
           empty.appendChild(el('h3', null, 'Inga inlägg än'));
-          empty.appendChild(el('p', null, opts.me ? (canWrite() ? 'Skriv ditt första inlägg under fliken Skriv.' : 'Verifierade konton kan publicera inlägg.') : p.name + ' har inte publicerat något än.'));
+          empty.appendChild(el('p', null, opts.me ? 'Skriv ditt första inlägg i rutan Vad händer? i bloggen.' : p.name + ' har inte publicerat något än.'));
         }
         list.appendChild(empty);
         return;
@@ -1864,7 +1911,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('prof-count').textContent = '';
     $('prof-body').replaceChildren(el('p', 'muted', 'Hämtar profilen…'));
     loadProfile(username).then(function (d) {
-      $('prof-title').textContent = d.profile.name;
+      titleWithBadge($('prof-title'), d.profile);
       $('prof-count').textContent = countText(d.items.length);
       profileView($('prof-body'), d.profile, d.items, { me: d.profile.isMe, edit: d.profile.isMe && !d.profile.brand, affiliates: d.affiliates, replies: d.replies, reposts: d.reposts });
     }).catch(function (err) { profileError($('prof-body'), err); });
@@ -2217,7 +2264,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       var box = $('acc-view');
       if (acc.kind === 'account') {
         return loadProfile(acc.username.toLowerCase()).then(function (d) {
-          $('acc-title').textContent = d.profile.name;
+          titleWithBadge($('acc-title'), d.profile);
           $('acc-count').textContent = countText(d.items.length);
           profileView(box, d.profile, d.items, { me: true, edit: true, affiliates: d.affiliates, replies: d.replies, reposts: d.reposts });
         });
@@ -2630,7 +2677,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   // ---------- Skrivrutan överst ----------
   // I Blogg skriver alla med eget konto korta inlägg direkt. I Nyheter öppnar rutan skrivfönstret för nyheter.
-  var xc = { image: '' };
+  var xc = { image: '', video: '', uploading: false };
   function renderComposer() {
     var box = $('xcompose');
     box.hidden = !(state.user && state.meKey && state.panel === 'panel-feed' && state.view !== 'saved');
@@ -2638,7 +2685,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var u = state.user;
     $('xc-avatar').replaceChildren(avatarEl('', myInitial(), u.avatar, myInitial() === 'FP'));
     $('xc-text').placeholder = state.view === 'blog' ? 'Vad händer?' : 'Vad händer? Inlägget hamnar i Bloggen.';
-    $('xc-news').hidden = !canWrite();
+    $('xc-news').hidden = !canWrite() || BLOG_SITE;
     if (xc.image) $('xc-img').hidden = false;
     updateComposer();
   }
@@ -2646,7 +2693,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     var n = $('xc-text').value.trim().length;
     $('xc-count').textContent = n > 800 ? (1000 - n) + '' : '';
     $('xc-count').classList.toggle('over', n > 1000);
-    $('xc-post').disabled = !(n || xc.image) || n > 1000;
+    $('xc-post').disabled = !(n || xc.image || xc.video) || n > 1000 || xc.uploading;
   }
   $('xc-news').addEventListener('click', openCompose);
   $('xc-text').addEventListener('input', function () {
@@ -2667,14 +2714,50 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     }).catch(function (err) { toast(err.message); });
   });
   $('xc-img-remove').addEventListener('click', function () { xc.image = ''; $('xc-img').hidden = true; updateComposer(); });
+
+  // Video i skrivrutan: laddas upp direkt till Vercel Blob medan man skriver.
+  function clearXcVideo() { xc.video = ''; xc.uploading = false; $('xc-vid').hidden = true; $('xc-vid-el').removeAttribute('src'); updateComposer(); }
+  $('xc-vid-remove').addEventListener('click', clearXcVideo);
+  $('xc-vfile').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (!file) return;
+    if (!/^video\/(mp4|webm|quicktime)$/.test(file.type)) { toast('Videon måste vara MP4, WebM eller MOV.'); return; }
+    if (file.size > MAX_VIDEO_BYTES) { toast('Videon är större än 100 MB. Korta den eller exportera i lägre upplösning.'); return; }
+    var ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4';
+    var name = (file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'video').slice(0, 40);
+    xc.uploading = true; xc.video = '';
+    $('xc-vid-el').src = URL.createObjectURL(file);
+    $('xc-vid').hidden = false;
+    $('xc-vid-msg').textContent = 'Laddar upp videon… 0 %';
+    updateComposer();
+    var token = {};
+    xc.token = token;
+    import('/vendor/blob-client.js').then(function (m) {
+      return m.upload('videos/' + name + '.' + ext, file, {
+        access: 'public', handleUploadUrl: '/api/image?video=1', contentType: file.type, multipart: file.size > 20 * 1024 * 1024,
+        onUploadProgress: function (p) { if (xc.token === token) $('xc-vid-msg').textContent = 'Laddar upp videon… ' + Math.round(p.percentage) + ' %'; },
+      });
+    }).then(function (blob) {
+      if (xc.token !== token || !xc.uploading) return;
+      xc.video = blob.url; xc.uploading = false;
+      $('xc-vid-msg').textContent = 'Videon är uppladdad.';
+      updateComposer();
+    }).catch(function (err) {
+      if (xc.token !== token) return;
+      clearXcVideo();
+      toast('Videon gick inte att ladda upp. ' + ((err && err.message) || '').replace(/^Vercel Blob: /, ''));
+    });
+  });
   $('xcompose').addEventListener('submit', function (e) {
     e.preventDefault();
     if ($('xc-post').disabled) return;
     $('xc-post').disabled = true;
-    api('news', { method: 'POST', body: { kind: 'blog', body: $('xc-text').value, image: xc.image } }).then(function (d) {
+    api('news', { method: 'POST', body: { kind: 'blog', body: $('xc-text').value, image: xc.image, video: xc.video } }).then(function (d) {
       state.items.unshift(norm(d.item));
       $('xc-text').value = ''; $('xc-text').style.height = '';
       xc.image = ''; $('xc-img').hidden = true;
+      xc.token = null; clearXcVideo();
       renderFeed();
       toast(state.view === 'blog' ? 'Ditt inlägg är postat.' : 'Ditt inlägg är postat i Bloggen.');
     }).catch(function (err) { toast(err.message); }).then(updateComposer);

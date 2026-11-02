@@ -46,7 +46,7 @@ export default handle(async (req, res) => {
     const category = blog ? '' : CATEGORIES.includes(b.category) ? b.category : CATEGORIES[0];
     let link = clean(b.link, 500);
     if (!blog && !title) throw new HttpError(400, 'Nyheten behöver en rubrik.');
-    if (!body && !(blog && b.image)) throw new HttpError(400, blog ? 'Skriv något först.' : 'Nyheten behöver en text.');
+    if (!body && !(blog && (b.image || b.video))) throw new HttpError(400, blog ? 'Skriv något först.' : 'Nyheten behöver en text.');
     if (link) {
       try {
         const u = new URL(link);
