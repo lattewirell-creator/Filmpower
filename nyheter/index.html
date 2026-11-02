@@ -536,6 +536,23 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 .xcompose .xc-img img { max-width: 100%; max-height: 18rem; border-radius: 14px; display: block; }
 .xcompose .xc-img button { position: absolute; top: .4rem; left: .4rem; }
 .t-text.blog { font-size: 1.02rem; }
+.ex-search { position: sticky; top: 0; z-index: 8; background: var(--bg); padding-block: .5rem; margin-bottom: .4rem; }
+.ex-search .input { border-radius: 999px; padding-left: 1.1rem; }
+.ex-sec { margin: 1rem 0 .3rem; font-family: var(--body); font-size: 1.15rem; font-weight: 700; }
+.trend { display: grid; gap: .1rem; padding: .7rem .75rem; margin-inline: -.75rem; color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.trend:hover { background: color-mix(in srgb, var(--soft) 60%, transparent); }
+.trend small { color: var(--muted); font-size: .8rem; }
+.trend b { font-size: 1.02rem; }
+.notif { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: .8rem; padding: .9rem .75rem; margin-inline: -.75rem; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+.notif:hover { background: color-mix(in srgb, var(--soft) 60%, transparent); }
+.notif.new { background: color-mix(in srgb, var(--brand) 7%, transparent); }
+.notif .n-icon svg { width: 1.7rem; height: 1.7rem; }
+.notif .n-icon.like { color: #e0245e; } .notif .n-icon.repost { color: #1f9d55; } .notif .n-icon.follow, .notif .n-icon.mention, .notif .n-icon.reply, .notif .n-icon.quote { color: var(--brand); }
+.notif .n-icon.like svg { fill: currentColor; }
+.notif .avatar { width: 2.1rem; height: 2.1rem; font-size: .85rem; margin-bottom: .35rem; }
+.notif .n-txt b { font-weight: 700; }
+.notif .n-snip { color: var(--muted); font-size: .93rem; margin-top: .2rem; overflow-wrap: anywhere; }
+.notif .n-time { color: var(--muted); font-size: .85rem; }
 
 /* Sidomeny till vänster som på Twitter (dator) */
 .xside { display: none; }
@@ -656,6 +673,10 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Nyheter</button>
       <button class="tab" role="tab" id="tab-blog" data-panel="panel-feed" data-view="blog" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 20.5l1.6-4.6A8.4 8.4 0 1 1 21 11.5z"/></svg>Blogg</button>
+      <button class="tab" role="tab" id="tab-explore" data-panel="panel-explore" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Utforska</button>
+      <button class="tab" role="tab" id="tab-notifs" data-panel="panel-notifs" aria-selected="false" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Notiser<span class="count dm" id="notif-count" hidden></span></button>
       <button class="tab" role="tab" id="tab-following" data-panel="panel-feed" data-view="following" aria-selected="false" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 11l2 2 3.5-4"/></svg>Följer</button>
       <button class="tab" role="tab" id="tab-popular" data-panel="panel-feed" data-view="popular" aria-selected="false">
@@ -747,6 +768,18 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       </div>
       <nav class="f-tabs" id="fol-tabs" aria-label="Följare och följer"></nav>
       <div class="member-list" id="fol-list"></div>
+    </div>
+
+    <div id="panel-explore" role="tabpanel" hidden>
+      <div class="field ex-search">
+        <label class="visually-hidden" for="ex-q">Sök</label>
+        <input class="input" id="ex-q" type="search" placeholder="Sök inlägg, #ämnen och personer" autocomplete="off">
+      </div>
+      <div id="ex-body"></div>
+    </div>
+
+    <div id="panel-notifs" role="tabpanel" hidden>
+      <div class="member-list" id="notif-list"></div>
     </div>
 
     <div id="panel-messages" role="tabpanel" hidden>
@@ -948,7 +981,11 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var PANELS = ['panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-follows', 'panel-messages', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'];
+  // Samma app på två adresser: /nyheter (nyheter) och /blogg (bloggen som egen hemsida).
+  var BLOG_SITE = /^\/blogg\/?$/.test(location.pathname);
+  var SITE_PATH = BLOG_SITE ? '/blogg/' : '/nyheter/';
+  var DEFAULT_TAB = BLOG_SITE ? 'tab-blog' : 'tab-all';
+  var PANELS = ['panel-notifs', 'panel-explore', 'panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-follows', 'panel-messages', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'];
   var state = {
     user: null, categories: [], items: [], dbReady: false,
     filter: 'Alla', sort: 'new', view: 'all', panel: 'panel-feed',
@@ -975,6 +1012,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     flag: '<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',
     back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
     send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    at: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
     repost: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
     quote: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   };
@@ -1064,6 +1103,22 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       moved = [];
     }
   }
+  // Bloggen som egen hemsida på /blogg: eget namn, Hem är bloggflödet, Nyheter länkar till /nyheter.
+  if (BLOG_SITE) {
+    document.title = 'Film Power Blogg';
+    document.querySelector('.logo .sub').textContent = 'Blogg';
+    var hb = $('tab-blog'), na = $('tab-all');
+    hb.replaceChildren();
+    hb.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Hem');
+    na.replaceChildren();
+    na.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M10 6h6M10 10h6M10 14h4"/></svg>Nyheter');
+    na.dataset.href = '/nyheter/';
+    na.removeAttribute('data-panel');
+    na.parentNode.insertBefore(na, $('tab-me').nextSibling);
+    $('tab-popular').hidden = true;
+  } else {
+    $('tab-blog').dataset.href = '/blogg';
+  }
   placeLayout();
   if (deskQuery.addEventListener) deskQuery.addEventListener('change', placeLayout); else deskQuery.addListener(placeLayout);
   function setMsg(node, text, kind) { node.textContent = text || ''; node.className = 'msg' + (kind ? ' ' + kind : ''); }
@@ -1114,15 +1169,23 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function linkify(text) {
     var frag = document.createDocumentFragment();
-    var re = /(^|[^A-Za-z0-9_.@-])@([A-Za-z0-9_.-]{3,20})/g, last = 0, m;
+    // @användarnamn blir länk till profilen, #ämne blir länk till Utforska.
+    var re = /(^|[^A-Za-z0-9_.@#\u00C0-\u017F-])([@#])([A-Za-z0-9_.\u00C0-\u017F-]{2,30})/g, last = 0, m;
     while ((m = re.exec(text))) {
-      var name = m[2].replace(/[.-]+$/, '');
+      var name = m[3].replace(/[.-]+$/, '');
       var start = m.index + m[1].length;
-      var target = MENTION_ALIASES[name.toLowerCase()] || name.toLowerCase();
-      if (!knownUsers[target]) continue;
+      var a;
+      if (m[2] === '@') {
+        var target = MENTION_ALIASES[name.toLowerCase()] || name.toLowerCase();
+        if (name.length < 3 || !knownUsers[target]) continue;
+        a = el('a', 'mention', '@' + name);
+        a.href = '#profil-' + target;
+      } else {
+        if (!/[A-Za-z\u00C0-\u017F]/.test(name)) continue;
+        a = el('a', 'mention', '#' + name);
+        a.href = '#utforska-' + encodeURIComponent('#' + name.toLowerCase());
+      }
       frag.appendChild(document.createTextNode(text.slice(last, start)));
-      var a = el('a', 'mention', '@' + name);
-      a.href = '#profil-' + target;
       frag.appendChild(a);
       last = start + 1 + name.length;
       re.lastIndex = last;
@@ -1299,6 +1362,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       state.meKey = d.me || '';
       state.myPin = d.pinnedPost || '';
       $('tab-me').hidden = !state.meKey;
+      $('tab-notifs').hidden = !state.meKey;
+      setNotifUnread(d.notifUnread || 0);
       $('compose-fab').hidden = !(canWrite() || state.meKey);
       renderComposer();
       state.feedReposts = d.feedReposts || [];
@@ -1312,7 +1377,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('dm-count').hidden = !n;
   }
   // Olästa meddelanden kollas en gång i minuten när fliken syns.
-  setInterval(function () { if (state.user && state.canDm && document.visibilityState === 'visible' && state.panel !== 'panel-messages') loadFollowing(); }, 60000);
+  setInterval(function () { if (state.user && state.canDm && document.visibilityState === 'visible' && state.panel !== 'panel-messages' && state.panel !== 'panel-notifs') loadFollowing(); }, 60000);
   // Inlägg och kommentarer från tystade och blockerade konton visas inte.
   function hiddenAuthor(key) { key = (key || 'filmpower').toLowerCase(); return !!(state.muted[key] || state.blocked[key]); }
 
@@ -1362,12 +1427,12 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     $('greeting').textContent = 'Nyheter för filmskapare';
     Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = true; });
     state.following = {};
-    ['tab-write', 'compose-fab', 'tab-saved', 'tab-following', 'tab-messages', 'tab-me'].forEach(function (id) { $(id).hidden = true; });
+    ['tab-write', 'compose-fab', 'tab-saved', 'tab-following', 'tab-messages', 'tab-me', 'tab-notifs'].forEach(function (id) { $(id).hidden = true; });
     state.muted = {}; state.blocked = {}; state.canDm = false; state.meKey = '';
     document.querySelector('.tab-sep').hidden = true;
     $('db-notice').hidden = true;
     show('view-app');
-    selectTab('tab-all');
+    selectTab(DEFAULT_TAB);
     loadKnownUsers().then(loadNews).then(route);
   }
 
@@ -1398,14 +1463,14 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       : 'Välkommen, ' + user.label;
     Array.prototype.forEach.call(document.querySelectorAll('[data-admin]'), function (n) { n.hidden = !admin; });
     var writer = admin || user.verified;
-    $('tab-write').hidden = !writer;
+    $('tab-write').hidden = true;
     $('compose-fab').hidden = !writer;
-    document.querySelector('.tab-sep').hidden = !writer;
+    document.querySelector('.tab-sep').hidden = !admin;
     $('pin-wrap').hidden = !admin;
     $('db-notice').hidden = state.dbReady;
     fillCategorySelect();
     show('view-app');
-    selectTab('tab-all');
+    selectTab(DEFAULT_TAB);
     loadKnownUsers().then(loadFollowing).then(loadNews).then(route);
     if (admin && state.dbReady) loadUsers();
     if (window.fpAdminAICheck) window.fpAdminAICheck();
@@ -1729,7 +1794,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
 
   function shareProfile(p) {
-    var url = location.origin + '/nyheter/#profil-' + p.username.toLowerCase();
+    var url = location.origin + SITE_PATH + '#profil-' + p.username.toLowerCase();
     if (navigator.share) { navigator.share({ title: p.name + ' på Film Power', url: url }).catch(function () {}); return; }
     try { navigator.clipboard.writeText(url).then(function () { toast('Länken till profilen är kopierad.'); }, function () { toast(url); }); } catch (err) { toast(url); }
   }
@@ -1853,6 +1918,117 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (m.isMe || key === state.meKey || state.blocked[key]) row.appendChild(el('span'));
     else row.appendChild(followButton(m));
     return row;
+  }
+
+  // ---------- Notiser ----------
+  function setNotifUnread(n) {
+    $('notif-count').textContent = n > 99 ? '99+' : n;
+    $('notif-count').hidden = !n;
+  }
+  var NOTIF_TEXT = { like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };
+  var NOTIF_ICON = { like: 'heart', repost: 'repost', reply: 'comment', follow: 'person', mention: 'at', quote: 'quote' };
+  function loadNotifs() {
+    var list = $('notif-list');
+    if (!state.meKey) { list.replaceChildren(emptyBox('Notiser kräver ett eget konto', 'Logga in med användarnamn och lösenord så ser du när någon gillar, svarar eller följer dig.')); return; }
+    list.replaceChildren(el('p', 'muted', 'Hämtar notiser…'));
+    var unreadBefore = Number($('notif-count').textContent) || 0;
+    api('profile?notifs=1').then(function (d) {
+      setNotifUnread(0);
+      list.replaceChildren();
+      if (!d.notifications.length) { list.appendChild(emptyBox('Inga notiser än', 'När någon gillar, delar, svarar, följer eller nämner dig syns det här.')); return; }
+      d.notifications.forEach(function (n, i) {
+        var a = el('a', 'notif' + (i < unreadBefore ? ' new' : ''));
+        a.href = n.type === 'follow' || !n.postId ? '#profil-' + (n.by || '') : '#inlagg-' + n.postId;
+        var ic = el('span', 'n-icon ' + n.type);
+        ic.appendChild(icon(NOTIF_ICON[n.type] || 'comment'));
+        a.appendChild(ic);
+        var t = el('div', 'n-txt');
+        var w = n.who;
+        if (w) t.appendChild(avatarEl('', w.brand ? 'FP' : w.name.charAt(0), w.avatar, w.brand));
+        var line = el('div');
+        line.appendChild(el('b', null, w ? w.name : n.byName));
+        line.appendChild(document.createTextNode(' ' + (NOTIF_TEXT[n.type] || '') + ' '));
+        line.appendChild(el('span', 'n-time', '· ' + timeAgo(n.at)));
+        t.appendChild(line);
+        var snip = n.text || n.postLabel;
+        if (snip && n.type !== 'follow') t.appendChild(el('div', 'n-snip', snip));
+        a.appendChild(t);
+        list.appendChild(a);
+      });
+    }).catch(function (err) { list.replaceChildren(el('p', 'msg error', err.message)); });
+  }
+
+  // ---------- Utforska ----------
+  // Sök i inlägg och bland medlemmar, trender (#ämnen de senaste sju dagarna) och förslag på vem man kan följa.
+  var exTimer = null;
+  $('ex-q').addEventListener('input', function () {
+    clearTimeout(exTimer);
+    var q = this.value;
+    exTimer = setTimeout(function () { state.exploreQ = q; renderExplore(); }, 150);
+  });
+  function openExplore(q) {
+    $('ex-q').value = q || '';
+    state.exploreQ = q || '';
+    if (!members.length) api('profile').then(function (d) { members = d.members || []; renderExplore(); }).catch(function () {});
+    renderExplore();
+  }
+  function siteItems() { return state.items.filter(function (i) { return (!BLOG_SITE || i.kind === 'blog') && !hiddenAuthor(i.authorKey); }); }
+  function trends() {
+    var since = Date.now() - 7 * 86400000, count = {};
+    siteItems().forEach(function (i) {
+      if (i.createdAt < since) return;
+      var seen = {};
+      ((i.title || '') + ' ' + (i.body || '')).replace(/(^|[^A-Za-z0-9_\u00C0-\u017F#])#([A-Za-z0-9_\u00C0-\u017F]{2,30})/g, function (all, pre, tag) {
+        var k = tag.toLowerCase();
+        if (/[a-z\u00C0-\u017F]/i.test(k) && !seen[k]) { seen[k] = 1; count[k] = (count[k] || 0) + 1; }
+      });
+    });
+    return Object.keys(count).sort(function (a, b) { return count[b] - count[a]; }).slice(0, 8).map(function (k) { return [k, count[k]]; });
+  }
+  function renderExplore() {
+    var box = $('ex-body');
+    box.replaceChildren();
+    var q = (state.exploreQ || '').trim().toLowerCase();
+    if (!q) {
+      var tr = trends();
+      box.appendChild(el('h2', 'ex-sec', 'Trendar på Film Power'));
+      if (!tr.length) box.appendChild(el('p', 'muted', 'Inga #ämnen den senaste veckan. Skriv till exempel #kortfilm i ett inlägg så dyker det upp här.'));
+      tr.forEach(function (t, i) {
+        var a = el('a', 'trend');
+        a.href = '#utforska-' + encodeURIComponent('#' + t[0]);
+        a.appendChild(el('small', null, (i + 1) + ' · Trendar'));
+        a.appendChild(el('b', null, '#' + t[0]));
+        a.appendChild(el('small', null, t[1] + (t[1] === 1 ? ' inlägg' : ' inlägg')));
+        box.appendChild(a);
+      });
+      var hot = siteItems().filter(function (i) { return i.createdAt > Date.now() - 7 * 86400000 && (i.likes || i.comments || i.reposts); })
+        .sort(function (a, b) { return (b.likes + b.comments * 2 + (b.reposts || 0) * 2) - (a.likes + a.comments * 2 + (a.reposts || 0) * 2); }).slice(0, 3);
+      if (hot.length) {
+        box.appendChild(el('h2', 'ex-sec', 'Populärt just nu'));
+        hot.forEach(function (it) { box.appendChild(renderTweet(it)); });
+      }
+      var sugg = members.filter(function (m) { var k = m.username.toLowerCase(); return k !== state.meKey && !state.following[k] && !state.blocked[k]; })
+        .sort(function (a, b) { return (b.verified - a.verified) || (b.brand ? 1 : 0) - (a.brand ? 1 : 0); }).slice(0, 5);
+      if (sugg.length && state.user) {
+        box.appendChild(el('h2', 'ex-sec', 'Vem du kan följa'));
+        sugg.forEach(function (m) { box.appendChild(personRow(m)); });
+      }
+      return;
+    }
+    var term = q.replace(/^@/, '');
+    var people = q.charAt(0) === '#' ? [] : members.filter(function (m) { return m.name.toLowerCase().indexOf(term) > -1 || m.username.toLowerCase().indexOf(term) > -1; }).slice(0, 5);
+    var posts = siteItems().filter(function (i) {
+      var hay = ((i.title || '') + ' ' + (i.body || '') + ' ' + (i.authorName || '')).toLowerCase();
+      if (q.charAt(0) === '#') return new RegExp('(^|[^a-z0-9_\u00C0-\u017F])' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-z0-9_\u00C0-\u017F])').test(hay);
+      return hay.indexOf(q) > -1;
+    }).sort(function (a, b) { return b.createdAt - a.createdAt; }).slice(0, 40);
+    if (people.length) {
+      box.appendChild(el('h2', 'ex-sec', 'Personer'));
+      people.forEach(function (m) { box.appendChild(personRow(m)); });
+    }
+    box.appendChild(el('h2', 'ex-sec', posts.length ? 'Inlägg' : 'Inga inlägg hittades'));
+    if (!posts.length) box.appendChild(el('p', 'muted', 'Prova ett annat ord.'));
+    posts.forEach(function (it) { box.appendChild(renderTweet(it)); });
   }
 
   // ---------- Direktmeddelanden ----------
@@ -2418,11 +2594,12 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   });
 
   // ---------- Flikar ----------
-  var TITLES = { all: 'Nyheter', blog: 'Blogg', following: 'Följer', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik', 'panel-messages': 'Meddelanden' };
+  var TITLES = { all: 'Nyheter', blog: 'Blogg', following: 'Följer', popular: 'Populärt', saved: 'Sparade', 'panel-members': 'Medlemmar', 'panel-write': 'Skriv nyhet', 'panel-users': 'Konton', 'panel-codes': 'Koder', 'panel-stats': 'Statistik', 'panel-messages': 'Meddelanden', 'panel-explore': 'Utforska', 'panel-notifs': 'Notiser' };
+  if (BLOG_SITE) TITLES.blog = 'Hem';
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
   tabs.forEach(function (t) {
     t.addEventListener('click', function () {
-      if (t.dataset.href) { location.hash = t.dataset.href.slice(1); return; }
+      if (t.dataset.href) { if (t.dataset.href.charAt(0) === '/') location.href = t.dataset.href; else location.hash = t.dataset.href.slice(1); return; }
       if (location.hash) history.pushState(null, '', location.pathname);
       selectTab(t.id);
     });
@@ -2447,6 +2624,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (state.panel === 'panel-stats') loadStats();
     if (state.panel === 'panel-members') loadMembers();
     if (state.panel === 'panel-messages') openMessages(true);
+    if (state.panel === 'panel-explore') openExplore(state.exploreQ || '');
+    if (state.panel === 'panel-notifs') loadNotifs();
   }
 
   // ---------- Skrivrutan överst ----------
@@ -2506,7 +2685,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     if (!state.user) { needLogin('skriva'); return; }
     if (canWrite()) { openCompose(); return; }
     if (!state.meKey) { toast('Skapa ett eget konto för att skriva i bloggen.'); return; }
-    if (state.panel !== 'panel-feed' || state.view === 'saved') { if (location.hash) history.pushState(null, '', location.pathname); selectTab('tab-blog'); }
+    if (state.panel !== 'panel-feed' || state.view === 'saved') { if (location.hash) history.pushState(null, '', location.pathname); selectTab(DEFAULT_TAB); }
     window.scrollTo(0, 0);
     setTimeout(function () { $('xc-text').focus(); }, 50);
   }
@@ -2526,7 +2705,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function viewItems() {
     var list = state.items.filter(function (i) {
-      if (state.view === 'blog') return i.kind === 'blog';
+      if (state.view === 'blog' || BLOG_SITE) return i.kind === 'blog';
       if (state.view === 'all' && i.kind === 'blog') return false;
       return state.filter === 'Alla' || i.category === state.filter || i.kind === 'blog';
     });
@@ -2849,7 +3028,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   }
 
   function share(item) {
-    var url = location.origin + '/nyheter/#inlagg-' + item.id;
+    var url = location.origin + (item.kind === 'blog' ? '/blogg/' : '/nyheter/') + '#inlagg-' + item.id;
     if (navigator.share) {
       navigator.share({ title: itemLabel(item), url: url }).catch(function () {});
       return;
@@ -2982,9 +3161,12 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     else if (location.hash === '#konto') openAccount();
     else if (/^#profil-[a-z0-9_.-]+$/.test(location.hash)) openProfile(MENTION_ALIASES[location.hash.slice(8)] || location.hash.slice(8));
     else if ((m = /^#profil-([a-z0-9_.-]+)\/(foljare|foljer)$/.exec(location.hash))) openFollows(MENTION_ALIASES[m[1]] || m[1], m[2] === 'foljare' ? 'followers' : 'following');
+    else if (location.hash === '#utforska') { state.exploreQ = ''; selectTab('tab-explore'); }
+    else if ((m = /^#utforska-(.+)$/.exec(location.hash))) { state.exploreQ = decodeURIComponent(m[1]); selectTab('tab-explore'); }
+    else if (location.hash === '#notiser') { if (!state.user) needLogin('se notiser'); else selectTab('tab-notifs'); }
     else if (location.hash === '#meddelanden') { if (!state.user) needLogin('läsa meddelanden'); else selectTab('tab-messages'); }
     else if ((m = /^#meddelanden-([a-z0-9_.-]+)$/.exec(location.hash))) { if (!state.user) needLogin('skicka meddelanden'); else openThread(MENTION_ALIASES[m[1]] || m[1]); }
-    else if (['panel-post', 'panel-account', 'panel-profile', 'panel-follows'].indexOf(state.panel) > -1 || (state.panel === 'panel-messages' && dmWith)) selectTab(state.lastTab || 'tab-all');
+    else if (['panel-post', 'panel-account', 'panel-profile', 'panel-follows'].indexOf(state.panel) > -1 || (state.panel === 'panel-messages' && dmWith)) selectTab(state.lastTab || DEFAULT_TAB);
   }
   window.addEventListener('hashchange', function () {
     // Bakåtknappen går ett steg tillbaka i historiken, oavsett om man kom från flödet, ett inlägg eller en profil.
@@ -2994,7 +3176,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 
   function goBack() {
     if (state.fromFeed) history.back();
-    else { history.pushState(null, '', location.pathname); selectTab(state.lastTab || 'tab-all'); }
+    else { history.pushState(null, '', location.pathname); selectTab(state.lastTab || DEFAULT_TAB); }
   }
   $('back-btn').addEventListener('click', goBack);
 
@@ -3378,7 +3560,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
       setMsg($('post-msg'), '');
       closeCompose();
       state.filter = 'Alla';
-      selectTab('tab-all');
+      selectTab(DEFAULT_TAB);
       toast('Inlägget är publicerat.');
       if (pin) setPinned(item, true);
     }).catch(function (err) { setMsg($('post-msg'), err.message, 'error'); })

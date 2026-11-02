@@ -2,7 +2,7 @@ import {
   handle, send, readBody, queryParam, readerSession, requireSession, requireAppHeader, actorId, pipeline, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo, rateLimit,
 } from './_lib.js';
 import {
-  keyActor, myKey, accountExists, relation, dmAllowed, people, blockedBetween, setBlock, setMute, report, repliesOf, followList, conversations, thread, sendDm, unreadTotal,
+  keyActor, myKey, accountExists, relation, dmAllowed, people, notify, notifications, notifUnread, blockedBetween, setBlock, setMute, report, repliesOf, followList, conversations, thread, sendDm, unreadTotal,
 } from './_social.js';
 
 const MAX_LIST = 200;
@@ -95,11 +95,12 @@ export default handle(async (req, res) => {
       if (!raw || JSON.parse(raw).status !== 'active') throw new HttpError(404, 'Kontot finns inte.');
     }
     const a = actorId(s), on = action === 'follow';
-    const [, , followers] = await pipeline([
+    const [added, , followers] = await pipeline([
       [on ? 'SADD' : 'SREM', 'following:' + a, key],
       [on ? 'SADD' : 'SREM', 'followers:' + key, a],
       ['SCARD', 'followers:' + key],
     ]);
+    if (on && added) await notify(s, key, 'follow');
     return send(res, 200, { following: on, followers: Number(followers) || 0 });
   }
 
@@ -119,7 +120,13 @@ export default handle(async (req, res) => {
     const names = new Map((await people(fk, s)).map((p) => [p.username.toLowerCase(), p.name]));
     const feedReposts = [];
     fk.forEach((k, i) => { const l = rp[i] || []; for (let j = 0; j < l.length; j += 2) feedReposts.push({ by: k, byName: names.get(k) || '@' + k, id: l[j], at: Number(l[j + 1]) }); });
-    return send(res, 200, { following, muted, blocked, unread: await unreadTotal(s), canDm: Boolean(me), me, pinnedPost: pinnedPost || '', feedReposts });
+    return send(res, 200, { following, muted, blocked, unread: await unreadTotal(s), canDm: Boolean(me), me, pinnedPost: pinnedPost || '', feedReposts, notifUnread: await notifUnread(s) });
+  }
+
+  // Notiser till den inloggade. Läses som lästa när de hämtas.
+  if (queryParam(req, 'notifs')) {
+    if (s.guest) throw new HttpError(401, 'Du behöver logga in.');
+    return send(res, 200, { notifications: await notifications(s) });
   }
 
   // Direktmeddelanden: alla konversationer, eller en tråd med ett konto.

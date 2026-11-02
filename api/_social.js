@@ -212,3 +212,53 @@ export async function sendDm(s, key, text) {
   ]);
   return { id: m.id, text: m.text, at: m.at, mine: true };
 }
+
+// ---------- Notiser ----------
+// notif:<nyckel> är en lista med det senaste som hänt kontot (nyast först), notifunread:<nyckel> antalet olästa.
+// Typer: like, repost, reply, follow, mention, quote.
+
+export async function notify(s, target, type, data = {}) {
+  target = String(target || '').toLowerCase();
+  const me = myKey(s);
+  if (!target || target === me || data.anon) return;
+  // Den som blockerat eller tystat avsändaren får inga notiser från den.
+  const ident = me || actorId(s);
+  const [blocked, muted, exists] = await pipeline([
+    ['SISMEMBER', 'blocked:' + keyActor(target), ident],
+    ['SISMEMBER', 'muted:' + keyActor(target), ident],
+    target === 'filmpower' ? ['EXISTS', 'nothing'] : ['HEXISTS', 'users', target],
+  ]);
+  if (blocked || muted || (target !== 'filmpower' && !exists)) return;
+  const n = { id: crypto.randomBytes(5).toString('hex'), type, by: me || '', byName: s.label || 'Någon', at: Date.now(), postId: data.postId || '', text: String(data.text || '').slice(0, 140) };
+  await pipeline([['LPUSH', 'notif:' + target, JSON.stringify(n)], ['LTRIM', 'notif:' + target, 0, 99], ['INCR', 'notifunread:' + target]]);
+}
+
+// @-taggar i en text, som användarnamn (gemener), utan dubbletter. @ceo betyder Film Power.
+export function mentionsIn(text) {
+  const out = new Set();
+  for (const m of String(text || '').matchAll(/(^|[^A-Za-z0-9_.@-])@([A-Za-z0-9_.-]{3,20})/g)) {
+    const k = m[2].replace(/[.-]+$/, '').toLowerCase();
+    out.add(k === 'ceo' ? 'filmpower' : k);
+  }
+  return [...out].slice(0, 10);
+}
+
+export async function notifUnread(s) {
+  const me = myKey(s);
+  return me ? Number(await redis('GET', 'notifunread:' + me)) || 0 : 0;
+}
+
+export async function notifications(s) {
+  const me = myKey(s);
+  if (!me) throw new HttpError(403, 'Skapa ett eget konto för att få notiser.');
+  const [raws] = await pipeline([['LRANGE', 'notif:' + me, 0, 99], ['SET', 'notifunread:' + me, '0']]);
+  const list = raws.map((r) => JSON.parse(r));
+  const who = new Map((await people(list.map((n) => n.by).filter(Boolean), s)).map((p) => [p.username.toLowerCase(), p]));
+  const posts = [...new Set(list.map((n) => n.postId).filter(Boolean))];
+  const raw = posts.length ? await redis('HMGET', 'news', ...posts) : [];
+  const label = new Map(posts.map((id, i) => {
+    const p = raw[i] && JSON.parse(raw[i]);
+    return [id, p ? p.title || (p.body || '').slice(0, 80) : ''];
+  }));
+  return list.map((n) => ({ ...n, who: who.get(n.by) || null, postLabel: n.postId ? label.get(n.postId) || '' : '' }));
+}

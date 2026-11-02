@@ -3,7 +3,7 @@ import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession, HttpError,
   redis, pipeline, rateLimit, readerSession, actorId, displayName, withStats, withAuthors, affKey, orgInfo,
 } from './_lib.js';
-import { keyActor, myKey, replyActor } from './_social.js';
+import { keyActor, myKey, replyActor, notify, mentionsIn } from './_social.js';
 
 const MAX_COMMENT = 1000;
 
@@ -61,6 +61,7 @@ export default handle(async (req, res) => {
     const changed = await redis(like ? 'SADD' : 'SREM', 'liked:' + a, id);
     let likes = Number(await redis('HGET', 'news:likes', id)) || 0;
     if (changed) likes = await redis('HINCRBY', 'news:likes', id, like ? 1 : -1);
+    if (changed && like) await notify(s, JSON.parse(raw).authorKey || 'filmpower', 'like', { postId: id });
     return send(res, 200, { liked: like, likes: Math.max(0, likes) });
   }
 
@@ -78,6 +79,7 @@ export default handle(async (req, res) => {
     if (changed) {
       const [, n] = await pipeline([on ? ['ZADD', 'reposts:' + a, Date.now(), id] : ['ZREM', 'reposts:' + a, id], ['HINCRBY', 'news:reposts', id, on ? 1 : -1]]);
       reposts = n;
+      if (on) await notify(s, JSON.parse(raw).authorKey || 'filmpower', 'repost', { postId: id });
     }
     return send(res, 200, { reposted: on, reposts: Math.max(0, reposts) });
   }
@@ -111,6 +113,10 @@ export default handle(async (req, res) => {
       // Svaren visas under fliken Svar på profilen.
       ...(!c.anon && replyActor(a) ? [['ZADD', 'replies:' + a, c.createdAt, id + ':' + c.id]] : []),
     ]);
+    // Notiser: till inläggets författare och till dem som @-taggas i kommentaren.
+    const ownerKey = JSON.parse(raw).authorKey || 'filmpower';
+    await notify(s, ownerKey, 'reply', { postId: id, text, anon: c.anon });
+    for (const k of mentionsIn(text)) if (k !== ownerKey) await notify(s, k, 'mention', { postId: id, text, anon: c.anon });
     const myOrg = s.affiliateOf ? (await orgInfo([s.affiliateOf])).get(s.affiliateOf) || null : null;
     const shown = c.anon
       ? { id: c.id, author: 'Anonym', anon: true, isAdmin: false, verified: false, avatar: '', username: '', realAuthor: s.role === 'admin' ? c.author : undefined }

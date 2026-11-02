@@ -4,6 +4,7 @@ import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
   HttpError, redis, pipeline, CATEGORIES, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
 } from './_lib.js';
+import { notify, mentionsIn } from './_social.js';
 
 const MAX_LIST = 200;
 // Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
@@ -90,6 +91,10 @@ export default handle(async (req, res) => {
       ['HSET', 'news', item.id, JSON.stringify(item)],
       ['ZADD', 'news:idx', item.createdAt, item.id],
     ]);
+    // Notiser: den som citeras och de som @-taggas.
+    const quoted = quoteOf ? JSON.parse(await redis('HGET', 'news', quoteOf)).authorKey || 'filmpower' : '';
+    if (quoted) await notify(s, quoted, 'quote', { postId: item.id, text: body });
+    for (const k of mentionsIn(title + ' ' + body)) if (k !== quoted) await notify(s, k, 'mention', { postId: item.id, text: body });
     const [created] = await withAuthors([item], s);
     return send(res, 201, { item: created });
   }
