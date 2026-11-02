@@ -161,6 +161,23 @@ export async function conversations(s) {
   }).filter((c) => c.last);
 }
 
+// Får den inloggade skriva till kontot? Kontot kan ha valt att bara ta emot från dem det följer, eller ingen.
+export async function dmAllowed(s, key) {
+  const me = myKey(s);
+  if (!me || key === me) return false;
+  const rel = await blockedBetween(s, key);
+  if (rel.blockedByMe || rel.blocksMe) return false;
+  if (key === 'filmpower') return true;
+  const u = JSON.parse((await redis('HGET', 'users', key)) || 'null');
+  if (!u || u.status !== 'active') return false;
+  const rule = u.dmFrom || 'all';
+  if (rule === 'all') return true;
+  // Den som redan fått ett meddelande från kontot får alltid svara.
+  if (await redis('ZSCORE', 'dms:' + me, key) && (await redis('LRANGE', pairKey(me, key), 0, 49)).some((r) => JSON.parse(r).from === key)) return true;
+  if (rule === 'none') return false;
+  return Boolean(await redis('SISMEMBER', 'following:' + keyActor(key), me));
+}
+
 export async function thread(s, key) {
   const me = needDm(s);
   const [raws] = await pipeline([['LRANGE', pairKey(me, key), 0, 199], ['HDEL', 'dmunread:' + me, key]]);
@@ -168,7 +185,8 @@ export async function thread(s, key) {
   const rel = await blockedBetween(s, key);
   return {
     with: partner || null,
-    canSend: Boolean(partner) && key !== me && !rel.blockedByMe && !rel.blocksMe,
+    canSend: Boolean(partner) && (await dmAllowed(s, key)),
+    closed: Boolean(partner) && !rel.blockedByMe && !rel.blocksMe && !(await dmAllowed(s, key)),
     blockedByMe: rel.blockedByMe,
     messages: raws.map((r) => JSON.parse(r)).reverse().map((m) => ({ id: m.id, text: m.text, at: m.at, mine: m.from === me })),
   };
@@ -183,6 +201,7 @@ export async function sendDm(s, key, text) {
   const rel = await blockedBetween(s, key);
   if (rel.blockedByMe) throw new HttpError(403, 'Du har blockerat det här kontot. Avblockera för att skicka meddelanden.');
   if (rel.blocksMe) throw new HttpError(403, 'Du kan inte skicka meddelanden till det här kontot.');
+  if (!(await dmAllowed(s, key))) throw new HttpError(403, 'Kontot tar bara emot meddelanden från vissa personer.');
   await rateLimit('rl:dm:' + me, 40, 600, 'Du har skickat många meddelanden på kort tid. Vänta några minuter.');
   const m = { id: crypto.randomBytes(6).toString('hex'), from: me, text, at: Date.now() };
   const pk = pairKey(me, key);

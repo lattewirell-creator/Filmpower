@@ -2,7 +2,7 @@ import {
   handle, send, readBody, queryParam, readerSession, requireSession, requireAppHeader, actorId, pipeline, HttpError, redis, withStats, withAuthors, usernameKey, affKey, orgInfo, rateLimit,
 } from './_lib.js';
 import {
-  keyActor, myKey, accountExists, relation, blockedBetween, setBlock, setMute, report, repliesOf, followList, conversations, thread, sendDm, unreadTotal,
+  keyActor, myKey, accountExists, relation, dmAllowed, people, blockedBetween, setBlock, setMute, report, repliesOf, followList, conversations, thread, sendDm, unreadTotal,
 } from './_social.js';
 
 const MAX_LIST = 200;
@@ -113,7 +113,13 @@ export default handle(async (req, res) => {
     const [following, muted, blocked] = await pipeline([['SMEMBERS', 'following:' + a], ['SMEMBERS', 'muted:' + a], ['SMEMBERS', 'blocked:' + a]]);
     const me = myKey(s);
     const pinnedPost = me === 'filmpower' ? await redis('GET', 'profilepin:filmpower') : me ? (JSON.parse((await redis('HGET', 'users', me)) || '{}').pinnedPost || '') : '';
-    return send(res, 200, { following, muted, blocked, unread: await unreadTotal(s), canDm: Boolean(me), me, pinnedPost: pinnedPost || '' });
+    // Det de man följer har delat vidare, till flödet Följer.
+    const fk = following.slice(0, 60);
+    const rp = fk.length ? await pipeline(fk.map((k) => ['ZREVRANGE', 'reposts:' + keyActor(k), 0, 9, 'WITHSCORES'])) : [];
+    const names = new Map((await people(fk, s)).map((p) => [p.username.toLowerCase(), p.name]));
+    const feedReposts = [];
+    fk.forEach((k, i) => { const l = rp[i] || []; for (let j = 0; j < l.length; j += 2) feedReposts.push({ by: k, byName: names.get(k) || '@' + k, id: l[j], at: Number(l[j + 1]) }); });
+    return send(res, 200, { following, muted, blocked, unread: await unreadTotal(s), canDm: Boolean(me), me, pinnedPost: pinnedPost || '', feedReposts });
   }
 
   // Direktmeddelanden: alla konversationer, eller en tråd med ett konto.
@@ -206,12 +212,22 @@ export default handle(async (req, res) => {
 
   const { authorKey, ...pub } = profile;
   const rel = await relation(s, orgKey);
+  // Inlägg som kontot har delat vidare visas under Inlägg, med "delade vidare".
+  const rpl = await redis('ZREVRANGE', 'reposts:' + keyActor(orgKey), 0, 49, 'WITHSCORES');
+  let reposts = [];
+  if (rpl.length) {
+    const rids = rpl.filter((_, j) => j % 2 === 0);
+    const rraws = await redis('HMGET', 'news', ...rids);
+    const at = new Map(rids.map((id, j) => [id, Number(rpl[2 * j + 1])]));
+    reposts = (await withStats(await withAuthors(rraws.filter(Boolean).map((r) => JSON.parse(r)), s), s)).map((item) => ({ at: at.get(item.id), item }));
+  }
   // Har kontot blockerat den som tittar visas varken inlägg eller svar, som på Twitter.
   const hidden = rel.blocksMe;
   send(res, 200, {
-    profile: { ...pub, ...rel, runBy: await runByOf(orgKey), isMe: Boolean(myKey(s) && myKey(s) === orgKey), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing), posts: items.length },
+    profile: { ...pub, ...rel, dmAllowed: await dmAllowed(s, orgKey), runBy: await runByOf(orgKey), isMe: Boolean(myKey(s) && myKey(s) === orgKey), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing), posts: items.length },
     items: hidden ? [] : items,
     replies: hidden ? [] : await repliesOf(orgKey),
+    reposts: hidden ? [] : reposts,
     affiliates,
   });
 });

@@ -64,6 +64,24 @@ export default handle(async (req, res) => {
     return send(res, 200, { liked: like, likes: Math.max(0, likes) });
   }
 
+  // Dela vidare, som en retweet. Syns på profilen och i flödet för dem som följer en.
+  if (req.method === 'POST' && (action === 'repost' || action === 'unrepost')) {
+    if (!myKey(s)) throw new HttpError(403, 'Skapa ett eget konto för att dela vidare.');
+    const on = action === 'repost';
+    if (on) {
+      const owner = JSON.parse(raw).authorKey || 'filmpower';
+      if (owner === myKey(s)) throw new HttpError(400, 'Du kan inte dela vidare ditt eget inlägg.');
+      if (await redis('SISMEMBER', 'blocked:' + keyActor(owner), myKey(s))) throw new HttpError(403, 'Du kan inte dela det här kontots inlägg.');
+    }
+    const changed = await redis(on ? 'SADD' : 'SREM', 'reposted:' + a, id);
+    let reposts = Number(await redis('HGET', 'news:reposts', id)) || 0;
+    if (changed) {
+      const [, n] = await pipeline([on ? ['ZADD', 'reposts:' + a, Date.now(), id] : ['ZREM', 'reposts:' + a, id], ['HINCRBY', 'news:reposts', id, on ? 1 : -1]]);
+      reposts = n;
+    }
+    return send(res, 200, { reposted: on, reposts: Math.max(0, reposts) });
+  }
+
   if (req.method === 'POST' && (action === 'save' || action === 'unsave')) {
     const save = action === 'save';
     await redis(save ? 'SADD' : 'SREM', 'saved:' + a, id);

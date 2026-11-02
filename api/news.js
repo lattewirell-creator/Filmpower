@@ -65,9 +65,16 @@ export default handle(async (req, res) => {
       await redis('SET', 'img:' + image, data);
     }
 
+    // Citat: ett nytt inlägg som visar ett annat inlägg inbäddat.
+    let quoteOf = '';
+    if (b.quoteOf) {
+      quoteOf = String(b.quoteOf);
+      if (!/^[a-f0-9]{12}$/.test(quoteOf) || !(await redis('HEXISTS', 'news', quoteOf))) throw new HttpError(400, 'Inlägget du citerar finns inte längre.');
+    }
+
     const item = {
       id: crypto.randomBytes(6).toString('hex'),
-      title, body, category, link, image, video,
+      title, body, category, link, image, video, ...(quoteOf ? { quoteOf } : {}),
       author: s.label,
       authorKey: s.user || '',
       createdAt: Date.now(),
@@ -100,7 +107,7 @@ export default handle(async (req, res) => {
     if (!admin && JSON.parse(raw).authorKey !== s.user) throw new HttpError(403, 'Du kan bara ta bort dina egna inlägg.');
     const cmds = [
       ['HDEL', 'news', id], ['ZREM', 'news:idx', id], ['DEL', 'comments:' + id],
-      ['HDEL', 'news:likes', id], ['HDEL', 'news:comments', id], ['HDEL', 'news:views', id],
+      ['HDEL', 'news:likes', id], ['HDEL', 'news:comments', id], ['HDEL', 'news:views', id], ['HDEL', 'news:reposts', id],
     ];
     const { image, video } = JSON.parse(raw);
     if (image) cmds.push(['DEL', 'img:' + image]);

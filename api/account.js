@@ -28,6 +28,7 @@ export default handle(async (req, res) => {
       location: u ? u.location || '' : '',
       website: u ? u.website || '' : '',
       birthday: u ? u.birthday || '' : '',
+      dmFrom: u ? u.dmFrom || 'all' : 'all',
       anon: Boolean(s.anon),
       createdAt: u ? u.createdAt : null,
       liked: Number(liked) || 0,
@@ -108,6 +109,12 @@ export default handle(async (req, res) => {
     u.birthday = d;
   }
 
+  // Vem som får skicka direktmeddelanden: alla, bara de man följer, eller ingen.
+  if (b.dmFrom !== undefined) {
+    if (!['all', 'following', 'none'].includes(b.dmFrom)) throw new HttpError(400, 'Ogiltigt val för meddelanden.');
+    u.dmFrom = b.dmFrom;
+  }
+
   if (b.newPassword !== undefined) {
     const ok = await checkPassword(String(b.currentPassword || ''), u.salt, u.hash);
     if (!ok) throw new HttpError(400, 'Nuvarande lösenord stämmer inte.');
@@ -122,5 +129,5 @@ export default handle(async (req, res) => {
   await redis('HSET', 'users', s.user, JSON.stringify(u));
   if (oldAvatar && oldAvatar !== u.avatar) await redis('DEL', 'img:' + oldAvatar);
   if (oldBanner && oldBanner !== u.banner) await redis('DEL', 'img:' + oldBanner);
-  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', banner: u.banner || '', bio: u.bio || '', location: u.location || '', website: u.website || '', birthday: u.birthday || '' });
+  send(res, 200, { ok: true, displayName: u.displayName || u.username, avatar: u.avatar || '', banner: u.banner || '', bio: u.bio || '', location: u.location || '', website: u.website || '', birthday: u.birthday || '', dmFrom: u.dmFrom || 'all' });
 });

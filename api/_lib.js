@@ -263,14 +263,16 @@ export async function withStats(items, s) {
   if (!items.length) return items;
   const ids = items.map((i) => i.id);
   const a = actorId(s);
-  const [likes, comments, views, liked, saved] = await pipeline([
+  const [likes, comments, views, liked, saved, reposts, reposted] = await pipeline([
     ['HMGET', 'news:likes', ...ids],
     ['HMGET', 'news:comments', ...ids],
     ['HMGET', 'news:views', ...ids],
     ['SMEMBERS', 'liked:' + a],
     ['SMEMBERS', 'saved:' + a],
+    ['HMGET', 'news:reposts', ...ids],
+    ['SMEMBERS', 'reposted:' + a],
   ]);
-  const L = new Set(liked), S = new Set(saved);
+  const L = new Set(liked), S = new Set(saved), RP = new Set(reposted);
   return items.map((it, i) => ({
     ...it,
     likes: Math.max(0, Number(likes[i]) || 0),
@@ -278,6 +280,8 @@ export async function withStats(items, s) {
     views: Number(views[i]) || 0,
     liked: L.has(it.id),
     saved: S.has(it.id),
+    reposts: Math.max(0, Number(reposts[i]) || 0),
+    reposted: RP.has(it.id),
   }));
 }
 
