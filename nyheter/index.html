@@ -33,6 +33,8 @@
 <meta name="description" content="Nyheter för filmskapare från Film Power. Logga in med din kod.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#3d7a2c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-180.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23141614'/%3E%3Ctext x='32' y='43' font-family='Rockwell,Georgia,serif' font-weight='700' font-size='30' fill='%23fafaf8' text-anchor='middle'%3Ef%3Ctspan fill='%2386bb6c'%3E://%3C/tspan%3E%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -663,6 +665,24 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 .xs-exit { display: flex; align-items: center; gap: 1rem; padding: .7rem 1rem; margin-top: .3rem; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 1.05rem; }
 .xs-exit svg { width: 1.45rem; height: 1.45rem; }
 .xs-exit:hover { background: var(--soft); color: var(--ink); }
+button.xs-exit { border: 0; background: none; font-family: inherit; cursor: pointer; text-align: left; width: 100%; }
+#install-app { color: var(--brand); font-weight: 600; margin-top: 0; }
+button.exit-link { background: none; font-family: inherit; cursor: pointer; margin-right: 0; }
+.install-mini { padding: .35rem .6rem; }
+.install-mini svg { margin-right: .15rem; }
+@media (max-width: 520px) { .install-mini span { display: none; } .install-mini svg { margin: 0; } .topbar .wrap { gap: .5rem; } .exit-link { padding-inline: .4rem .6rem; } }
+@media (max-width: 400px) { .exit-link:not(.install-mini) { font-size: 0; gap: 0; padding: .4rem; } .wordmark { font-size: 1.3rem; } }
+.install-modal { width: min(30rem, 100%); }
+.inst-hero { display: flex; gap: .9rem; align-items: center; padding: 1.2rem 0 1rem; }
+.inst-hero img { border-radius: 14px; flex: none; }
+.inst-hero b { display: block; font-size: 1.1rem; }
+.inst-hero span { color: var(--muted); font-size: .92rem; }
+.inst-go { width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: .5rem; padding: .8rem 1rem; font-size: 1rem; }
+.inst-go svg { width: 1.2rem; height: 1.2rem; }
+.inst-lead { font-weight: 600; margin: .4rem 0 .5rem; }
+.inst-list { margin: 0 0 1rem; padding-left: 1.3rem; display: grid; gap: .55rem; }
+.inst-list kbd { font: 600 .85em var(--body); border: 1px solid var(--line); border-radius: 6px; padding: .05rem .4rem; }
+.inst-small { font-size: .86rem; margin: .8rem 0 0; }
 @media (min-width: 1000px) {
   body.app-on .topbar { display: none; }
   body.app-on .xside { display: flex; flex-direction: column; gap: .3rem; position: fixed; top: 0; bottom: 0; left: max(0px, calc(50% - var(--xs-half))); width: 15.5rem; padding: 1rem 1rem 1.2rem .6rem; border-right: 1px solid var(--line); overflow-y: auto; z-index: 20; background: var(--bg); }
@@ -697,7 +717,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     <a class="logo" href="/" aria-label="Till Film Powers startsida">
       <span class="wordmark" aria-label="Film Power">film<span class="sep">://</span>power</span><span class="sub">Nyheter/blogg</span>
     </a>
-    <a class="exit-link" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Hemsidan</a>
+    <a class="exit-link" href="/" aria-label="Till hemsidan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Hemsidan</a>
+    <button class="exit-link install-mini" type="button" id="install-app-top" aria-label="Ladda ner appen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span>App</span></button>
     <div class="who" id="who" hidden>
       <button class="account-btn" type="button" id="who-name" aria-label="Mitt konto"></button>
       <span class="badge" id="who-badge"></span>
@@ -736,6 +757,7 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   <div id="xs-logo"></div>
   <div id="xs-nav"></div>
   <a class="xs-exit" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l-5-5 5-5"/><path d="M11 12h10"/></svg>Till hemsidan</a>
+  <button class="xs-exit" type="button" id="install-app" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Ladda ner appen</button>
   <div class="xs-who" id="xs-who"></div>
 </aside>
 
@@ -1042,6 +1064,26 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
   </div>
 </div>
 
+<div class="modal-back" id="install-modal" hidden>
+  <div class="modal install-modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
+    <div class="modal-head">
+      <button class="icon-btn" type="button" id="install-close" aria-label="Stäng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <h2 id="install-title">Ladda ner Film Power</h2>
+    </div>
+    <div class="modal-body">
+      <div class="inst-hero"><img src="/icons/icon-192.png" alt="" width="64" height="64"><div><b>Film Power</b><span>Nyheter och blogg som en egen app, på Chromebook, dator och mobil.</span></div></div>
+      <div id="inst-one">
+        <button class="btn btn-primary inst-go" type="button" id="install-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Installera appen</button>
+        <p class="muted inst-small">Appen öppnas i ett eget fönster och hamnar bland dina appar. Du kan fästa den på hyllan längst ner.</p>
+      </div>
+      <div id="inst-steps">
+        <p class="inst-lead" id="inst-lead">Så installerar du appen i Chrome:</p>
+        <ol class="inst-list" id="inst-list"></ol>
+      </div>
+      <p class="muted inst-small" id="inst-school">På en skol-Chromebook kan skolan ha stängt av installation av appar. Fungerar det inte, spara sidan som bokmärke med Ctrl + D, eller be skolans IT lägga till filmpower.vercel.app.</p>
+    </div>
+  </div>
+</div>
 <div class="modal-back" id="edit-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
     <div class="modal-head">
@@ -3161,6 +3203,66 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
     opts.forEach(function (o, i) { o.classList.toggle('sel', i === xrSel); o.setAttribute('aria-selected', String(i === xrSel)); });
     opts[xrSel].scrollIntoView({ block: 'nearest' });
   });
+
+  // ---------- Ladda ner appen ----------
+  // Sajten går att installera som app (PWA) i Chrome, även på Chromebook. Chrome ger ett eget
+  // installationsfönster när det går. Annars visas hur man gör i menyn.
+  var installEvt = null;
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  function paintInstall() {
+    var show = !standalone;
+    $('install-app').hidden = !show;
+    $('install-app-top').hidden = !show;
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEvt = e; paintInstall(); });
+  window.addEventListener('appinstalled', function () {
+    installEvt = null; closeInstall();
+    toast('Film Power är installerad. Du hittar appen bland dina appar.');
+  });
+  function openInstall() {
+    var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var chrome = /Chrome|CriOS|Edg\//.test(ua) && !ios;
+    $('inst-one').hidden = !installEvt;
+    $('inst-steps').hidden = !!installEvt;
+    var list = $('inst-list');
+    list.replaceChildren();
+    var steps;
+    if (ios) {
+      $('inst-lead').textContent = 'Så lägger du till appen på iPhone eller iPad:';
+      steps = ['Öppna sidan i Safari.', 'Tryck på Dela-knappen (rutan med en pil uppåt).', 'Välj "Lägg till på hemskärmen" och tryck Lägg till.'];
+    } else if (chrome) {
+      $('inst-lead').textContent = 'Så installerar du appen i Chrome:';
+      steps = ['Titta längst till höger i adressfältet efter installera-ikonen (en skärm med en pil) och klicka på den.',
+        'Ser du ingen ikon: öppna menyn ⋮ uppe till höger, välj "Casta, spara och dela" och sedan "Installera sidan som app…".',
+        'Klicka Installera. Appen hamnar bland dina appar, och du kan högerklicka på den och fästa den på hyllan.'];
+    } else {
+      $('inst-lead').textContent = 'Appen installeras enklast i Chrome:';
+      steps = ['Öppna filmpower.vercel.app/nyheter i Google Chrome.', 'Klicka på Ladda ner appen igen, eller på installera-ikonen i adressfältet.'];
+    }
+    steps.forEach(function (t) { list.appendChild(el('li', null, t)); });
+    $('install-modal').hidden = false;
+    (installEvt ? $('install-go') : $('install-close')).focus();
+  }
+  function closeInstall() { $('install-modal').hidden = true; }
+  $('install-app').addEventListener('click', openInstall);
+  $('install-app-top').addEventListener('click', openInstall);
+  $('install-close').addEventListener('click', closeInstall);
+  $('install-modal').addEventListener('click', function (e) { if (e.target === this) closeInstall(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('install-modal').hidden) closeInstall(); });
+  $('install-go').addEventListener('click', function () {
+    if (!installEvt) { openInstall(); return; }
+    var ev = installEvt;
+    installEvt = null;
+    ev.prompt();
+    (ev.userChoice || Promise.resolve({})).then(function (c) {
+      if (c && c.outcome === 'accepted') closeInstall(); else openInstall();
+    });
+  });
+  if (/[?&]app=1\b/.test(location.search)) { standalone = true; }
+  paintInstall();
 
   function renderFeed() {
     renderRight();
