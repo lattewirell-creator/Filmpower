@@ -723,6 +723,63 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   body.app-on .app-head .label { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .tweet { transition: none; } }
+/* ---- Mer som Twitter ---- */
+/* För dig / Följer överst i flödet, med en grön linje under den valda. */
+.home-tabs { display: flex; margin: .2rem -1.1rem -.6rem; border-bottom: 0; }
+.home-tabs[hidden] { display: none; }
+.home-tabs button { flex: 1; position: relative; padding: 1rem .5rem 1.05rem; border: 0; background: none; color: var(--muted); font: 500 1rem var(--body); cursor: pointer; transition: background-color .2s ease, color .2s ease; }
+.home-tabs button:hover { background: color-mix(in srgb, var(--soft) 70%, transparent); }
+.home-tabs button[aria-selected="true"] { color: var(--ink); font-weight: 700; }
+.home-tabs button[aria-selected="true"]::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 3.6rem; height: 4px; border-radius: 4px; background: var(--brand); transform: translateX(-50%); animation: htLine .28s var(--ease-out) both; }
+@keyframes htLine { from { width: 0; } }
+.app-head.has-home h1, .app-head.has-home .label { display: none; }
+.app-head.has-home { padding-bottom: .6rem; }
+@media (max-width: 999px) { .home-tabs { margin: 0 0 -.2rem; } .app-head.has-home { padding-top: .6rem; border-bottom: 1px solid var(--line); } }
+/* Teckenringen i skrivrutan. */
+.xc-ring { position: relative; display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-left: auto; margin-right: .4rem; }
+.xc-ring.off { visibility: hidden; }
+.xc-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.xc-ring circle { fill: none; stroke-width: 2.2; }
+.xc-ring .r-bg { stroke: var(--line); }
+.xc-ring .r-fg { stroke: var(--brand); stroke-linecap: round; transition: stroke-dashoffset .15s ease, stroke .2s ease; }
+.xc-ring.warn { width: 2.1rem; height: 2.1rem; }
+.xc-ring.warn .r-fg { stroke: #e8b23a; }
+.xc-ring.over .r-fg { stroke: #e5484d; }
+.xc-ring .xc-count { position: absolute; font-size: .7rem; color: var(--muted); }
+.xc-ring.over .xc-count { color: #e5484d; }
+/* Kontot längst ner i sidomenyn: bild, namn, @namn och en meny. */
+.who-handle, .who-more { display: none; }
+@media (min-width: 1000px) {
+  .xs-who { position: relative; }
+  .xs-who .who { display: block; }
+  .xs-who .who .badge, .xs-who #logout-btn { display: none; }
+  .xs-who .account-btn { display: grid !important; grid-template-columns: 2.5rem minmax(0, 1fr) auto; align-items: center; gap: .7rem; text-align: left; border: 0; border-radius: 999px; padding: .55rem .7rem; background: none; }
+  .xs-who .account-btn:hover { background: var(--soft); }
+  .xs-who .account-btn .txt { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .xs-who .who-name-col { display: grid; min-width: 0; line-height: 1.25; }
+  .xs-who .who-handle { display: block; color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .xs-who .who-more { display: block; color: var(--ink); }
+  .xs-who .who-more svg { width: 1.2rem; height: 1.2rem; }
+  .xs-who.menu-wrap { margin-left: 0; }
+  .xs-who .menu { position: absolute; bottom: calc(100% + .4rem); left: 0; right: 0; top: auto; }
+}
+/* Menyraden längst ner på mobil, som Twitters app. */
+.bnav { display: none; }
+@media (max-width: 999px) {
+  body.app-on .bnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; justify-content: space-around; padding: .3rem .3rem calc(.3rem + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+  body.app-on.in-dm .bnav { display: none; }
+  body.app-on { padding-bottom: calc(3.6rem + env(safe-area-inset-bottom, 0px)); }
+  body.app-on .fab { bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px)); }
+  body.app-on .toast { bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px)); }
+  .bnav button { position: relative; flex: 1; display: grid; place-items: center; height: 3rem; border: 0; background: none; color: var(--ink); border-radius: 999px; cursor: pointer; }
+  .bnav button svg { width: 1.6rem; height: 1.6rem; }
+  .bnav button[aria-current="page"] svg { stroke-width: 2.7; }
+  .bnav button:not([aria-current="page"]) { color: var(--muted); }
+  .bnav .bn-count { position: absolute; top: .25rem; left: calc(50% + .3rem); min-width: 1.1rem; height: 1.1rem; padding: 0 .3rem; border-radius: 999px; background: var(--brand); color: var(--on-brand); font: 700 .68rem/1.1rem var(--body); }
+  .bnav .bn-count[hidden] { display: none; }
+  body.app-on #tabs .tab.in-bnav { display: none; }
+  body.app-on .topbar { background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+}
 </style>
 </head>
 <body>
@@ -767,6 +824,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     <a href="/">Film Power</a><a href="/nyheter/">Nyheter</a><a href="/blogg">Bloggen</a><span>© 2026 Film Power</span>
   </nav>
 </aside>
+
+<nav class="bnav" id="bnav" aria-label="Huvudmeny"></nav>
 
 <aside class="xside" id="xside" aria-label="Meny">
   <div id="xs-logo"></div>
@@ -835,6 +894,10 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     <div class="app-head" id="app-head">
       <p class="label" id="greeting"></p>
       <h1 id="view-title">Nyheter</h1>
+      <div class="home-tabs" id="home-tabs" role="tablist" aria-label="Flöde" hidden>
+        <button type="button" role="tab" id="ht-for">För dig</button>
+        <button type="button" role="tab" id="ht-following">Följer</button>
+      </div>
     </div>
 
     <div class="notice" id="db-notice" hidden>Databasen är inte kopplad än. Nyheter, konton och kommentarer sparas först när Upstash Redis är kopplat i Vercel.</div>
@@ -883,7 +946,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
             <input id="xc-file" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden">
             <label class="icon-btn" for="xc-vfile" title="Lägg till video"><span class="visually-hidden">Lägg till video</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="14" height="14" rx="2.5"/><path d="M16.5 10l5-3v10l-5-3"/></svg></label>
             <input id="xc-vfile" type="file" accept="video/mp4,video/webm,video/quicktime" class="visually-hidden">
-            <span class="xc-count" id="xc-count"></span>
+            <span class="xc-ring off" id="xc-ring"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" class="r-bg"/><circle cx="12" cy="12" r="9.5" class="r-fg" id="xc-ring-fg"/></svg><span class="xc-count" id="xc-count"></span></span>
             <button class="btn btn-ghost btn-small" type="button" id="xc-news" hidden>Skriv nyhet</button>
             <button class="btn btn-primary btn-small" type="submit" id="xc-post" disabled>Posta</button>
           </div>
@@ -1213,6 +1276,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     repost: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
     quote: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
     hash: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
   };
   function icon(name, extra) {
@@ -1576,6 +1641,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
       state.blocked = toSet(d.blocked);
       state.canDm = !!d.canDm;
       state.meKey = d.me || '';
+      if (state.user) renderWho();
       state.myPin = d.pinnedPost || '';
       $('tab-me').hidden = !state.meKey;
       $('tab-notifs').hidden = !state.meKey;
@@ -1585,12 +1651,14 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
       state.feedReposts = d.feedReposts || [];
       setUnread(d.unread || 0);
       $('tab-messages').hidden = !state.canDm;
+      paintBnav();
     }).catch(function () {});
   }
   function setUnread(n) {
     state.unread = n;
     $('dm-count').textContent = n > 99 ? '99+' : n;
     $('dm-count').hidden = !n;
+    paintBnav();
   }
   // Följlistor och inställningar uppdateras var femte minut. Olästa siffror sköts av livekollen.
   setInterval(function () { if (state.user && state.canDm && document.visibilityState === 'visible' && state.panel !== 'panel-messages' && state.panel !== 'panel-notifs') loadFollowing(); }, 300000);
@@ -1701,10 +1769,35 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
       return;
     }
     b.appendChild(avatarEl('mini', myInitial(), u.avatar, myInitial() === 'FP'));
-    b.appendChild(el('span', 'txt', u.label));
-    if (u.verified) b.appendChild(verified());
+    var col = el('span', 'who-name-col');
+    var nm = el('span', 'txt', u.label);
+    if (u.verified) nm.appendChild(verified());
+    col.appendChild(nm);
+    var handle = state.meKey ? '@' + state.meKey : u.role === 'admin' ? '@filmpower' : 'Inloggad med kod';
+    col.appendChild(el('span', 'who-handle', handle));
+    b.appendChild(col);
+    var more = el('span', 'who-more');
+    more.appendChild(icon('more'));
+    b.appendChild(more);    paintBnav();
   }
-  $('who-name').addEventListener('click', function () { location.hash = 'konto'; });
+  // På dator öppnar kontot en meny som på Twitter. På mobil går det direkt till kontot.
+  $('who-name').addEventListener('click', function (e) {
+    if (!deskQuery.matches) { location.hash = 'konto'; return; }
+    e.stopPropagation();
+    var wrap = $('xs-who');
+    var wasOpen = openMenu && openMenu.parentNode === wrap;
+    closeMenu();
+    if (wasOpen) return;
+    var m = el('div', 'menu');
+    m.setAttribute('role', 'menu');
+    if (state.meKey && state.meKey !== 'filmpower') menuItem(m, 'person', 'Din profil', function () { closeMenu(); location.hash = 'profil-' + state.meKey; });
+    menuItem(m, 'gear', 'Konto och inställningar', function () { closeMenu(); location.hash = 'konto'; });
+    menuItem(m, 'logout', 'Logga ut ' + (state.meKey ? '@' + state.meKey : ''), function () { closeMenu(); $('logout-btn').click(); });
+    wrap.classList.add('menu-wrap');
+    wrap.appendChild(m);
+    openMenu = m;
+    m.firstChild.focus();
+  });
 
   function hidePanels(except) {
     closeMenu();
@@ -1719,6 +1812,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     // Profil-fliken lyser när man är på sitt eget konto.
     tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.id === 'tab-me' && except === 'panel-account')); });
     window.scrollTo(0, 0);
+    paintBnav();
   }
 
   function monthYear(ts) { return new Date(ts).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }); }
@@ -2164,6 +2258,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   function setNotifUnread(n) {
     $('notif-count').textContent = n > 99 ? '99+' : n;
     $('notif-count').hidden = !n;
+    paintBnav();
   }
   var NOTIF_TEXT = { like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };
   var NOTIF_ICON = { like: 'heart', repost: 'repost', reply: 'comment', follow: 'person', mention: 'at', quote: 'quote' };
@@ -2871,6 +2966,51 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     if (state.panel === 'panel-messages') openMessages(true);
     if (state.panel === 'panel-explore') openExplore(state.exploreQ || '');
     if (state.panel === 'panel-notifs') loadNotifs();
+    paintHomeTabs();
+    paintBnav();
+  }
+
+  // ---------- För dig / Följer och menyraden på mobil ----------
+  function paintHomeTabs() {
+    var home = state.panel === 'panel-feed' && (state.lastTab === DEFAULT_TAB || state.lastTab === 'tab-following');
+    $('home-tabs').hidden = !home;
+    $('app-head').classList.toggle('has-home', home);
+    $('ht-for').setAttribute('aria-selected', String(state.lastTab === DEFAULT_TAB));
+    $('ht-following').setAttribute('aria-selected', String(state.lastTab === 'tab-following'));
+  }
+  $('ht-for').addEventListener('click', function () { if (state.lastTab !== DEFAULT_TAB) $(DEFAULT_TAB).click(); else window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  $('ht-following').addEventListener('click', function () {
+    if (!state.user || $('tab-following').hidden) { needLogin('se inlägg från dem du följer'); return; }
+    if (state.lastTab !== 'tab-following') $('tab-following').click(); else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  [DEFAULT_TAB, 'tab-explore', 'tab-notifs', 'tab-messages', 'tab-me', 'tab-following'].forEach(function (id) { $(id).classList.add('in-bnav'); });
+  var BNAV = [[DEFAULT_TAB, ['panel-feed']], ['tab-explore', ['panel-explore']], ['tab-notifs', ['panel-notifs'], 'notif-count'], ['tab-messages', ['panel-messages'], 'dm-count'], ['tab-me', ['panel-account', 'panel-profile']]];
+  function paintBnav() {
+    var nav = $('bnav');
+    if (!nav || !BNAV) return;
+    nav.replaceChildren();
+    BNAV.forEach(function (b) {
+      var tab = $(b[0]);
+      if (!tab || tab.hidden) return;
+      var btn = el('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', tab.textContent.replace(/\d+\+?/g, '').trim());
+      var svg = tab.querySelector('svg');
+      if (svg) btn.appendChild(svg.cloneNode(true));
+      if (b[2]) {
+        var src = $(b[2]), c = el('span', 'bn-count', src.textContent);
+        c.hidden = src.hidden;
+        btn.appendChild(c);
+      }
+      var active = b[1].indexOf(state.panel) > -1 && (b[0] !== DEFAULT_TAB || state.lastTab === DEFAULT_TAB || state.lastTab === 'tab-following' || state.panel !== 'panel-feed');
+      if (b[0] === 'tab-me' && state.panel === 'panel-profile') active = location.hash === '#profil-' + state.meKey;
+      if (active) btn.setAttribute('aria-current', 'page');
+      btn.addEventListener('click', function () {
+        if (active && b[0] !== 'tab-me') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        tab.click();
+      });
+      nav.appendChild(btn);
+    });
   }
 
   // ---------- Skrivrutan överst ----------
@@ -2888,9 +3028,13 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     updateComposer();
   }
   function updateComposer() {
-    var n = $('xc-text').value.trim().length;
-    $('xc-count').textContent = n > 800 ? (1000 - n) + '' : '';
-    $('xc-count').classList.toggle('over', n > 1000);
+    var n = $('xc-text').value.trim().length, left = 1000 - n;
+    // Ringen som på Twitter: fylls medan man skriver, gul de sista 100 tecknen, röd när det är för långt.
+    var ring = $('xc-ring'), c = 2 * Math.PI * 9.5;
+    $('xc-ring-fg').style.strokeDasharray = c;
+    $('xc-ring-fg').style.strokeDashoffset = c * (1 - Math.min(n / 1000, 1));
+    ring.className = 'xc-ring' + (!n ? ' off' : left < 0 ? ' over' : left <= 100 ? ' warn' : '');
+    $('xc-count').textContent = left <= 100 ? String(left) : '';
     $('xc-post').disabled = !(n || xc.image || xc.video) || n > 1000 || xc.uploading;
   }
   $('xc-news').addEventListener('click', openCompose);
@@ -3129,7 +3273,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
       });
       if (!hot.length) tl.appendChild(el('p', 'xr-empty', 'Skriv #ämnen i dina inlägg, till exempel #kortfilm, så syns de här.'));
     }
-    renderWho();
+    renderWhoToFollow();
   }
 
   // Vem du kan följa: verifierade och aktiva konton man inte redan följer. Medlemslistan hämtas en gång.
@@ -3139,10 +3283,10 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     membersAsked = true;
     return api('profile').then(function (d) { members = d.members || []; }).catch(function () { membersAsked = false; });
   }
-  function renderWho() {
+  function renderWhoToFollow() {
     var card = $('xr-who');
     if (!state.user || !window.matchMedia('(min-width: 1280px)').matches) { card.hidden = true; return; }
-    if (!members.length) { needMembers().then(function () { if (members.length) renderWho(); }); return; }
+    if (!members.length) { needMembers().then(function () { if (members.length) renderWhoToFollow(); }); return; }
     var active = {};
     state.items.forEach(function (i) { if (i.authorKey) active[i.authorKey] = (active[i.authorKey] || 0) + 1; });
     // Samma förslag ligger kvar efter att man följt, så att knappen kan visa Följer i stället för att raden försvinner.
