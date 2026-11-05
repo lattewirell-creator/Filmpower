@@ -17,8 +17,10 @@ export default handle(async (req, res) => {
   if (!raw) throw new HttpError(404, 'Inlägget finns inte längre.');
 
   if (req.method === 'GET') {
+    // noview=1: sidans livekoll hämtar nya kommentarer utan att räkna en visning till.
+    const noview = Boolean(queryParam(req, 'noview'));
     const [, flat] = await pipeline([
-      ['HINCRBY', 'news:views', id, 1],
+      noview ? ['EXISTS', 'news'] : ['HINCRBY', 'news:views', id, 1],
       ['HGETALL', 'comments:' + id],
     ]);
     const [item] = await withStats(await withAuthors([JSON.parse(raw)], s), s);

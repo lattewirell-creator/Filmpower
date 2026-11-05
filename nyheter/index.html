@@ -592,6 +592,21 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 .fx-in { animation: fxIn .32s var(--ease-out) both; }
 .fx-item { animation: fxItem .42s var(--ease-out) both; }
 .fx-pop { animation: fxPop .6s var(--ease-out) both; }
+/* Livefunktioner: knappen för nya inlägg och siffror som tickar upp. */
+.live-pill { position: sticky; top: 4.2rem; z-index: 12; display: flex; align-items: center; gap: .45rem; margin: .3rem auto -2.6rem; padding: .5rem 1rem .5rem .55rem; border: 0; border-radius: 999px; background: var(--brand); color: #0f120f; font: 600 .92rem var(--body); cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.3); animation: livePill .35s var(--ease-out) both; }
+.live-pill[hidden] { display: none; }
+.live-pill svg { width: 1rem; height: 1rem; }
+.live-pill:hover { filter: brightness(1.06); }
+.lp-faces { display: inline-flex; }
+.lp-faces .avatar { width: 1.55rem; height: 1.55rem; font-size: .62rem; border: 2px solid var(--brand); box-sizing: content-box; }
+.lp-faces .avatar + .avatar { margin-left: -.5rem; }
+@media (min-width: 1000px) { .live-pill { top: 1rem; } }
+@keyframes livePill { from { opacity: 0; transform: translateY(-.6rem) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes countTick { 0% { transform: translateY(.45em); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.act span.tick { display: inline-block; animation: countTick .3s var(--ease-out) both; }
+.tweet.fx-gone { animation: fxGone .3s ease forwards; }
+@keyframes fxGone { to { opacity: 0; transform: scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .live-pill, .act span.tick, .tweet.fx-gone { animation: none !important; } }
 .menu { animation: fxMenu .18s var(--ease-out) both; transform-origin: top right; }
 .act-wrap .menu { transform-origin: top left; }
 .modal-back:not([hidden]) { animation: fxFade .2s ease both; }
@@ -883,6 +898,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
           </select>
         </label>
       </div>
+      <button class="live-pill" type="button" id="live-pill" hidden><span class="lp-faces" id="lp-faces"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span id="lp-text">Visa nya inlägg</span></button>
       <div class="feed" id="feed"></div>
     </div>
 
@@ -1248,9 +1264,11 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   }
 
   // ---------- Hjälpfunktioner ----------
+  var lastWrite = 0;
   function api(path, opts) {
     opts = opts || {};
     var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: { 'x-fp': '1' } };
+    if (init.method !== 'GET') lastWrite = Date.now();
     if (opts.body) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
     return fetch('/api/' + path, init).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (data) {
@@ -1574,8 +1592,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     $('dm-count').textContent = n > 99 ? '99+' : n;
     $('dm-count').hidden = !n;
   }
-  // Olästa meddelanden kollas en gång i minuten när fliken syns.
-  setInterval(function () { if (state.user && state.canDm && document.visibilityState === 'visible' && state.panel !== 'panel-messages' && state.panel !== 'panel-notifs') loadFollowing(); }, 60000);
+  // Följlistor och inställningar uppdateras var femte minut. Olästa siffror sköts av livekollen.
+  setInterval(function () { if (state.user && state.canDm && document.visibilityState === 'visible' && state.panel !== 'panel-messages' && state.panel !== 'panel-notifs') loadFollowing(); }, 300000);
   // Inlägg och kommentarer från tystade och blockerade konton visas inte.
   function hiddenAuthor(key) { key = (key || 'filmpower').toLowerCase(); return !!(state.muted[key] || state.blocked[key]); }
 
@@ -1695,6 +1713,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     $('tabs').hidden = true;
     $('app-head').hidden = true;
     state.panel = except;
+    $('live-pill').hidden = true;
     animateIn(except);
     document.body.classList.toggle('in-dm', except === 'panel-messages');
     // Profil-fliken lyser när man är på sitt eget konto.
@@ -2834,6 +2853,9 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     if (tab.dataset.view) state.view = tab.dataset.view;
     tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.id === tabId)); });
     stopThreadPoll();
+    // Byter man flik visas väntande nya inlägg direkt, eftersom flödet ritas om ändå.
+    if (live && live.pending.length) { state.items = live.pending.concat(state.items); live.pending = []; }
+    $('live-pill').hidden = true;
     document.body.classList.toggle('in-dm', state.panel === 'panel-messages');
     PANELS.forEach(function (p) { $(p).hidden = p !== state.panel; });
     animateIn(state.panel);
@@ -3071,7 +3093,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
       var pa = postAuthor(it), faces = el('span', 'xr-faces');
       faces.appendChild(avatarEl('', pa.initial, pa.avatar, pa.brand));
       meta.appendChild(faces);
-      meta.appendChild(document.createTextNode([timeAgo(it.createdAt), it.category, it.comments ? it.comments + (it.comments === 1 ? ' kommentar' : ' kommentarer') : it.likes ? it.likes + ' gillningar' : ''].filter(Boolean).join(' · ')));
+      meta.appendChild(document.createTextNode([timeAgo(it.createdAt), it.category, it.comments ? it.comments + (it.comments === 1 ? ' kommentar' : ' kommentarer') : it.likes ? it.likes + (it.likes === 1 ? ' gillning' : ' gillningar') : ''].filter(Boolean).join(' · ')));
       txt.appendChild(meta);
       a.appendChild(txt);
       if (it.image) {
@@ -3102,7 +3124,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
         a.href = '#inlagg-' + it.id;
         a.appendChild(el('small', null, 'Populärt på Film Power'));
         a.appendChild(el('b', null, itemLabel(it)));
-        a.appendChild(el('small', null, [it.likes ? it.likes + ' gillningar' : '', it.comments ? it.comments + ' kommentarer' : ''].filter(Boolean).join(' · ')));
+        a.appendChild(el('small', null, [it.likes ? it.likes + (it.likes === 1 ? ' gillning' : ' gillningar') : '', it.comments ? it.comments + (it.comments === 1 ? ' kommentar' : ' kommentarer') : ''].filter(Boolean).join(' · ')));
         tl.appendChild(a);
       });
       if (!hot.length) tl.appendChild(el('p', 'xr-empty', 'Skriv #ämnen i dina inlägg, till exempel #kortfilm, så syns de här.'));
@@ -3203,6 +3225,152 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     opts.forEach(function (o, i) { o.classList.toggle('sel', i === xrSel); o.setAttribute('aria-selected', String(i === xrSel)); });
     opts[xrSel].scrollIntoView({ block: 'nearest' });
   });
+
+  // ---------- Live ----------
+  // Sidan frågar servern var 15:e sekund (bara när fliken syns) om något har hänt: nya inlägg,
+  // nya gillningar, kommentarer och delningar, olästa notiser och meddelanden. Nya inlägg
+  // visas inte mitt i läsningen, utan bakom knappen "Visa nya inlägg", som på Twitter.
+  var live = { sig: '', timer: null, busy: false, fails: 0, pending: [], title: document.title };
+  function liveDelay() { return document.visibilityState === 'visible' ? Math.min(15000 * Math.pow(2, live.fails), 120000) : 0; }
+  function scheduleLive(ms) {
+    clearTimeout(live.timer);
+    var d = ms != null ? ms : liveDelay();
+    if (d) live.timer = setTimeout(pulse, d);
+  }
+  function pulse() {
+    if (live.busy || !state.dbReady || document.visibilityState !== 'visible') { scheduleLive(); return; }
+    live.busy = true;
+    var post = state.panel === 'panel-post' && state.current ? state.current.id : '';
+    api('news?pulse=1' + (post ? '&post=' + encodeURIComponent(post) : ''))
+      .then(function (d) {
+        live.fails = 0;
+        liveBadges(d);
+        var jobs = [];
+        if (live.sig && d.sig !== live.sig && Date.now() - lastWrite > 4000) jobs.push(refreshFeed());
+        if (!live.sig || Date.now() - lastWrite > 4000) live.sig = d.sig;
+        if (post && state.current && state.current.id === post && d.postComments !== (state.currentComments || []).length && Date.now() - lastWrite > 4000) jobs.push(refreshComments(post));
+        return Promise.all(jobs);
+      })
+      .catch(function () { live.fails = Math.min(live.fails + 1, 3); })
+      .then(function () { live.busy = false; scheduleLive(); });
+  }
+  function liveBadges(d) {
+    if (!state.user) return;
+    var hadNotif = Number($('notif-count').textContent) || 0;
+    setNotifUnread(d.notifUnread || 0);
+    if (state.canDm) setUnread(d.dmUnread || 0);
+    var total = (d.notifUnread || 0) + (state.canDm ? d.dmUnread || 0 : 0);
+    document.title = (total ? '(' + (total > 99 ? '99+' : total) + ') ' : '') + live.title;
+    if (d.notifUnread > hadNotif && state.panel === 'panel-notifs') loadNotifs();
+    if (d.notifUnread > hadNotif) replay($('notif-count'), 'fx-pop');
+  }
+  function setCount(btn, n) {
+    if (!btn) return;
+    var sp = btn.querySelector('span'), t = num(n);
+    if (!t) { if (sp) sp.remove(); return; }
+    if (!sp) { sp = el('span'); btn.appendChild(sp); }
+    if (sp.textContent === t) return;
+    sp.textContent = t;
+    replay(sp, 'tick');
+  }
+  function patchCounts(item) {
+    Array.prototype.forEach.call(document.querySelectorAll('.tweet[data-id="' + item.id + '"]'), function (art) {
+      var bar = art.querySelector('.t-actions');
+      if (!bar) return;
+      var acts = bar.querySelectorAll('.act');
+      setCount(acts[0], item.comments);
+      setCount(bar.querySelector('.act.repost'), item.reposts);
+      setCount(bar.querySelector('.act.like'), item.likes);
+      setCount(bar.querySelector('.act.static'), item.views);
+    });
+    if (state.current && state.current.id === item.id && state.panel === 'panel-post') renderDetailActions(item);
+  }
+  function refreshFeed() {
+    return api('news').then(function (d) {
+      var fresh = (d.items || []).map(norm), byId = {}, seen = {}, added = [];
+      state.items.forEach(function (i) { byId[i.id] = i; });
+      var oldest = fresh.length ? Math.min.apply(null, fresh.map(function (f) { return f.createdAt; })) : 0;
+      fresh.forEach(function (f) {
+        seen[f.id] = 1;
+        var old = byId[f.id];
+        if (!old) { if (!live.pending.some(function (p) { return p.id === f.id; })) added.push(f); return; }
+        var counts = old.likes !== f.likes || old.comments !== f.comments || (old.reposts || 0) !== (f.reposts || 0) || old.views !== f.views;
+        var other = old.body !== f.body || old.title !== f.title || old.pinned !== f.pinned;
+        Object.assign(old, f);
+        if (other) refreshItem(old); else if (counts) patchCounts(old);
+      });
+      // Borttagna inlägg försvinner mjukt ur flödet.
+      state.items = state.items.filter(function (i) {
+        if (seen[i.id] || i.createdAt < oldest || (state.current && state.current.id === i.id)) return true;
+        Array.prototype.forEach.call(document.querySelectorAll('.tweet[data-id="' + i.id + '"]'), function (n) { n.classList.add('fx-gone'); setTimeout(function () { n.remove(); }, 320); });
+        return false;
+      });
+      live.pending = live.pending.filter(function (p) { return seen[p.id]; });
+      if (!added.length) { renderRight(); paintPill(); return; }
+      // Bara det som hör till flödet man tittar på väntar bakom knappen. Resten läggs in direkt.
+      var keep = state.items;
+      state.items = keep.concat(added);
+      var showIds = {};
+      viewItems().forEach(function (i) { showIds[i.id] = 1; });
+      state.items = keep;
+      added.forEach(function (a) {
+        if (showIds[a.id] && !a.mine) live.pending.push(a);
+        else state.items.push(a);
+      });
+      if (state.panel === 'panel-feed' && !$('feed').querySelector('.tweet')) showPending();
+      renderRight();
+      paintPill();
+    });
+  }
+  function paintPill() {
+    var n = live.pending.length, pill = $('live-pill');
+    if (!n || state.panel !== 'panel-feed') { pill.hidden = true; return; }
+    var faces = $('lp-faces'), shown = {};
+    faces.replaceChildren();
+    live.pending.forEach(function (it) {
+      var pa = postAuthor(it);
+      if (shown[pa.username] || faces.children.length >= 3) return;
+      shown[pa.username] = 1;
+      faces.appendChild(avatarEl('', pa.initial, pa.avatar, pa.brand));
+    });
+    $('lp-text').textContent = 'Visa ' + n + (n === 1 ? ' nytt inlägg' : ' nya inlägg');
+    pill.hidden = false;
+  }
+  function showPending() {
+    if (!live.pending.length) return;
+    var ids = {};
+    live.pending.forEach(function (p) { ids[p.id] = 1; });
+    state.items = live.pending.concat(state.items);
+    live.pending = [];
+    $('live-pill').hidden = true;
+    renderFeed();
+    Array.prototype.forEach.call($('feed').querySelectorAll('.tweet'), function (t) { if (ids[t.dataset.id]) { t.classList.remove('fx-item'); replay(t, 'fx-pop'); } });
+  }
+  $('live-pill').addEventListener('click', function () {
+    showPending();
+    var top = $('panel-feed').getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: Math.max(0, top), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
+  function refreshComments(id) {
+    return api('post?id=' + encodeURIComponent(id) + '&noview=1').then(function (d) {
+      if (!state.current || state.current.id !== id) return;
+      var before = {};
+      (state.currentComments || []).forEach(function (c) { before[c.id] = 1; });
+      Object.assign(state.current, norm(d.item));
+      state.currentComments = d.comments || [];
+      renderComments(state.current);
+      renderDetailActions(state.current);
+      patchCounts(state.current);
+      Array.prototype.forEach.call($('comment-list').querySelectorAll('.comment'), function (row) {
+        if (row.dataset.cid && !before[row.dataset.cid]) replay(row, 'fx-pop');
+      });
+    });
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') scheduleLive(600); else clearTimeout(live.timer);
+  });
+  window.addEventListener('online', function () { live.fails = 0; scheduleLive(300); });
+  scheduleLive(8000);
 
   // ---------- Ladda ner appen ----------
   // Sajten går att installera som app (PWA) i Chrome, även på Chromebook. Chrome ger ett eget
@@ -3858,6 +4026,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     if (!comments.length) { list.appendChild(el('p', 'no-comments', 'Inga kommentarer än. Bli först!')); return; }
     comments.forEach(function (c) {
       var row = el('div', 'comment');
+      row.dataset.cid = c.id;
       var brand = !c.anon && c.author === 'Film Power';
       var cUser = c.anon ? '' : brand ? 'filmpower' : c.username;
       row.appendChild(c.anon ? avatarEl('anon', '?', '', false) : profileLink(cUser, avatarEl('', brand ? 'FP' : c.author.charAt(0), c.avatar, brand), 'Profil: ' + c.author));

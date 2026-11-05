@@ -4,7 +4,7 @@ import {
   handle, send, readBody, queryParam, requireAppHeader, requireSession,
   HttpError, redis, pipeline, CATEGORIES, blobMode, blobAuth, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
 } from './_lib.js';
-import { notify, mentionsIn } from './_social.js';
+import { notify, mentionsIn, myKey } from './_social.js';
 
 const MAX_LIST = 200;
 // Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
@@ -19,6 +19,27 @@ export default handle(async (req, res) => {
   // Nyheterna är öppna för alla. Att skriva kräver inloggning.
   if (req.method === 'GET') {
     const s = await readerSession(req);
+    // Livekoll som sidan gör var 15:e sekund: ett fingeravtryck av de senaste inläggen och deras
+    // gillningar, kommentarer och delningar, plus olästa notiser och meddelanden. Sidan hämtar
+    // hela flödet bara när fingeravtrycket ändrats. Billigt: två anrop till databasen.
+    if (queryParam(req, 'pulse')) {
+      const ids = await redis('ZREVRANGE', 'news:idx', 0, 39);
+      const post = String(queryParam(req, 'post') || '').slice(0, 40);
+      const me = myKey(s);
+      const cmds = [];
+      if (ids.length) cmds.push(['HMGET', 'news:likes', ...ids], ['HMGET', 'news:comments', ...ids], ['HMGET', 'news:reposts', ...ids]);
+      if (post) cmds.push(['HGET', 'news:comments', post]);
+      if (me) cmds.push(['GET', 'notifunread:' + me], ['HVALS', 'dmunread:' + me]);
+      const out = await pipeline(cmds);
+      let i = 0;
+      const stats = ids.length ? [out[i++], out[i++], out[i++]] : [[], [], []];
+      const postComments = post ? Number(out[i++]) || 0 : 0;
+      const notif = me ? Number(out[i++]) || 0 : 0;
+      const dm = me ? (out[i++] || []).reduce((t, v) => t + (Number(v) || 0), 0) : 0;
+      const sig = crypto.createHash('sha1').update(ids.map((id, n) => [id, stats[0][n] || 0, stats[1][n] || 0, stats[2][n] || 0].join(':')).join(',')).digest('base64url').slice(0, 16);
+      res.setHeader('Cache-Control', 'no-store');
+      return send(res, 200, { sig, ids: ids.slice(0, 20), postComments, notifUnread: notif, dmUnread: dm });
+    }
     const ids = await redis('ZREVRANGE', 'news:idx', 0, MAX_LIST - 1);
     if (!ids.length) return send(res, 200, { items: [] });
     const raws = await redis('HMGET', 'news', ...ids);
