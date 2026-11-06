@@ -671,6 +671,8 @@ footer { padding-block: 3rem 2rem; text-align: center; font-size: .88rem; color:
 .xr-foot { display: flex; flex-wrap: wrap; gap: .3rem .9rem; padding: 0 1.1rem; font-size: .8rem; color: var(--muted); }
 .xr-foot a { color: var(--muted); text-decoration: none; }
 .xr-foot a:hover { text-decoration: underline; }
+.tmdb-note { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+.tmdb-note a { color: var(--muted); text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .xr-pop, .xr-card { animation: none; } }
 .xside, .xright { display: none; }
 /* Väg ut från bloggen och nyheterna till Film Powers hemsida. */
@@ -861,7 +863,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     <a class="xr-more" href="#utforska">Visa mer</a>
   </section>
   <nav class="xr-foot" aria-label="Sidfot">
-    <a href="/">Film Power</a><a href="/nyheter/">Nyheter</a><a href="/blogg">Bloggen</a><span>© 2026 Film Power</span>
+    <a href="/">Film Power</a><a href="/nyheter/">Nyheter</a><a href="/blogg">Bloggen</a><span>© 2026 Film Power</span><span class="tmdb-note">Filmdata från <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>. Använder TMDB:s API men är inte godkänd eller certifierad av TMDB.</span>
   </nav>
 </aside>
 
@@ -1285,7 +1287,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-<footer>© 2026 Film Power · <a href="/">filmpower</a></footer>
+<footer>© 2026 Film Power · <a href="/">filmpower</a><br><small class="tmdb-note">Filmdata från <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>. Sajten använder TMDB:s API men är inte godkänd eller certifierad av TMDB.</small></footer>
 
 <script>
 (function () {

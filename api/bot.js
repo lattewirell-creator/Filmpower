@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import {
   handle, send, requireAppHeader, getSession, HttpError, dbReady, redis, pipeline, CATEGORIES, readBody, rateLimit, clientIp,
 } from './_lib.js';
+import { tmdbKey, tmdbPicks, markTmdb, tmdbCheck } from './_tmdb.js';
 
 // Nyhetsboten: hämtar filmnyheter från branschsajter en gång per dag och publicerar dem som Film Power.
 // Vercel Cron anropar GET varje morgon. Admin kan också köra den direkt (POST) och se status (GET ?status=1).
@@ -390,8 +391,28 @@ export async function fetchImage(url) {
 
 // ---------- Körning ----------
 
+// Var Film Powers dagliga inlägg kommer ifrån. Med TMDB_API_KEY: filmer från TMDB (nytt på bio,
+// premiärer, trender). BOT_SOURCES=both blandar TMDB och nyhetssajterna, BOT_SOURCES=rss stänger av TMDB.
+function sources() {
+  const v = String(process.env.BOT_SOURCES || '').toLowerCase();
+  if (!tmdbKey() || v === 'rss') return { tmdb: false, rss: true };
+  return { tmdb: true, rss: v === 'both' || v === 'båda' };
+}
+
 async function run() {
-  const results = await Promise.allSettled(feeds().map(fetchFeed));
+  const src = sources();
+  const total = postsPerDay();
+  let tmdbPosts = [], tmdbError = '';
+  if (src.tmdb) {
+    try {
+      const r = await tmdbPicks(src.rss ? Math.ceil(total / 2) : total);
+      tmdbPosts = r.picked;
+      if (!tmdbPosts.length && r.errors.length) tmdbError = r.errors[0];
+    } catch (err) { console.error('TMDB:', err); tmdbError = String(err.message || err).slice(0, 300); }
+  }
+  // Nyhetssajterna fyller resten. Går TMDB inte att nå tar de över hela dagen, så att kontot inte tystnar.
+  const rssCount = src.rss || !tmdbPosts.length ? total - tmdbPosts.length : 0;
+  const results = rssCount ? await Promise.allSettled(feeds().map(fetchFeed)) : [];
   const failed = results.map((r, i) => (r.status === 'rejected' ? feeds()[i].name : null)).filter(Boolean);
   const now = Date.now();
   let all = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
@@ -404,9 +425,9 @@ async function run() {
   const seen = keys.length ? await redis('HMGET', 'bot:seen', ...keys) : [];
   const candidates = unique.filter((_, i) => !seen[i]).slice(0, 30);
 
-  const count = postsPerDay();
+  const count = rssCount;
   let picked = [], mode = 'plain', aiError = '';
-  if (candidates.length) {
+  if (candidates.length && count) {
     if (aiProvider()) {
       try { picked = await writeSwedish(candidates, count); mode = aiProvider(); } catch (err) { console.error('Nyhetsboten:', err); aiError = String(err.message || err).slice(0, 300); }
     }
@@ -414,8 +435,12 @@ async function run() {
     if (!picked.length && !aiProvider()) picked = pickPlain(candidates, count);
   }
 
-  // Hämta artikelbilderna och spara dem en och en (varje bild är ett eget, stort anrop).
-  const images = await Promise.all(picked.map(articleImage));
+  // TMDB-filmerna först, sedan nyheterna.
+  const rssPicked = picked.length;
+  picked = tmdbPosts.map((p) => ({ ...p, tmdbImage: p.image })).concat(picked);
+
+  // Hämta bilderna och spara dem en och en (varje bild är ett eget, stort anrop).
+  const images = await Promise.all(picked.map((p) => (p.tmdbImage ? fetchImage(p.tmdbImage) : articleImage(p))));
   const imageIds = [];
   for (const data of images) {
     if (!data) { imageIds.push(''); continue; }
@@ -438,25 +463,27 @@ async function run() {
       authorKey: '',
       bot: true,
       img2: true,
-      sv: mode !== 'plain',
-      v: mode !== 'plain' ? 3 : 0,
+      sv: p.tmdbId ? true : mode !== 'plain',
+      v: p.tmdbId ? 3 : mode !== 'plain' ? 3 : 0,
+      ...(p.tmdbId ? { tmdb: p.tmdbId } : {}),
       createdAt: now - i * 1000,
     };
     const key = crypto.createHash('sha1').update(p.link).digest('hex').slice(0, 16);
     cmds.push(['HSET', 'news', item.id, JSON.stringify(item)], ['ZADD', 'news:idx', item.createdAt, item.id], ['HSET', 'bot:seen', key, String(now)]);
   });
   if (cmds.length) await pipeline(cmds);
+  await markTmdb(tmdbPosts.map((p) => p.tmdbId));
 
   // Rätta äldre inlägg: översätt engelska och skriv om sådana som skrevs med den gamla metoden.
   let translated = 0, unverified = 0;
-  if (aiProvider()) {
+  if (aiProvider() && rssCount) {
     try { ({ repaired: translated, unverified } = await repairOld(all)); } catch (err) { console.error('Nyhetsboten rättning:', err); aiError = aiError || String(err.message || err).slice(0, 300); }
   }
 
   let imagesFixed = 0;
   try { imagesFixed = await refreshImages(); } catch (err) { console.error('Nyhetsboten bilder:', err); }
 
-  const status = { at: now, posted: picked.length, translated, unverified, imagesFixed, error: aiError, images: imageIds.filter(Boolean).length, mode, found: all.length, failed };
+  const status = { at: now, posted: picked.length, tmdb: tmdbPosts.length, news: rssPicked, tmdbError, translated, unverified, imagesFixed, error: aiError || tmdbError, images: imageIds.filter(Boolean).length, mode: tmdbPosts.length ? (rssPicked ? 'tmdb+' + mode : 'tmdb') : mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }
@@ -551,7 +578,7 @@ export default handle(async (req, res) => {
     const s = await getSession(req);
     if (!s || s.role !== 'admin') throw new HttpError(403, 'Bara admin kan se nyhetsboten.');
     const last = await redis('GET', 'bot:last');
-    return send(res, 200, { last: last ? JSON.parse(last) : null, ai: aiProvider(), perDay: postsPerDay() });
+    return send(res, 200, { last: last ? JSON.parse(last) : null, ai: aiProvider(), perDay: postsPerDay(), sources: sources(), tmdb: url.searchParams.get('status') === 'tmdb' ? await tmdbCheck() : Boolean(tmdbKey()) });
   }
 
   if (req.method === 'GET') {
