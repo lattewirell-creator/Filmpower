@@ -3,7 +3,7 @@ import {
   normalizeCode, hashCode, safeEqual, sessionCookie, clientIp,
   usernameKey, hashPassword, checkPassword,
 } from './_lib.js';
-import { ensureNewsAccount } from './_newsaccount.js';
+import { ensureNewsAccount, NEWS_KEY } from './_newsaccount.js';
 
 const MAX_FAILS = 10; // misslyckade försök per IP och kvart
 
@@ -37,6 +37,8 @@ async function attempt(b, req, res) {
     const password = String(b.password || '');
     if (!key || !password) throw new HttpError(400, 'Fyll i användarnamn och lösenord.');
 
+    // Nyhetskontot film://power loggar bara in via Admin-fliken.
+    if (key === NEWS_KEY) throw new HttpError(401, 'Fel användarnamn eller lösenord.');
     const raw = await redis('HGET', 'users', key);
     const user = raw ? JSON.parse(raw) : null;
     // Adminkonton får högst 20 felaktiga försök per dygn, oavsett varifrån de kommer,
@@ -79,8 +81,25 @@ async function attempt(b, req, res) {
     });
   }
 
-  // Från Admin-fliken godtas bara adminkoden.
-  if (b.as === 'admin') throw new HttpError(401, 'Det är inte adminkoden. Är du medlem? Välj Medlem ovanför.');
+  // Från Admin-fliken godtas adminkoden, och nyhetskontots lösenord (loggar in som film://power).
+  if (b.as === 'admin') {
+    if (dbReady()) {
+      await ensureNewsAccount().catch(() => {});
+      const raw = await redis('HGET', 'users', NEWS_KEY);
+      const user = raw ? JSON.parse(raw) : null;
+      const acctKey = 'rl:loginacct:' + NEWS_KEY;
+      if (user && user.role === 'admin' && user.status === 'active' && Number(await redis('GET', acctKey) || 0) < 20) {
+        if (await checkPassword(String(b.code || '').trim(), user.salt, user.hash)) {
+          const label = user.displayName || user.username;
+          return send(res, 200, { role: 'admin', label, verified: Boolean(user.verified), avatar: user.avatar || '', anon: false }, {
+            'Set-Cookie': sessionCookie(req, { role: 'admin', label, user: NEWS_KEY, anon: false }),
+          });
+        }
+        await pipeline([['INCR', acctKey], ['EXPIRE', acctKey, 86400, 'NX']]);
+      }
+    }
+    throw new HttpError(401, 'Det är inte adminkoden. Är du medlem? Välj Medlem ovanför.');
+  }
 
   if (dbReady()) {
     const hash = hashCode(entered);
