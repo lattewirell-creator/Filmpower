@@ -5,6 +5,7 @@ import {
 } from './_lib.js';
 import { tmdbKey, tmdbPicks, markTmdb, tmdbCheck } from './_tmdb.js';
 import { ensureNewsAccount, NEWS_KEY, NEWS_NAME } from './_newsaccount.js';
+import { randomTimes, queuePosts, queueCount, publishDue } from './_botqueue.js';
 
 // Nyhetsboten: hämtar filmnyheter från branschsajter en gång per dag och publicerar dem som Film Power.
 // Vercel Cron anropar GET varje morgon. Admin kan också köra den direkt (POST) och se status (GET ?status=1).
@@ -400,7 +401,7 @@ function sources() {
   return { tmdb: true, rss: v === 'both' || v === 'båda' };
 }
 
-async function run() {
+async function run(spread = false) {
   await ensureNewsAccount();
   const src = sources();
   const total = postsPerDay();
@@ -450,8 +451,10 @@ async function run() {
     try { await redis('SET', 'img:' + id, data); imageIds.push(id); } catch (err) { console.error('Nyhetsboten bild:', err); imageIds.push(''); }
   }
 
-  // Lite olika tider, så att inläggen hamnar i rätt ordning i flödet.
-  const cmds = [];
+  // Den dagliga körningen sprider ut inläggen på slumpmässiga tider under dagen (se _botqueue.js).
+  // Kör admin boten för hand publiceras de direkt, med lite olika tider så att ordningen blir rätt.
+  const when = spread ? randomTimes(picked.length, now) : picked.map((_, i) => now - i * 1000);
+  const cmds = [], queued = [];
   picked.forEach((p, i) => {
     const item = {
       id: crypto.randomBytes(6).toString('hex'),
@@ -468,12 +471,15 @@ async function run() {
       sv: p.tmdbId ? true : mode !== 'plain',
       v: p.tmdbId ? 3 : mode !== 'plain' ? 3 : 0,
       ...(p.tmdbId ? { tmdb: p.tmdbId } : {}),
-      createdAt: now - i * 1000,
+      createdAt: when[i],
     };
     const key = crypto.createHash('sha1').update(p.link).digest('hex').slice(0, 16);
-    cmds.push(['HSET', 'news', item.id, JSON.stringify(item)], ['ZADD', 'news:idx', item.createdAt, item.id], ['HSET', 'bot:seen', key, String(now)]);
+    if (spread) queued.push(item);
+    else cmds.push(['HSET', 'news', item.id, JSON.stringify(item)], ['ZADD', 'news:idx', item.createdAt, item.id]);
+    cmds.push(['HSET', 'bot:seen', key, String(now)]);
   });
   if (cmds.length) await pipeline(cmds);
+  await queuePosts(queued);
   await markTmdb(tmdbPosts.map((p) => p.tmdbId));
 
   // Rätta äldre inlägg: översätt engelska och skriv om sådana som skrevs med den gamla metoden.
@@ -485,7 +491,7 @@ async function run() {
   let imagesFixed = 0;
   try { imagesFixed = await refreshImages(); } catch (err) { console.error('Nyhetsboten bilder:', err); }
 
-  const status = { at: now, posted: picked.length, tmdb: tmdbPosts.length, news: rssPicked, tmdbError, translated, unverified, imagesFixed, error: aiError || tmdbError, images: imageIds.filter(Boolean).length, mode: tmdbPosts.length ? (rssPicked ? 'tmdb+' + mode : 'tmdb') : mode, found: all.length, failed };
+  const status = { at: now, posted: picked.length, queued: queued.length, times: queued.map((q) => q.createdAt), tmdb: tmdbPosts.length, news: rssPicked, tmdbError, translated, unverified, imagesFixed, error: aiError || tmdbError, images: imageIds.filter(Boolean).length, mode: tmdbPosts.length ? (rssPicked ? 'tmdb+' + mode : 'tmdb') : mode, found: all.length, failed };
   await redis('SET', 'bot:last', JSON.stringify(status));
   return status;
 }
@@ -580,7 +586,7 @@ export default handle(async (req, res) => {
     const s = await getSession(req);
     if (!s || s.role !== 'admin') throw new HttpError(403, 'Bara admin kan se nyhetsboten.');
     const last = await redis('GET', 'bot:last');
-    return send(res, 200, { last: last ? JSON.parse(last) : null, ai: aiProvider(), perDay: postsPerDay(), sources: sources(), tmdb: url.searchParams.get('status') === 'tmdb' ? await tmdbCheck() : Boolean(tmdbKey()) });
+    return send(res, 200, { last: last ? JSON.parse(last) : null, queue: await queueCount(), ai: aiProvider(), perDay: postsPerDay(), sources: sources(), tmdb: url.searchParams.get('status') === 'tmdb' ? await tmdbCheck() : Boolean(tmdbKey()) });
   }
 
   if (req.method === 'GET') {
@@ -589,7 +595,7 @@ export default handle(async (req, res) => {
     const day = new Date().toISOString().slice(0, 10);
     const ok = await redis('SET', 'bot:day:' + day, '1', 'NX', 'EX', 172800);
     if (!ok) return send(res, 200, { skipped: true });
-    return send(res, 200, await run());
+    return send(res, 200, await run(true));
   }
 
   if (req.method === 'POST') {

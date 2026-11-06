@@ -5,6 +5,7 @@ import {
   HttpError, redis, pipeline, CATEGORIES, blobMode, blobAuth, readerSession, withStats, withAuthors, rateLimit, actorId, IMAGE_RE,
 } from './_lib.js';
 import { notify, mentionsIn, myKey } from './_social.js';
+import { publishDue } from './_botqueue.js';
 
 const MAX_LIST = 200;
 // Bilden krymps i webbläsaren innan uppladdning. Taket håller oss under Upstash gräns per anrop.
@@ -18,6 +19,8 @@ function clean(s, max) {
 export default handle(async (req, res) => {
   // Nyheterna är öppna för alla. Att skriva kräver inloggning.
   if (req.method === 'GET') {
+    // Nyhetskontots inlägg i kö som är dags att publicera (högst en koll var 15:e sekund och server).
+    await publishDue().catch((err) => console.error('Kön:', err.message));
     const s = await readerSession(req);
     // Livekoll som sidan gör var 15:e sekund: ett fingeravtryck av de senaste inläggen och deras
     // gillningar, kommentarer och delningar, plus olästa notiser och meddelanden. Sidan hämtar

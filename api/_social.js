@@ -243,12 +243,12 @@ export async function notify(s, target, type, data = {}) {
 }
 const PUSH_TEXT = { post: 'har publicerat något nytt', like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };
 
-// @-taggar i en text, som användarnamn (gemener), utan dubbletter. @ceo betyder Film Power.
+// @-taggar i en text, som användarnamn (gemener), utan dubbletter. @ceo betyder nyhetskontot film://power.
 export function mentionsIn(text) {
   const out = new Set();
   for (const m of String(text || '').matchAll(/(^|[^A-Za-z0-9_.@-])@([A-Za-z0-9_.-]{3,20})/g)) {
     const k = m[2].replace(/[.-]+$/, '').toLowerCase();
-    out.add(k === 'ceo' ? 'filmpower' : k);
+    out.add(k === 'ceo' ? 'filmpowernyheter' : k);
   }
   return [...out].slice(0, 10);
 }
