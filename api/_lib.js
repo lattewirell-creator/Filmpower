@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 const COOKIE = 'fp_session';
 const SESSION_DAYS = 30;
 
-export const CATEGORIES = ['Branschnytt', 'Festivaler', 'Teknik', 'Jobb & casting', 'Tips'];
+export const CATEGORIES = ['Branschnytt', 'Bio & premiärer', 'Festivaler', 'Teknik', 'Jobb & casting', 'Tips'];
 
 // ---------- Databas (Upstash Redis via REST, inga npm-paket behövs) ----------
 
