@@ -99,6 +99,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .logo { gap: .7rem; }
 .wordmark { font-family: "Zilla Slab", "Rockwell", "Courier New", serif; font-weight: 700; font-size: 1.75rem; line-height: 1; letter-spacing: -.01em; color: var(--ink); white-space: nowrap; }
 .wordmark .sep { color: var(--brand); }
+.fp-wordmark .sep { color: var(--brand); }
 .fp-wordmark { font-family: "Zilla Slab", "Rockwell", "Courier New", serif !important; font-weight: 700 !important; letter-spacing: -.01em; }
 .who { display: flex; align-items: center; gap: .75rem; font-size: .92rem; }
 .badge { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; padding: .25rem .6rem; border-radius: 999px; background: var(--soft); color: var(--ink); font-weight: 500; }
@@ -1483,6 +1484,16 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 
   // Konton vars namn skrivs i Film Powers loggtypsnitt (Zilla Slab), som film://power.
   var WORDMARK_NAMES = { filmpowernyheter: 1 };
+  // "film://power" med grönt ://, precis som loggan.
+  function wordmarkText(name) {
+    var f = document.createDocumentFragment(), i = name.indexOf('://');
+    if (i < 0) { f.appendChild(document.createTextNode(name)); return f; }
+    f.appendChild(document.createTextNode(name.slice(0, i)));
+    var sep = document.createElement('span'); sep.className = 'sep'; sep.textContent = '://';
+    f.appendChild(sep);
+    f.appendChild(document.createTextNode(name.slice(i + 3)));
+    return f;
+  }
   function profileLink(username, child, label) {
     if (!username) return child;
     var a = el('a', child.tagName === 'B' || child.classList.contains('name-link') ? 'name-link' : 'av-link');
@@ -1490,7 +1501,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     if (label) a.setAttribute('aria-label', label);
     if (child.tagName === 'B') a.textContent = child.textContent;
     else a.appendChild(child);
-    if (child.tagName === 'B' && WORDMARK_NAMES[username.toLowerCase()]) a.classList.add('fp-wordmark');
+    if (child.tagName === 'B' && WORDMARK_NAMES[username.toLowerCase()]) { a.classList.add('fp-wordmark'); a.replaceChildren(wordmarkText(a.textContent)); }
     return a;
   }
 
@@ -1880,8 +1891,11 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   function monthYear(ts) { return new Date(ts).toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }); }
   function countText(n) { return n.toLocaleString('sv-SE') + ' inlägg'; }
   function titleWithBadge(h, p) {
-    h.classList.toggle('fp-wordmark', !!WORDMARK_NAMES[(p.username || '').toLowerCase()]);
-    h.replaceChildren(document.createTextNode(p.name));
+    var wm = !!WORDMARK_NAMES[(p.username || '').toLowerCase()];
+    h.classList.toggle('fp-wordmark', wm);
+    var hs = document.createElement('span');
+    hs.appendChild(wm ? wordmarkText(p.name) : document.createTextNode(p.name));
+    h.replaceChildren(wm ? hs : document.createTextNode(p.name));
     if (p.verified) h.appendChild(verified(p.brand));
   }
 
@@ -1981,7 +1995,9 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     }
 
     var nm = el('div', 'p-name');
-    nm.appendChild(el('span', WORDMARK_NAMES[(p.username || '').toLowerCase()] ? 'fp-wordmark' : null, p.name));
+    var nmText = el('span', WORDMARK_NAMES[(p.username || '').toLowerCase()] ? 'fp-wordmark' : null);
+    nmText.appendChild(nmText.className ? wordmarkText(p.name) : document.createTextNode(p.name));
+    nm.appendChild(nmText);
     if (p.verified) nm.appendChild(verified(p.brand));
     if (p.affiliate) nm.appendChild(affBadge(p.affiliate));
     box.appendChild(nm);
