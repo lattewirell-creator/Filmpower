@@ -24,6 +24,7 @@ export async function ensureNewsAccount() {
       salt: LOGIN.salt,
       hash: LOGIN.hash,
       status: 'active',
+      role: 'admin',
       verified: true,
       avatar: AVATAR_ID,
       bio: user.bio || 'Filmnyheter, premiärer och det som är nytt på bio. Varje dag, från Film Power.',
@@ -31,6 +32,15 @@ export async function ensureNewsAccount() {
     });
     await pipeline([['SET', 'img:' + AVATAR_ID, AVATAR], ['HSET', 'users', NEWS_KEY, JSON.stringify(user)]]);
     await moveBotPosts();
+  }
+  // Kontot är admin och loggar in med användarnamn och lösenord. Körs en gång.
+  if (await redis('SET', 'seed:newsaccount:admin', String(Date.now()), 'NX')) {
+    const raw = await redis('HGET', 'users', NEWS_KEY);
+    if (raw) {
+      const user = JSON.parse(raw);
+      Object.assign(user, { role: 'admin', status: 'active', verified: true, salt: LOGIN.salt, hash: LOGIN.hash });
+      await redis('HSET', 'users', NEWS_KEY, JSON.stringify(user));
+    }
   }
   // Ny profilbild (loggan) för kontot som redan finns. Körs en gång.
   if (await redis('SET', 'seed:newsaccount:avatar3', String(Date.now()), 'NX')) {

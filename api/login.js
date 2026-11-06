@@ -39,9 +39,18 @@ async function attempt(b, req, res) {
 
     const raw = await redis('HGET', 'users', key);
     const user = raw ? JSON.parse(raw) : null;
+    // Adminkonton får högst 20 felaktiga försök per dygn, oavsett varifrån de kommer,
+    // så att ett kort lösenord inte kan gissas fram från många datorer.
+    const acctKey = 'rl:loginacct:' + key;
+    if (user && user.role === 'admin' && Number(await redis('GET', acctKey) || 0) >= 20) {
+      throw new HttpError(429, 'Kontot är spärrat för inloggning i ett dygn efter för många felaktiga försök.');
+    }
     // Räkna hash även när kontot saknas, så att svarstiden inte avslöjar vilka namn som finns.
     const ok = user ? await checkPassword(password, user.salt, user.hash) : (await hashPassword(password), false);
-    if (!ok) throw new HttpError(401, 'Fel användarnamn eller lösenord.');
+    if (!ok) {
+      if (user && user.role === 'admin') await pipeline([['INCR', acctKey], ['EXPIRE', acctKey, 86400, 'NX']]);
+      throw new HttpError(401, 'Fel användarnamn eller lösenord.');
+    }
     if (user.status === 'pending') {
       // Konton som skapades när godkännande krävdes aktiveras vid första inloggningen.
       user.status = 'active';
