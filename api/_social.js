@@ -217,7 +217,7 @@ export async function sendDm(s, key, text) {
 
 // ---------- Notiser ----------
 // notif:<nyckel> är en lista med det senaste som hänt kontot (nyast först), notifunread:<nyckel> antalet olästa.
-// Typer: like, repost, reply, follow, mention, quote.
+// Typer: like, repost, reply, follow, mention, quote, post (någon man har klockan på publicerade).
 
 export async function notify(s, target, type, data = {}) {
   target = String(target || '').toLowerCase();
@@ -241,7 +241,7 @@ export async function notify(s, target, type, data = {}) {
   const url = n.postId ? (blog ? '/blogg' : '/nyheter/') + '#inlagg-' + n.postId : type === 'follow' && me ? '/nyheter/#profil-' + me : '/nyheter/#notiser';
   await pushTo(target, { title: n.byName + ' ' + (PUSH_TEXT[type] || 'har gjort något'), body: n.text || label, url, tag: type + '-' + (n.postId || n.by) });
 }
-const PUSH_TEXT = { like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };
+const PUSH_TEXT = { post: 'har publicerat något nytt', like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };
 
 // @-taggar i en text, som användarnamn (gemener), utan dubbletter. @ceo betyder Film Power.
 export function mentionsIn(text) {

@@ -91,6 +91,16 @@ export default handle(async (req, res) => {
       return send(res, 200, await relation(s, key));
     }
 
+    // Klockan på en profil, som på Twitter: notis när kontot publicerar något. Kräver att man följer.
+    if (action === 'bell' || action === 'unbell') {
+      const me = myKey(s);
+      if (!me) throw new HttpError(403, 'Skapa ett eget konto för att få notiser.');
+      if (!key || key === me) throw new HttpError(400, 'Vilket konto gäller det?');
+      if (action === 'bell' && !(await redis('SISMEMBER', 'followers:' + key, actorId(s)))) throw new HttpError(400, 'Följ kontot först.');
+      await redis(action === 'bell' ? 'SADD' : 'SREM', 'postbell:' + key, me);
+      return send(res, 200, { bell: action === 'bell' });
+    }
+
     if (action !== 'follow' && action !== 'unfollow') throw new HttpError(400, 'Okänd åtgärd.');
     if (!key) throw new HttpError(400, 'Vem vill du följa?');
     if (action === 'follow') {
@@ -110,6 +120,7 @@ export default handle(async (req, res) => {
       ['SCARD', 'followers:' + key],
     ]);
     if (on && added) await notify(s, key, 'follow');
+    if (!on && myKey(s)) await redis('SREM', 'postbell:' + key, myKey(s));
     return send(res, 200, { following: on, followers: Number(followers) || 0 });
   }
 
@@ -226,10 +237,11 @@ export default handle(async (req, res) => {
 
   // Följare och vilka kontot själv följer. Film Power följer som admin.
   const selfActor = profile.brand ? 'admin' : 'u:' + key;
-  const [followers, following, isFollowing] = await pipeline([
+  const [followers, following, isFollowing, bell] = await pipeline([
     ['SCARD', 'followers:' + orgKey],
     ['SCARD', 'following:' + selfActor],
     ['SISMEMBER', 'followers:' + orgKey, s.guest ? 'guest' : actorId(s)],
+    ['SISMEMBER', 'postbell:' + orgKey, myKey(s) || '-'],
   ]);
 
   const { authorKey, ...pub } = profile;
@@ -254,7 +266,7 @@ export default handle(async (req, res) => {
   // Har kontot blockerat den som tittar visas varken inlägg eller svar, som på Twitter.
   const hidden = rel.blocksMe;
   send(res, 200, {
-    profile: { ...pub, ...rel, followedBy, dmAllowed: await dmAllowed(s, orgKey), runBy: await runByOf(orgKey), isMe: Boolean(myKey(s) && myKey(s) === orgKey), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing), posts: items.length },
+    profile: { ...pub, ...rel, followedBy, dmAllowed: await dmAllowed(s, orgKey), runBy: await runByOf(orgKey), isMe: Boolean(myKey(s) && myKey(s) === orgKey), followers: Number(followers) || 0, following: Number(following) || 0, isFollowing: !s.guest && Boolean(isFollowing), bell: Boolean(bell), posts: items.length },
     items: hidden ? [] : items,
     replies: hidden ? [] : await repliesOf(orgKey),
     reposts: hidden ? [] : reposts,

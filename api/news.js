@@ -115,7 +115,14 @@ export default handle(async (req, res) => {
     // Notiser: den som citeras och de som @-taggas.
     const quoted = quoteOf ? JSON.parse(await redis('HGET', 'news', quoteOf)).authorKey || 'filmpower' : '';
     if (quoted) await notify(s, quoted, 'quote', { postId: item.id, text: body });
-    for (const k of mentionsIn(title + ' ' + body)) if (k !== quoted) await notify(s, k, 'mention', { postId: item.id, text: body });
+    const mentioned = mentionsIn(title + ' ' + body);
+    for (const k of mentioned) if (k !== quoted) await notify(s, k, 'mention', { postId: item.id, text: body });
+    // De som slagit på klockan på författarens profil får en notis om det nya inlägget.
+    const author = myKey(s);
+    if (author) {
+      const bells = (await redis('SMEMBERS', 'postbell:' + author)).filter((k) => k !== quoted && !mentioned.includes(k)).slice(0, 100);
+      await Promise.all(bells.map((k) => notify(s, k, 'post', { postId: item.id, text: title || body }).catch(() => {})));
+    }
     const [created] = await withAuthors([item], s);
     return send(res, 201, { item: created });
   }
