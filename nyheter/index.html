@@ -1514,8 +1514,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   }
 
   // Gör om text till noder där @användarnamn blir klickbara länkar till profilen.
-  // Extra handles som leder till ett konto: @ceo går till nyhetskontot film://power.
-  var MENTION_ALIASES = { ceo: 'filmpowernyheter' };
+  // Extra handles som leder till ett konto: @ceo går till Film Power, @co-ceo till nyhetskontot film://power.
+  var MENTION_ALIASES = { ceo: 'filmpower', 'co-ceo': 'filmpowernyheter' };
 
   function linkify(text) {
     var frag = document.createDocumentFragment();
