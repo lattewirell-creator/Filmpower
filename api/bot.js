@@ -4,6 +4,7 @@ import {
   handle, send, requireAppHeader, getSession, HttpError, dbReady, redis, pipeline, CATEGORIES, readBody, rateLimit, clientIp,
 } from './_lib.js';
 import { tmdbKey, tmdbPicks, markTmdb, tmdbCheck } from './_tmdb.js';
+import { ensureNewsAccount, NEWS_KEY, NEWS_NAME } from './_newsaccount.js';
 
 // Nyhetsboten: hämtar filmnyheter från branschsajter en gång per dag och publicerar dem som Film Power.
 // Vercel Cron anropar GET varje morgon. Admin kan också köra den direkt (POST) och se status (GET ?status=1).
@@ -400,6 +401,7 @@ function sources() {
 }
 
 async function run() {
+  await ensureNewsAccount();
   const src = sources();
   const total = postsPerDay();
   let tmdbPosts = [], tmdbError = '';
@@ -459,8 +461,8 @@ async function run() {
       category: p.category,
       link: p.link,
       image: imageIds[i],
-      author: 'Film Power',
-      authorKey: '',
+      author: NEWS_NAME,
+      authorKey: NEWS_KEY,
       bot: true,
       img2: true,
       sv: p.tmdbId ? true : mode !== 'plain',

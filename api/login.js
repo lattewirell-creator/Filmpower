@@ -3,6 +3,7 @@ import {
   normalizeCode, hashCode, safeEqual, sessionCookie, clientIp,
   usernameKey, hashPassword, checkPassword,
 } from './_lib.js';
+import { ensureNewsAccount } from './_newsaccount.js';
 
 const MAX_FAILS = 10; // misslyckade försök per IP och kvart
 
@@ -28,6 +29,7 @@ export default handle(async (req, res) => {
 });
 
 async function attempt(b, req, res) {
+  if (b.username !== undefined && dbReady()) await ensureNewsAccount().catch(() => {});
   // Inloggning med användarnamn och lösenord
   if (b.username !== undefined) {
     if (!dbReady()) throw new HttpError(503, 'Databasen är inte kopplad än.');
