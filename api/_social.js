@@ -10,6 +10,7 @@
 //   dmunread:<nyckel> hash med antal olästa per avsändare
 import crypto from 'node:crypto';
 import { redis, pipeline, actorId, HttpError, rateLimit, affKey, orgInfo } from './_lib.js';
+import { pushTo } from './_push.js';
 
 export const keyActor = (key) => (key === 'filmpower' ? 'admin' : 'u:' + key);
 
@@ -210,6 +211,7 @@ export async function sendDm(s, key, text) {
     ['ZADD', 'dms:' + me, m.at, key], ['ZADD', 'dms:' + key, m.at, me],
     ['HINCRBY', 'dmunread:' + key, me, 1],
   ]);
+  await pushTo(key, { title: (s.label || 'Någon') + ' skickade ett meddelande', body: text.slice(0, 140), url: '/nyheter/#meddelanden-' + me, tag: 'dm-' + me });
   return { id: m.id, text: m.text, at: m.at, mine: true };
 }
 
@@ -231,7 +233,15 @@ export async function notify(s, target, type, data = {}) {
   if (blocked || muted || (target !== 'filmpower' && !exists)) return;
   const n = { id: crypto.randomBytes(5).toString('hex'), type, by: me || '', byName: s.label || 'Någon', at: Date.now(), postId: data.postId || '', text: String(data.text || '').slice(0, 140) };
   await pipeline([['LPUSH', 'notif:' + target, JSON.stringify(n)], ['LTRIM', 'notif:' + target, 0, 99], ['INCR', 'notifunread:' + target]]);
+  // Samma notis till datorn och mobilen, om kontot har slagit på det.
+  let label = '', blog = false;
+  if (n.postId) {
+    try { const p = JSON.parse((await redis('HGET', 'news', n.postId)) || 'null'); if (p) { label = p.title || (p.body || '').slice(0, 100); blog = p.kind === 'blog'; } } catch { /* inget inlägg */ }
+  }
+  const url = n.postId ? (blog ? '/blogg' : '/nyheter/') + '#inlagg-' + n.postId : type === 'follow' && me ? '/nyheter/#profil-' + me : '/nyheter/#notiser';
+  await pushTo(target, { title: n.byName + ' ' + (PUSH_TEXT[type] || 'har gjort något'), body: n.text || label, url, tag: type + '-' + (n.postId || n.by) });
 }
+const PUSH_TEXT = { like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };
 
 // @-taggar i en text, som användarnamn (gemener), utan dubbletter. @ceo betyder Film Power.
 export function mentionsIn(text) {

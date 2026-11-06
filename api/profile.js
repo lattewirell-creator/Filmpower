@@ -4,6 +4,7 @@ import {
 import {
   keyActor, myKey, accountExists, relation, dmAllowed, people, notify, notifications, notifUnread, blockedBetween, setBlock, setMute, report, repliesOf, followList, conversations, thread, sendDm, unreadTotal,
 } from './_social.js';
+import { publicKey, addSub, removeSub, hasSub } from './_push.js';
 
 const MAX_LIST = 200;
 // "Drivs av" på företagskonton. Film Power har det här som standard tills admin ändrar det.
@@ -39,6 +40,14 @@ export default handle(async (req, res) => {
       const names = [...new Set((Array.isArray(b.runBy) ? b.runBy : []).map((n) => usernameKey(String(n).replace(/^@/, ''))).filter((n) => /^[a-z0-9_.-]{3,20}$/.test(n)))].slice(0, 10);
       await redis('HSET', 'runby', key, JSON.stringify(names));
       return send(res, 200, { runBy: await runByOf(key) });
+    }
+
+    // Notiser på datorn: spara eller ta bort den här webbläsarens prenumeration.
+    if (action === 'push' || action === 'unpush') {
+      const b = await readBody(req, 5000);
+      if (action === 'push') await addSub(myKey(s), b.subscription);
+      else await removeSub(myKey(s), b.endpoint);
+      return send(res, 200, { ok: true });
     }
 
     // Direktmeddelande till kontot.
@@ -121,6 +130,12 @@ export default handle(async (req, res) => {
     const feedReposts = [];
     fk.forEach((k, i) => { const l = rp[i] || []; for (let j = 0; j < l.length; j += 2) feedReposts.push({ by: k, byName: names.get(k) || '@' + k, id: l[j], at: Number(l[j + 1]) }); });
     return send(res, 200, { following, muted, blocked, unread: await unreadTotal(s), canDm: Boolean(me), me, pinnedPost: pinnedPost || '', feedReposts, notifUnread: await notifUnread(s) });
+  }
+
+  // Nyckeln webbläsaren behöver för att slå på notiser på datorn, och om den här enheten redan är påslagen.
+  if (queryParam(req, 'push')) {
+    const endpoint = String(queryParam(req, 'endpoint') || '');
+    return send(res, 200, { publicKey: await publicKey(), on: await hasSub(myKey(s), endpoint) });
   }
 
   // Notiser till den inloggade. Läses som lästa när de hämtas.
