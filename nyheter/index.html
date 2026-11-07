@@ -387,7 +387,10 @@ body.app-on #prof-body .cover, body.app-on #acc-view .cover { margin-inline: -1.
 .aff:not(.brand) { background: var(--soft); color: var(--ink); font-family: var(--body); font-size: .55rem; overflow: hidden; border: 1px solid var(--line); }
 .aff img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .aff-select { padding: .4rem .6rem; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-size: .85rem; max-width: 15rem; }
-.p-name .aff { width: 1.45rem; height: 1.45rem; font-size: .66rem; border-radius: 5px; }
+.p-name .aff { width: 1.75rem; height: 1.75rem; font-size: .8rem; border-radius: 6px; }
+.aff { width: 1.35rem; height: 1.35rem; font-size: .6rem; overflow: hidden; }
+/* film://powers märke: zooma in f:// så att det fyller rutan. */
+.aff.aff-fp img { transform: scale(1.75); }
 .p-aff { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; color: var(--muted); font-size: .93rem; }
 .member .m-bio { color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cover.has-img { background-size: cover; background-position: center; }
@@ -404,6 +407,13 @@ body.app-on #prof-body .cover, body.app-on #acc-view .cover { margin-inline: -1.
 .fpb-lens { font: 600 22px var(--body); letter-spacing: 8px; fill: #ecece6; }
 .fpb-lens.small { font-size: 17px; letter-spacing: 6px; fill: #d6d6cf; }
 @media (max-width: 560px) { .fpb-txt { top: 18%; } .fpb-cam { height: 92%; right: -6%; } }
+/* Nyhetskontots variant: ljuset från vänster, f://-märket, loggan och en rad med ämnen. */
+.cover.brand.news { background: radial-gradient(120% 150% at 12% 20%, #2f5f24 0%, #142312 42%, #0a0d09 100%); }
+.fpb-mark-news { display: flex; align-items: center; justify-content: center; width: auto; padding: 0 .45em; white-space: nowrap; background: #141614; color: #fafaf8; border: 1px solid rgba(134, 187, 108, .45); font-family: "Zilla Slab", serif; font-size: 1.05em; letter-spacing: -.02em; }
+.fpb-mark-news .sep, .fpb-name-news .sep { color: #86bb6c; }
+.fpb-name-news { font-family: "Zilla Slab", "Rockwell", serif; letter-spacing: -.01em; text-transform: none; }
+.fpb-news .fpb-cam { transform: translateY(-46%) rotate(6deg); right: 3%; }
+.fpb-ticker { position: absolute; left: 0; right: 0; top: 0; padding: .5em 5%; font: 600 clamp(.5rem, 1.2vw, .72rem)/1 var(--body); letter-spacing: .22em; color: rgba(185, 216, 168, .75); background: linear-gradient(90deg, rgba(0,0,0,.5), rgba(0,0,0,0)); white-space: nowrap; overflow: hidden; z-index: 0; }
 .cover.has-img::before, .cover.has-img::after { display: none; }
 .cover-actions { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; gap: .8rem; }
 .cam-btn { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; border: 0; border-radius: 50%; background: rgba(10,12,10,.6); color: #fff; cursor: pointer; transition: background-color .15s ease; }
@@ -695,6 +705,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 .inst-list { margin: 0 0 1rem; padding-left: 1.3rem; display: grid; gap: .55rem; }
 .inst-list kbd { font: 600 .85em var(--body); border: 1px solid var(--line); border-radius: 6px; padding: .05rem .4rem; }
 .inst-small { font-size: .86rem; margin: .8rem 0 0; }
+.inst-short { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.inst-short[hidden] { display: none; }
 @media (min-width: 1000px) {
   body.app-on .topbar { display: none; }
   body.app-on .xside { display: flex; flex-direction: column; gap: .3rem; position: fixed; top: 0; bottom: 0; left: max(0px, calc(50% - var(--xs-half))); width: 15.5rem; padding: 1rem 1rem 1.2rem .6rem; border-right: 1px solid var(--line); overflow-y: auto; z-index: 20; background: var(--bg); }
@@ -1242,7 +1254,11 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
         <p class="inst-lead" id="inst-lead">Så installerar du appen i Chrome:</p>
         <ol class="inst-list" id="inst-list"></ol>
       </div>
-      <p class="muted inst-small" id="inst-school">På en skol-Chromebook kan skolan ha stängt av installation av appar. Fungerar det inte, spara sidan som bokmärke med Ctrl + D, eller be skolans IT lägga till filmpower.vercel.app.</p>
+      <div class="inst-short" id="inst-short" hidden>
+        <button class="btn btn-ghost inst-go" type="button" id="install-shortcut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span id="inst-short-label">Ladda ner genväg till skrivbordet</span></button>
+        <p class="muted inst-small" id="inst-short-text">Fungerar i alla webbläsare: en ikon på skrivbordet som öppnar Film Power.</p>
+      </div>
+      <p class="muted inst-small" id="inst-school" hidden>På en skol-Chromebook kan skolan ha stängt av installation av appar. Fungerar det inte, spara sidan som bokmärke med Ctrl + D, eller be skolans IT lägga till filmpower.vercel.app.</p>
     </div>
   </div>
 </div>
@@ -1567,7 +1583,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 
   // Affiliate-märke som på Twitter: kontots profilbild bredvid namnet, länkad till kontots profil.
   function affBadge(org) {
-    var a = el('a', 'aff' + (org.brand ? ' brand' : ''));
+    var a = el('a', 'aff' + (org.brand ? ' brand' : '') + (WORDMARK_NAMES[org.username.toLowerCase()] ? ' aff-fp' : ''));
     a.href = '#profil-' + org.username.toLowerCase();
     a.title = 'Affiliate till ' + org.name;
     a.setAttribute('aria-label', 'Affiliate till ' + org.name);
@@ -1985,6 +2001,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     var cover = el('div', 'cover' + (p.brand ? ' brand' : ''));
     if (p.banner) { cover.classList.add('has-img'); cover.style.backgroundImage = 'url(/api/image?id=' + encodeURIComponent(p.banner) + ')'; }
     else if (p.brand) cover.appendChild(fpBanner());
+    else if ((p.username || '').toLowerCase() === 'filmpowernyheter') { cover.classList.add('brand', 'news'); cover.appendChild(fpBanner('news')); }
     box.appendChild(cover);
 
     var head = el('div', 'p-head');
@@ -2328,15 +2345,30 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   }
 
   // Film Powers egen banner: loggan, sloganen och kameran från introt.
-  function fpBanner() {
-    var wrap = el('div', 'fpb');
+  // news: varianten för nyhetskontot film://power, med f://-märket, loggan och en egen slogan.
+  function fpBanner(variant) {
+    var news = variant === 'news';
+    var wrap = el('div', 'fpb' + (news ? ' fpb-news' : ''));
     var txt = el('div', 'fpb-txt');
     var logo = el('div', 'fpb-logo');
-    logo.appendChild(el('span', 'fpb-mark', 'FP'));
-    logo.appendChild(el('span', 'fpb-name', 'FILM POWER'));
-    txt.appendChild(logo);
-    txt.appendChild(el('p', 'fpb-tag', 'Vi får bilder att röra sig.'));
+    if (news) {
+      var mk = el('span', 'fpb-mark fpb-mark-news');
+      mk.appendChild(document.createTextNode('f'));
+      mk.appendChild(el('span', 'sep', '://'));
+      logo.appendChild(mk);
+      var nm = el('span', 'fpb-name fpb-name-news');
+      nm.appendChild(wordmarkText('film://power'));
+      logo.appendChild(nm);
+      txt.appendChild(logo);
+      txt.appendChild(el('p', 'fpb-tag', 'Filmvärlden, varje dag.'));
+    } else {
+      logo.appendChild(el('span', 'fpb-mark', 'FP'));
+      logo.appendChild(el('span', 'fpb-name', 'FILM POWER'));
+      txt.appendChild(logo);
+      txt.appendChild(el('p', 'fpb-tag', 'Vi får bilder att röra sig.'));
+    }
     wrap.appendChild(txt);
+    if (news) wrap.appendChild(el('div', 'fpb-ticker', 'NYHETER · PREMIÄRER · FESTIVALER · TEKNIK · JOBB · NYHETER · PREMIÄRER · FESTIVALER'));
     // Samma kamera som i introt, med texten runt objektivet.
     var cam = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     cam.setAttribute('class', 'fpb-cam');
@@ -2347,8 +2379,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
         '<path id="fpb-lens-bottom" d="M 409.5 335 A 139 139 0 0 0 687.5 335"/>' +
       '</defs>' +
       '<image href="/intro-camera.webp" width="948" height="568"/>' +
-      '<text class="fpb-lens"><textPath href="#fpb-lens-top" startOffset="50%" text-anchor="middle">FILMPOWER</textPath></text>' +
-      '<text class="fpb-lens small"><textPath href="#fpb-lens-bottom" startOffset="50%" text-anchor="middle">EST. 2026</textPath></text>';
+      '<text class="fpb-lens"><textPath href="#fpb-lens-top" startOffset="50%" text-anchor="middle">' + (news ? 'NYHETER' : 'FILMPOWER') + '</textPath></text>' +
+      '<text class="fpb-lens small"><textPath href="#fpb-lens-bottom" startOffset="50%" text-anchor="middle">' + (news ? 'VARJE DAG' : 'EST. 2026') + '</textPath></text>';
     wrap.appendChild(cam);
     return wrap;
   }
@@ -3984,30 +4016,71 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     installEvt = null; closeInstall();
     toast('Film Power är installerad. Du hittar appen bland dina appar.');
   });
+  // Vilken webbläsare och vilket system, så att rutan kan visa rätt steg.
+  function browserInfo() {
+    var ua = navigator.userAgent;
+    var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var android = /Android/.test(ua), cros = /CrOS/.test(ua);
+    var os = ios ? 'ios' : android ? 'android' : cros ? 'chromeos' : /Windows/.test(ua) ? 'windows' : /Macintosh/.test(ua) ? 'mac' : /Linux/.test(ua) ? 'linux' : 'other';
+    var br = /SamsungBrowser/.test(ua) ? 'samsung' : /Edg(A|iOS)?\//.test(ua) ? 'edge' : /OPR\/|Opera/.test(ua) ? 'opera'
+      : /Firefox\/|FxiOS/.test(ua) ? 'firefox' : (navigator.brave ? 'brave' : /Chrome\/|CriOS|Chromium/.test(ua) ? 'chrome' : /Safari\//.test(ua) ? 'safari' : 'other');
+    return { os: os, br: br, mobile: ios || android };
+  }
+  var BR_NAME = { chrome: 'Chrome', edge: 'Edge', opera: 'Opera', brave: 'Brave', samsung: 'Samsung Internet', firefox: 'Firefox', safari: 'Safari', other: 'din webbläsare' };
+  function installSteps(b) {
+    if (b.os === 'ios') {
+      return ['Tryck på Dela-knappen (rutan med en pil uppåt). I Safari sitter den längst ner, i Chrome och Edge uppe till höger.',
+        'Välj "Lägg till på hemskärmen". Syns den inte, scrolla ner i listan.', 'Tryck Lägg till. Film Power ligger nu på hemskärmen som en app.'];
+    }
+    if (b.os === 'android') {
+      if (b.br === 'firefox') return ['Tryck på menyn ⋮.', 'Välj "Installera" eller "Lägg till på startskärmen".', 'Bekräfta. Film Power ligger nu bland dina appar.'];
+      if (b.br === 'samsung') return ['Tryck på menyn ≡ längst ner.', 'Välj "Lägg till sida på" och sedan "Startskärm".', 'Bekräfta med Lägg till.'];
+      return ['Tryck på menyn ⋮ uppe till höger.', 'Välj "Installera app" eller "Lägg till på startskärmen".', 'Tryck Installera. Film Power ligger nu bland dina appar.'];
+    }
+    if (b.br === 'safari' && b.os === 'mac') return ['Välj Arkiv i menyraden högst upp.', 'Klicka på "Lägg till i Dock…".', 'Klicka Lägg till. Film Power ligger nu i Dock och i mappen Program.'];
+    if (b.br === 'edge') return ['Klicka på menyn ⋯ uppe till höger.', 'Välj "Appar" och sedan "Installera den här webbplatsen som en app".', 'Klicka Installera. Du kan fästa appen i aktivitetsfältet eller på Start.'];
+    if (b.br === 'opera') return ['Klicka på installera-ikonen längst till höger i adressfältet, om den syns.', 'Annars: ladda ner genvägen nedan, så får du en ikon på skrivbordet.'];
+    if (b.br === 'firefox') return ['Firefox på dator kan inte installera webbappar på samma sätt som Chrome och Edge.', 'Ladda ner genvägen nedan, så får du en ikon på skrivbordet som öppnar Film Power.', 'Vill du ha en riktig app: öppna sidan i Chrome eller Edge och klicka på Ladda ner appen där.'];
+    return ['Titta längst till höger i adressfältet efter installera-ikonen (en skärm med en pil) och klicka på den.',
+      'Ser du ingen ikon: öppna menyn ⋮ uppe till höger, välj "Casta, spara och dela" och sedan "Installera sidan som app…".',
+      'Klicka Installera. Appen hamnar bland dina appar' + (b.os === 'chromeos' ? ', och du kan högerklicka på den och fästa den på hyllan.' : ' och kan fästas i aktivitetsfältet eller Dock.')];
+  }
   function openInstall() {
-    var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    var chrome = /Chrome|CriOS|Edg\//.test(ua) && !ios;
+    var b = browserInfo();
     $('inst-one').hidden = !installEvt;
     $('inst-steps').hidden = !!installEvt;
+    $('inst-lead').textContent = b.os === 'ios' ? 'Så lägger du till appen på iPhone eller iPad:' : (b.br === 'firefox' || b.br === 'opera') && !b.mobile ? 'Film Power på datorn med ' + BR_NAME[b.br] + ':' : 'Så installerar du appen i ' + BR_NAME[b.br] + ':';
     var list = $('inst-list');
     list.replaceChildren();
-    var steps;
-    if (ios) {
-      $('inst-lead').textContent = 'Så lägger du till appen på iPhone eller iPad:';
-      steps = ['Öppna sidan i Safari.', 'Tryck på Dela-knappen (rutan med en pil uppåt).', 'Välj "Lägg till på hemskärmen" och tryck Lägg till.'];
-    } else if (chrome) {
-      $('inst-lead').textContent = 'Så installerar du appen i Chrome:';
-      steps = ['Titta längst till höger i adressfältet efter installera-ikonen (en skärm med en pil) och klicka på den.',
-        'Ser du ingen ikon: öppna menyn ⋮ uppe till höger, välj "Casta, spara och dela" och sedan "Installera sidan som app…".',
-        'Klicka Installera. Appen hamnar bland dina appar, och du kan högerklicka på den och fästa den på hyllan.'];
-    } else {
-      $('inst-lead').textContent = 'Appen installeras enklast i Chrome:';
-      steps = ['Öppna filmpower.vercel.app/nyheter i Google Chrome.', 'Klicka på Ladda ner appen igen, eller på installera-ikonen i adressfältet.'];
-    }
-    steps.forEach(function (t) { list.appendChild(el('li', null, t)); });
+    installSteps(b).forEach(function (t) { list.appendChild(el('li', null, t)); });
+    // Genväg till skrivbordet: för datorer, och särskilt för webbläsare som inte kan installera appar.
+    var desktop = b.os === 'windows' || b.os === 'mac' || b.os === 'linux';
+    $('inst-short').hidden = !desktop;
+    $('inst-short-label').textContent = 'Ladda ner genväg till ' + (b.os === 'mac' ? 'skrivbordet (Mac)' : b.os === 'linux' ? 'skrivbordet (Linux)' : 'skrivbordet (Windows)');
+    $('inst-school').hidden = b.os !== 'chromeos';
     $('install-modal').hidden = false;
     (installEvt ? $('install-go') : $('install-close')).focus();
   }
+  // Skapar en genvägsfil för datorns system och laddar ner den. Dubbelklick öppnar Film Power.
+  $('install-shortcut').addEventListener('click', function () {
+    var b = browserInfo(), url = location.origin + '/nyheter/', icon = location.origin + '/icons/icon-512.png', name, text, type;
+    if (b.os === 'mac') {
+      name = 'Film Power.webloc'; type = 'application/x-apple-plist';
+      text = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>URL</key><string>' + url + '</string></dict></plist>\n';
+    } else if (b.os === 'linux') {
+      name = 'film-power.desktop'; type = 'application/x-desktop';
+      text = '[Desktop Entry]\nType=Link\nName=Film Power\nComment=Nyheter och blogg för filmskapare\nURL=' + url + '\nIcon=' + icon + '\n';
+    } else {
+      name = 'Film Power.url'; type = 'application/internet-shortcut';
+      text = '[InternetShortcut]\r\nURL=' + url + '\r\n';
+    }
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: type }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    toast('Genvägen laddades ner. Flytta den till skrivbordet och dubbelklicka för att öppna Film Power.');
+  });
   function closeInstall() { $('install-modal').hidden = true; }
   $('install-app').addEventListener('click', openInstall);
   $('install-app-top').addEventListener('click', openInstall);
