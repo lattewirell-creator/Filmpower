@@ -174,6 +174,89 @@ export function clearCookie(req) {
   return `${COOKIE}=; Max-Age=0; ${cookieFlags(req)}`;
 }
 
+// ---------- Flera konton, som på Twitter ----------
+// Den aktiva inloggningen ligger i fp_session. De andra kontona man lagt till ligger signerade i
+// fp_accounts (högst 4 till, alltså 5 totalt). Alla sätt att logga in går: konto, adminkod och medlemskod.
+const ACCOUNTS = 'fp_accounts';
+export const MAX_ACCOUNTS = 5;
+
+export function sessionId(p) {
+  if (!p) return '';
+  if (p.user) return 'u:' + p.user;
+  if (p.role === 'admin') return 'admin';
+  return p.code ? 'c:' + p.code : '';
+}
+
+export function rawSession(req) {
+  return verify(readCookie(req, COOKIE));
+}
+
+export function otherAccounts(req) {
+  const v = verify(readCookie(req, ACCOUNTS));
+  const list = v && Array.isArray(v.list) ? v.list : [];
+  return list.filter((p) => p && p.exp > Date.now() && sessionId(p));
+}
+
+function sessionToken(payload) {
+  return sign({ ...payload, exp: payload.exp && payload.exp > Date.now() ? payload.exp : Date.now() + SESSION_DAYS * 864e5 });
+}
+
+export function accountsCookie(req, list) {
+  const clean = [];
+  for (const p of list) if (sessionId(p) && !clean.some((x) => sessionId(x) === sessionId(p))) clean.push(p);
+  const kept = clean.slice(0, MAX_ACCOUNTS - 1);
+  if (!kept.length) return `${ACCOUNTS}=; Max-Age=0; ${cookieFlags(req)}`;
+  return `${ACCOUNTS}=${sign({ list: kept, exp: Date.now() + SESSION_DAYS * 864e5 })}; Max-Age=${SESSION_DAYS * 86400}; ${cookieFlags(req)}`;
+}
+
+// Cookies för en ny aktiv inloggning. add: den som redan var inloggad sparas bland de andra kontona.
+export function loginCookies(req, payload, add) {
+  const cur = rawSession(req);
+  let list = otherAccounts(req);
+  if (add && cur && sessionId(cur) !== sessionId(payload)) list = [cur, ...list];
+  list = list.filter((p) => sessionId(p) !== sessionId(payload));
+  return [`${COOKIE}=${sessionToken(payload)}; Max-Age=${SESSION_DAYS * 86400}; ${cookieFlags(req)}`, accountsCookie(req, list)];
+}
+
+// Byter aktivt konto. Det som var aktivt läggs bland de andra.
+export function switchCookies(req, target) {
+  const cur = rawSession(req);
+  const list = otherAccounts(req).filter((p) => sessionId(p) !== sessionId(target));
+  if (cur && sessionId(cur) !== sessionId(target)) list.unshift(cur);
+  return [`${COOKIE}=${sessionToken(target)}; Max-Age=${SESSION_DAYS * 86400}; ${cookieFlags(req)}`, accountsCookie(req, list)];
+}
+
+// Kollar att en sparad inloggning fortfarande gäller (kontot finns och är aktivt, koden finns kvar).
+export async function stillValid(p) {
+  if (!p) return false;
+  if (p.user) {
+    const raw = dbReady() ? await redis('HGET', 'users', p.user) : null;
+    return Boolean(raw && JSON.parse(raw).status === 'active');
+  }
+  if (p.role === 'member') return Boolean(dbReady() && (await redis('HEXISTS', 'codes', p.code)));
+  return p.role === 'admin';
+}
+
+// Kort information om de andra kontona, till kontomenyn.
+export async function accountSummaries(req) {
+  const list = otherAccounts(req);
+  const users = list.filter((p) => p.user).map((p) => p.user);
+  const rows = users.length && dbReady() ? await redis('HMGET', 'users', ...users) : [];
+  const info = new Map(users.map((u, i) => [u, rows[i] ? JSON.parse(rows[i]) : null]));
+  return list.map((p) => {
+    const u = p.user ? info.get(p.user) : null;
+    if (p.user && (!u || u.status !== 'active')) return null;
+    return {
+      id: sessionId(p),
+      label: u ? u.displayName || u.username : p.role === 'admin' ? 'Admin' : p.label || 'Medlem',
+      username: u ? u.username : '',
+      avatar: u ? u.avatar || '' : '',
+      verified: Boolean(u && u.verified),
+      role: u ? (u.role === 'admin' ? 'admin' : 'member') : p.role,
+    };
+  }).filter(Boolean);
+}
+
 function readCookie(req, name) {
   const header = req.headers.cookie || '';
   for (const part of header.split(';')) {

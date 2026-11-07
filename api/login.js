@@ -1,6 +1,6 @@
 import {
   handle, send, readBody, requireAppHeader, HttpError, dbReady, redis, pipeline,
-  normalizeCode, hashCode, safeEqual, sessionCookie, clientIp,
+  normalizeCode, hashCode, safeEqual, clientIp, loginCookies, switchCookies, otherAccounts, accountsCookie, sessionId, stillValid,
   usernameKey, hashPassword, checkPassword,
 } from './_lib.js';
 import { ensureNewsAccount, NEWS_KEY } from './_newsaccount.js';
@@ -12,6 +12,20 @@ export default handle(async (req, res) => {
   requireAppHeader(req);
 
   const b = await readBody(req);
+
+  // Byt till ett av de andra inloggade kontona, eller ta bort ett ur listan.
+  if (b.switch || b.remove) {
+    const id = String(b.switch || b.remove);
+    const target = otherAccounts(req).find((p) => sessionId(p) === id);
+    if (b.remove || !target || !(await stillValid(target))) {
+      send(res, b.remove ? 200 : 404, b.remove ? { ok: true } : { error: 'Kontot är inte inloggat längre. Lägg till det igen.' }, {
+        'Set-Cookie': accountsCookie(req, otherAccounts(req).filter((p) => sessionId(p) !== id)),
+      });
+      return;
+    }
+    return send(res, 200, { ok: true }, { 'Set-Cookie': switchCookies(req, target) });
+  }
+
   const rlKey = 'rl:login:' + clientIp(req);
   if (dbReady() && Number(await redis('GET', rlKey) || 0) >= MAX_FAILS) {
     throw new HttpError(429, 'För många felaktiga försök. Vänta en kvart och prova igen.');
@@ -64,7 +78,7 @@ async function attempt(b, req, res) {
     const label = user.displayName || user.username;
     const anon = Boolean(b.anon);
     return send(res, 200, { role, label, verified: Boolean(user.verified), avatar: user.avatar || '', anon }, {
-      'Set-Cookie': sessionCookie(req, { role, label, user: key, anon }),
+      'Set-Cookie': loginCookies(req, { role, label, user: key, anon }, Boolean(b.add)),
     });
   }
 
@@ -77,7 +91,7 @@ async function attempt(b, req, res) {
 
   if (safeEqual(entered, normalizeCode(adminCode))) {
     return send(res, 200, { role: 'admin', label: 'Admin' }, {
-      'Set-Cookie': sessionCookie(req, { role: 'admin', label: 'Admin' }),
+      'Set-Cookie': loginCookies(req, { role: 'admin', label: 'Admin' }, Boolean(b.add)),
     });
   }
 
@@ -92,7 +106,7 @@ async function attempt(b, req, res) {
         if (await checkPassword(String(b.code || '').trim(), user.salt, user.hash)) {
           const label = user.displayName || user.username;
           return send(res, 200, { role: 'admin', label, verified: Boolean(user.verified), avatar: user.avatar || '', anon: false }, {
-            'Set-Cookie': sessionCookie(req, { role: 'admin', label, user: NEWS_KEY, anon: false }),
+            'Set-Cookie': loginCookies(req, { role: 'admin', label, user: NEWS_KEY, anon: false }, Boolean(b.add)),
           });
         }
         await pipeline([['INCR', acctKey], ['EXPIRE', acctKey, 86400, 'NX']]);
@@ -108,7 +122,7 @@ async function attempt(b, req, res) {
       const info = JSON.parse(raw);
       const anon = Boolean(b.anon);
       return send(res, 200, { role: 'member', label: info.label, anon }, {
-        'Set-Cookie': sessionCookie(req, { role: 'member', label: info.label, code: hash, anon }),
+        'Set-Cookie': loginCookies(req, { role: 'member', label: info.label, code: hash, anon }, Boolean(b.add)),
       });
     }
   }

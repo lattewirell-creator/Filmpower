@@ -1,4 +1,4 @@
-import { handle, send, getSession, dbReady, CATEGORIES, queryParam } from './_lib.js';
+import { handle, send, getSession, dbReady, CATEGORIES, queryParam, accountSummaries, MAX_ACCOUNTS } from './_lib.js';
 import { servePage } from './_pages.js';
 import { reviewsHandler } from './_reviews.js';
 import { dataHandler } from './_data.js';
@@ -18,6 +18,10 @@ export default handle(async (req, res) => {
   const s = await getSession(req);
   send(res, 200, {
     user: s ? { role: s.role, label: s.label, verified: Boolean(s.verified), avatar: s.avatar || '', anon: Boolean(s.anon) } : null,
+    // Andra konton man är inloggad på i den här webbläsaren (till kontomenyn).
+    accounts: s ? await accountSummaries(req) : [],
+    maxAccounts: MAX_ACCOUNTS,
+    me: s ? (s.user ? 'u:' + s.user : s.role === 'admin' ? 'admin' : 'c:' + (s.code || '')) : '',
     dbReady: dbReady(),
     categories: CATEGORIES,
     // Felsökning: visar bara om inställningarna finns, aldrig deras värden.

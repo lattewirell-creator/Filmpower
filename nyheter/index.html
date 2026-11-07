@@ -750,6 +750,24 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 .hc-stats a:hover { text-decoration: underline; }
 .hc-load { color: var(--muted); font-size: .9rem; }
 @media (prefers-reduced-motion: reduce) { .lightbox, .lightbox img, .hovercard { animation: none; } }
+/* Flera konton: kontomenyn och rutan när man lägger till ett konto. */
+.acc-menu { min-width: 17rem; }
+.acc-row { display: grid !important; grid-template-columns: 2.4rem minmax(0, 1fr) auto; gap: .65rem; align-items: center; width: 100%; padding: .55rem .9rem !important; text-align: left; }
+.acc-row .avatar { width: 2.4rem; height: 2.4rem; }
+.acc-txt { display: grid; min-width: 0; line-height: 1.25; }
+.acc-name { display: flex; align-items: center; gap: .25rem; font-weight: 700; overflow: hidden; white-space: nowrap; }
+.acc-name > span { overflow: hidden; text-overflow: ellipsis; }
+.acc-handle { color: var(--muted); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-check { color: var(--brand); }
+.acc-check svg { width: 1.2rem; height: 1.2rem; }
+.menu-sep { height: 1px; background: var(--line); margin: .3rem 0; }
+.who { position: relative; }
+.who .acc-menu { position: absolute; top: calc(100% + .4rem); right: 0; left: auto; z-index: 40; }
+@media (max-width: 999px) { body.app-on .topbar #logout-btn, body.app-on .topbar .who .badge { display: none; } .who .acc-menu { position: fixed; top: calc(var(--top-h, 4.2rem) + .2rem); right: 8px; left: auto; max-width: calc(100vw - 16px); max-height: calc(100vh - 6rem); overflow-y: auto; } }
+.add-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1.4rem; padding: .9rem 1rem; border-radius: 14px; border: 1px solid var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); text-align: left; }
+.add-banner[hidden] { display: none; }
+.add-banner div { display: grid; gap: .2rem; }
+.add-banner span { color: var(--muted); font-size: .9rem; }
 /* Förslag på konton när man skriver @, som på Twitter. */
 .mention-pop { position: absolute; z-index: 90; width: min(22rem, calc(100vw - 16px)); max-height: 20rem; overflow-y: auto; padding: .3rem 0; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); box-shadow: 0 10px 34px rgba(0, 0, 0, .4); animation: fxMenu .14s var(--ease-out) both; }
 .mention-pop[hidden] { display: none; }
@@ -810,6 +828,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   .xs-who .who-more svg { width: 1.2rem; height: 1.2rem; }
   .xs-who.menu-wrap { margin-left: 0; }
   .xs-who .menu { position: absolute; bottom: calc(100% + .4rem); left: 0; right: 0; top: auto; }
+  .xs-who .acc-menu { position: fixed; left: calc(max(0px, calc(50% - var(--xs-half))) + .6rem); right: auto; bottom: 5.4rem; top: auto; z-index: 40; width: 19rem; max-height: calc(100vh - 7rem); overflow-y: auto; }
 }
 /* Menyraden längst ner på mobil, som Twitters app. */
 .bnav { display: none; }
@@ -888,6 +907,10 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 
   <!-- Inloggning -->
   <section class="login wrap" id="view-login" hidden>
+    <div class="add-banner" id="add-banner" hidden>
+      <div><b>Lägg till ett konto</b><span id="add-banner-text">Du är fortfarande inloggad på ditt andra konto och kan byta mellan dem i kontomenyn.</span></div>
+      <button class="btn btn-ghost btn-small" type="button" id="add-cancel">Avbryt</button>
+    </div>
     <p class="label">För filmskapare</p>
     <h1>Nyheter från <em>filmvärlden</em></h1>
     <p class="lead">Festivaler, jobb, teknik och tips, samlat på ett ställe. Logga in för att gilla, spara och kommentera, eller läs nyheterna direkt.</p>
@@ -1339,6 +1362,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     bellplus: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path d="M12 7v6M9 10h6"/>',
     logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    personplus: '<circle cx="10" cy="8" r="4"/><path d="M2 21a8 8 0 0 1 16 0"/><path d="M19 8v6M16 11h6"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
   };
@@ -1604,6 +1629,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     api('me').then(function (d) {
       state.categories = d.categories || [];
       state.dbReady = d.dbReady;
+      state.accounts = d.accounts || []; state.maxAccounts = d.maxAccounts || 5; state.meId = d.me || '';
       if (d.user) enterApp(d.user); else enterGuest();
     }).catch(function () {
       show('view-login');
@@ -1630,8 +1656,11 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
   function loginWith(form, btn, msg, body, after) {
     btn.disabled = true;
     setMsg(msg, '');
+    if (state.adding) body.add = true;
     api('login', { method: 'POST', body: body }).then(function (user) {
       after();
+      // Nytt konto tillagt: ladda om, så att allt visas för det kontot.
+      if (state.adding) { location.reload(); return; }
       enterApp(user);
     }).catch(function (err) { setMsg(msg, err.message, 'error'); })
       .then(function () { btn.disabled = false; });
@@ -1668,7 +1697,8 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     setMsg($('register-msg'), '');
     api('register', { method: 'POST', body: { username: username, password: p1 } }).then(function () {
       // Kontot är aktivt direkt, så vi loggar in på en gång.
-      return api('login', { method: 'POST', body: { username: username, password: p1 } }).then(function (user) {
+      return api('login', { method: 'POST', body: { username: username, password: p1, add: !!state.adding } }).then(function (user) {
+        if (state.adding) { location.reload(); return; }
         $('register-form').reset();
         setMode('user');
         enterApp(user);
@@ -1678,9 +1708,14 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
       .then(function () { $('register-btn').disabled = false; });
   });
 
+  var logoutAll = false;
   $('logout-btn').addEventListener('click', function () {
     // Datorn ska inte få notiser för ett konto som loggat ut, till exempel på en delad skoldator.
-    Promise.race([disablePush(true), new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { return api('logout', { method: 'POST' }); }).catch(function () {}).then(function () {
+    var all = !!logoutAll; logoutAll = false;
+    Promise.race([disablePush(true), new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { return api('logout', { method: 'POST', body: { all: all } }); }).catch(function () { return {}; }).then(function (r) {
+      // Fanns fler inloggade konton byter sajten till nästa, som på Twitter.
+      if (r && r.switched) { location.reload(); return; }
+      state.accounts = [];
       closeEdit();
       state.user = null; state.items = []; state.current = null; state.account = null;
       $('who').hidden = true;
@@ -1850,18 +1885,66 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     b.appendChild(more);    paintBnav();
   }
   // På dator öppnar kontot en meny som på Twitter. På mobil går det direkt till kontot.
+  // Kontomenyn, som på Twitter: de konton man är inloggad på, byta konto, lägga till ett konto och logga ut.
+  function accountRow(m, a, current) {
+    var b = el('button', 'acc-row' + (current ? ' current' : ''));
+    b.type = 'button'; b.setAttribute('role', 'menuitem');
+    var wm = a.username && WORDMARK_NAMES[a.username.toLowerCase()];
+    b.appendChild(avatarEl('', a.role === 'admin' && !a.username ? 'FP' : (a.label || '?').charAt(0), a.avatar, a.role === 'admin' && !a.username));
+    var t = el('span', 'acc-txt'), nm = el('span', 'acc-name'), ns = el('span', wm ? 'fp-wordmark' : null);
+    ns.appendChild(wm ? wordmarkText(a.label) : document.createTextNode(a.label));
+    nm.appendChild(ns);
+    if (a.verified) nm.appendChild(verified(false));
+    t.appendChild(nm);
+    t.appendChild(el('span', 'acc-handle', a.username ? '@' + a.username : a.role === 'admin' ? 'Adminkod' : 'Inloggad med kod'));
+    b.appendChild(t);
+    if (current) { var ck = el('span', 'acc-check'); ck.appendChild(icon('check')); b.appendChild(ck); }
+    m.appendChild(b);
+    return b;
+  }
+  function switchAccount(id) {
+    closeMenu();
+    toast('Byter konto…');
+    api('login', { method: 'POST', body: { switch: id } }).then(function () { location.reload(); }).catch(function (err) {
+      toast(err.message);
+      api('me').then(function (d) { state.accounts = d.accounts || []; });
+    });
+  }
+  function startAddAccount() {
+    closeMenu();
+    state.adding = true;
+    $('add-banner-text').textContent = 'Du är fortfarande inloggad som ' + (state.user ? state.user.label : 'ditt konto') + ' och kan byta mellan kontona i kontomenyn.';
+    $('add-banner').hidden = false;
+    setMode('user');
+    show('view-login');
+    window.scrollTo(0, 0);
+    $('u-name').focus();
+  }
+  $('add-cancel').addEventListener('click', function () {
+    state.adding = false;
+    $('add-banner').hidden = true;
+    show('view-app');
+  });
   $('who-name').addEventListener('click', function (e) {
-    if (!deskQuery.matches) { location.hash = 'konto'; return; }
     e.stopPropagation();
-    var wrap = $('xs-who');
+    var wrap = deskQuery.matches ? $('xs-who') : $('who');
     var wasOpen = openMenu && openMenu.parentNode === wrap;
     closeMenu();
     if (wasOpen) return;
-    var m = el('div', 'menu');
+    var m = el('div', 'menu acc-menu');
     m.setAttribute('role', 'menu');
+    var u = state.user || {};
+    accountRow(m, { label: u.label || '', username: state.meKey && state.meKey !== 'filmpower' ? state.meKey : '', avatar: u.avatar, verified: u.verified, role: u.role }, true)
+      .addEventListener('click', function () { closeMenu(); if (state.meKey && state.meKey !== 'filmpower') location.hash = 'profil-' + state.meKey; else location.hash = 'konto'; });
+    (state.accounts || []).forEach(function (a) {
+      accountRow(m, a, false).addEventListener('click', function (ev) { ev.stopPropagation(); switchAccount(a.id); });
+    });
+    m.appendChild(el('div', 'menu-sep'));
+    if (1 + (state.accounts || []).length < (state.maxAccounts || 5)) menuItem(m, 'personplus', 'Lägg till ett befintligt konto', startAddAccount);
     if (state.meKey && state.meKey !== 'filmpower') menuItem(m, 'person', 'Din profil', function () { closeMenu(); location.hash = 'profil-' + state.meKey; });
     menuItem(m, 'gear', 'Konto och inställningar', function () { closeMenu(); location.hash = 'konto'; });
-    menuItem(m, 'logout', 'Logga ut ' + (state.meKey ? '@' + state.meKey : ''), function () { closeMenu(); $('logout-btn').click(); });
+    menuItem(m, 'logout', 'Logga ut ' + (state.meKey ? '@' + state.meKey : (u.label || '')), function () { closeMenu(); $('logout-btn').click(); });
+    if ((state.accounts || []).length) menuItem(m, 'logout', 'Logga ut från alla konton', function () { closeMenu(); logoutAll = true; $('logout-btn').click(); });
     wrap.classList.add('menu-wrap');
     wrap.appendChild(m);
     openMenu = m;
