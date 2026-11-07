@@ -2112,9 +2112,10 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     if (anonMe) meta.appendChild(el('span', 'status anon-chip', 'Anonymt läge på'));
     if (meta.childNodes.length) box.appendChild(meta);
 
-    // Drivs av: personerna bakom ett företagskonto. Admin kan ändra listan här.
+    // Drivs av: personerna bakom ett företagskonto eller adminkonto. Admin kan ändra listan här.
     var runBy = p.runBy || [];
-    if (runBy.length || (isAdmin() && (p.brand || (opts.affiliates && opts.affiliates.length)))) {
+    // Gäller Film Power, företagskonton och konton som är admin (t.ex. film://power).
+    if (runBy.length || (isAdmin() && (p.brand || p.role === 'admin' || (opts.affiliates && opts.affiliates.length)))) {
       var rb = el('div', 'p-runby');
       rb.appendChild(el('span', 'muted', runBy.length ? 'Drivs av' : 'Ingen är angiven som ansvarig.'));
       runBy.forEach(function (r, i) {
