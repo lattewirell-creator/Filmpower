@@ -238,7 +238,7 @@ export async function notify(s, target, type, data = {}) {
   if (n.postId) {
     try { const p = JSON.parse((await redis('HGET', 'news', n.postId)) || 'null'); if (p) { label = p.title || (p.body || '').slice(0, 100); blog = p.kind === 'blog'; } } catch { /* inget inlägg */ }
   }
-  const url = n.postId ? (blog ? '/blogg' : '/nyheter/') + '#inlagg-' + n.postId : type === 'follow' && me ? '/nyheter/#profil-' + me : '/nyheter/#notiser';
+  const url = n.postId ? (blog ? '/nyheter/blogg' : '/nyheter/') + '#inlagg-' + n.postId : type === 'follow' && me ? '/nyheter/#profil-' + me : '/nyheter/#notiser';
   await pushTo(target, { title: n.byName + ' ' + (PUSH_TEXT[type] || 'har gjort något'), body: n.text || label, url, tag: type + '-' + (n.postId || n.by) });
 }
 const PUSH_TEXT = { post: 'har publicerat något nytt', like: 'gillade ditt inlägg', repost: 'delade vidare ditt inlägg', reply: 'svarade på ditt inlägg', follow: 'började följa dig', mention: 'nämnde dig', quote: 'citerade ditt inlägg' };

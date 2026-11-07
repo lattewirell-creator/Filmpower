@@ -4,18 +4,51 @@
   "description": "Nyheter och blogg för filmskapare från Film Power.",
   "id": "/nyheter/",
   "start_url": "/nyheter/?app=1",
-  "scope": "/",
+  "scope": "/nyheter/",
   "display": "standalone",
   "background_color": "#121412",
   "theme_color": "#121412",
   "lang": "sv",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Nyheter", "url": "/nyheter/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Bloggen", "url": "/blogg", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Nyheter",
+      "url": "/nyheter/",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Bloggen",
+      "url": "/nyheter/blogg",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

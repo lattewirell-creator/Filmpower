@@ -16,6 +16,14 @@
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude).github' ':(exclude)scripts' ':(exclude)README.md'",
   "rewrites": [
     {
+      "source": "/nyheter/blogg",
+      "destination": "/nyheter/index.html"
+    },
+    {
+      "source": "/nyheter/blogg/",
+      "destination": "/nyheter/index.html"
+    },
+    {
       "source": "/blogg",
       "destination": "/nyheter/index.html"
     },

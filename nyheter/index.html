@@ -1339,8 +1339,11 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // Samma app på två adresser: /nyheter (nyheter) och /blogg (bloggen som egen hemsida).
-  var BLOG_SITE = /^\/blogg\/?$/.test(location.pathname);
-  var SITE_PATH = BLOG_SITE ? '/blogg/' : '/nyheter/';
+  // Bloggen finns på /blogg i webbläsaren och på /nyheter/blogg i appen (appen täcker bara /nyheter/).
+  var BLOG_SITE = /^\/(nyheter\/)?blogg\/?$/.test(location.pathname);
+  var IN_APP = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var BLOG_URL = IN_APP || location.pathname.indexOf('/nyheter/') === 0 ? '/nyheter/blogg' : '/blogg';
+  var SITE_PATH = BLOG_SITE ? BLOG_URL + (BLOG_URL === '/blogg' ? '/' : '') : '/nyheter/';
   var DEFAULT_TAB = BLOG_SITE ? 'tab-blog' : 'tab-all';
   var PANELS = ['panel-notifs', 'panel-explore', 'panel-feed', 'panel-post', 'panel-account', 'panel-profile', 'panel-follows', 'panel-messages', 'panel-write', 'panel-users', 'panel-codes', 'panel-stats', 'panel-members'];
   var state = {
@@ -1491,7 +1494,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     hb.parentNode.insertBefore(na, hb);
     $('tab-popular').hidden = true;
   } else {
-    $('tab-blog').dataset.href = '/blogg';
+    $('tab-blog').dataset.href = BLOG_URL;
   }
   placeLayout();
   if (deskQuery.addEventListener) deskQuery.addEventListener('change', placeLayout); else deskQuery.addListener(placeLayout);
@@ -3364,7 +3367,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     if (canWrite() && !BLOG_SITE) { openCompose(); return; }
     if (!state.meKey) { toast('Skapa ett eget konto för att skriva i bloggen.'); return; }
     // Blogginlägg skrivs i Vad händer? på bloggens egen sida.
-    if (!BLOG_SITE) { location.href = '/blogg'; return; }
+    if (!BLOG_SITE) { location.href = BLOG_URL; return; }
     if (state.panel !== 'panel-feed' || state.view !== 'blog') { if (location.hash) history.pushState(null, '', location.pathname); selectTab(DEFAULT_TAB); }
     window.scrollTo(0, 0);
     setTimeout(function () { $('xc-text').focus(); }, 50);
@@ -4082,8 +4085,21 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     toast('Genvägen laddades ner. Flytta den till skrivbordet och dubbelklicka för att öppna Film Power.');
   });
   function closeInstall() { $('install-modal').hidden = true; }
-  $('install-app').addEventListener('click', openInstall);
-  $('install-app-top').addEventListener('click', openInstall);
+  // Appen täcker bara nyheterna och bloggen under /nyheter/. Från /blogg byter vi först adress,
+  // så att telefonen eller datorn installerar rätt sak.
+  function startInstall() {
+    if (location.pathname.indexOf('/nyheter/') !== 0) { location.href = '/nyheter/blogg#ladda-ner'; return; }
+    openInstall();
+  }
+  $('install-app').addEventListener('click', startInstall);
+  $('install-app-top').addEventListener('click', startInstall);
+  // I appen öppnas länkar till den vanliga hemsidan i webbläsaren i stället för i appen.
+  function fixAppLinks() {
+    Array.prototype.forEach.call(document.querySelectorAll('a[href="/blogg"]'), function (a) { a.setAttribute('href', BLOG_URL); });
+    if (!IN_APP) return;
+    Array.prototype.forEach.call(document.querySelectorAll('a[href="/"], a[href^="/sida/"]'), function (a) { a.target = '_blank'; a.rel = 'noopener'; });
+  }
+  fixAppLinks();
   $('install-close').addEventListener('click', closeInstall);
   $('install-modal').addEventListener('click', function (e) { if (e.target === this) closeInstall(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('install-modal').hidden) closeInstall(); });
@@ -4508,6 +4524,7 @@ button.exit-link { background: none; font-family: inherit; cursor: pointer; marg
     var m = /^#inlagg-([a-f0-9]+)$/.exec(location.hash);
     if (!state.user && location.hash === '#konto') { needLogin('se ditt konto'); return; }
     if (m) openPost(m[1]);
+    else if (location.hash === '#ladda-ner') { history.replaceState(null, '', location.pathname); openInstall(); }
     else if (location.hash === '#konto') openAccount();
     else if (/^#profil-[a-z0-9_.-]+$/.test(location.hash)) openProfile(MENTION_ALIASES[location.hash.slice(8)] || location.hash.slice(8));
     else if ((m = /^#profil-([a-z0-9_.-]+)\/(foljare|foljer)$/.exec(location.hash))) openFollows(MENTION_ALIASES[m[1]] || m[1], m[2] === 'foljare' ? 'followers' : 'following');
